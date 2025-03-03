@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const Menu = () => {
   const { user, logout } = useAuth();
 
-  return (
+  return ( 
     <nav
       className="navbar navbar-expand-lg"
       style={{

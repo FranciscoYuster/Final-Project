@@ -63,7 +63,7 @@ const Dashboard = () => {
                     <input type="email" id="email" className="form-control" placeholder='email@domain.com'
                         defaultValue={user.email} disabled
                     />
-                </div>
+                </div> 
 
                 <div className="form-group mb-3">
                     <label htmlFor="biography" className="form-label">Bio</label>
