@@ -1,73 +1,80 @@
 /* src/components/SideNav.css */
 .side-nav-container {
-    display: flex;
-  }
-  
-  .side-nav {
-    min-width: 205px;
-    height: 100vh;
-    background: linear-gradient(to bottom, #39a2e7, #186fda);
-    color: white;
-    padding: 30px;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .side-nav h4 {
-    margin-bottom: 20px;
-    font-weight: bold;
-  }
-  
-  .side-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .side-nav li {
-    margin-bottom: 15px;
-  }
-  
-  .side-nav a {
-    color: white;
-    text-decoration: none;
-    display: block;
-    padding: 8px 12px;
-    border-radius: 30px;
-    transition: background 0.3s;
-  }
-  
-  .side-nav a:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  .side-nav button {
-    border: none;
-    background: transparent;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 30px;
-    transition: background 0.3s;
-    cursor: pointer;
-  }
-  
-  .side-nav button:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  .side-nav-content {
-    flex-grow: 1;
-    padding: 30px;
-  }
-  
+  /* Ya no usaremos flex para el contenedor principal,
+     ya que el menú estará fijo y el contenido se separará con margen */
+  display: block;
+}
+
+/* Menú fijo a la izquierda */
+.side-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 205px;
+  height: 110vh;
+  background: linear-gradient(to bottom, #39a2e7, #186fda);
+  color: white;
+  padding: 30px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.side-nav h4 {
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.side-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.side-nav li {
+  margin-bottom: 15px;
+}
+
+.side-nav a {
+  color: white;
+  text-decoration: none;
+  display: block;
+  padding: 8px 12px;
+  border-radius: 30px;
+  transition: background 0.3s;
+}
+
+.side-nav a:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.side-nav button {
+  border: none;
+  background: transparent;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 30px;
+  transition: background 0.3s;
+  cursor: pointer;
+}
+
+.side-nav button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .side-nav .btn-outline-danger {
-    color: white;
-    border-color: #dc3545;
-    background-color: #dc3545;
-  }
-  
-  .side-nav .btn-outline-danger:hover {
-    color: #fff;
-    background-color: #dc3545;
-    border-color: #dc3545;
-  }
-  
+  color: white;
+  border-color: #dc3545;
+  background-color: #dc3545;
+}
+
+.side-nav .btn-outline-danger:hover {
+  color: #fff;
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* Área para el contenido principal, se separa con un margen izquierdo igual al ancho del menú */
+.side-nav-content {
+  margin-left: 205px;
+  padding: 30px;
+}

@@ -6,8 +6,17 @@ import { motion } from 'framer-motion';
 import './SideNav.css';
 
 const sideNavVariants = {
-  hidden: { x: -250, opacity: 0 },
-  visible: { x: 0, opacity: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+  hidden: { x: -205, opacity: 0, y: -25 },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 120,  // Ajusta la rigidez según sea necesario
+      damping: 25,     // Mayor damping reduce el rebote
+      delay: 0       // Pequeño retardo para suavizar la entrada
+    }
+  }
 };
 
 const linkVariants = {
@@ -33,7 +42,7 @@ const SideNav = () => {
       <nav className="side-nav">
         <motion.h4 
           initial={{ opacity: 0 }} 
-          animate={{ opacity: 1, transition: { duration: 0.5 } }}
+          animate={{ opacity: 1, transition: { delay: 0.2, duration: 0.5 } }}
         >
           Menú
         </motion.h4>
@@ -62,7 +71,7 @@ const SideNav = () => {
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/reports">Reportes Dinamicos</Link>
           </motion.li>
-          <motion.li style={{ marginTop: '600px' }}>
+          <motion.li style={{ marginTop: '300px' }}>
             <motion.button 
               className="btn btn-outline-danger btn-sm" 
               whileHover={{ scale: 1.1 }}
@@ -73,9 +82,6 @@ const SideNav = () => {
           </motion.li>
         </ul>
       </nav>
-      <div className="side-nav-content">
-        {/* Aquí se inyectará el contenido de cada página */}
-      </div>
     </motion.div>
   );
 };

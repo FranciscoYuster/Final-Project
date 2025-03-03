@@ -1,4 +1,3 @@
-// src/Layout.jsx
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Menu from './components/Menu';
@@ -17,89 +16,123 @@ import Compras from './views/Compras';
 import { Usuarios } from './views/Usuarios';
 import Proveedores from './views/Proveedores';
 import Reportes from './views/Reportes';
+import Services from './views/Services';
 
 const AppRoutes = () => {
-    const { user } = useAuth();
+  const { user } = useAuth();
 
-    return (
+  return (
+    <>
+      {user ? (
+        // Para usuarios autenticados: menú lateral fijo y contenido a la derecha
+        <div className="d-flex" style={{ minHeight: '100vh', width: '100vw' }}>
+          <SideNav />
+          {/* Contenedor principal con margen izquierdo igual al ancho del SideNav */}
+          <div
+            className="flex-grow-1"
+            style={{
+              marginLeft: '205px',
+              padding: '30px',
+              textAlign: 'left'
+            }}
+          >
+            <Routes>
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/adm"
+                element={
+                  <PrivateRoute>
+                    <Admin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/productos"
+                element={
+                  <PrivateRoute>
+                    <Productos />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/ventas"
+                element={
+                  <PrivateRoute>
+                    <Ventas />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/compras"
+                element={
+                  <PrivateRoute>
+                    <Compras />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/usuarios"
+                element={
+                  <PrivateRoute>
+                    <Usuarios />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/proveed"
+                element={
+                  <PrivateRoute>
+                    <Proveedores />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <PrivateRoute>
+                    <Reportes />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="/services" element={<Services />} />
+              <Route path="*" element={<Error404 />} />
+            </Routes>
+          </div>
+        </div>
+      ) : (
+        // Para usuarios no autenticados: menú superior y contenido debajo
         <>
-            {user ? (
-                // Estructura con SideNav y contenido principal
-                <div className="d-flex">
-                    <SideNav />
-                    <div className="flex-grow-1 p-4">
-                        <Routes>
-                            <Route path="/profile" element={
-                                <PrivateRoute>
-                                    <Dashboard />
-                                </PrivateRoute>
-                            } />
-                            <Route path="/adm" element={
-                                <PrivateRoute>
-                                    <Admin />
-                                </PrivateRoute>
-                            } />
-                            <Route path="/productos" element={
-                                <PrivateRoute>
-                                    <Productos />
-                                </PrivateRoute>
-                            } />
-                             <Route path="/ventas" element={
-                                <PrivateRoute>
-                                    <Ventas />
-                                </PrivateRoute>
-                            } />
-                             <Route path="/compras" element={
-                                <PrivateRoute>
-                                    <Compras />
-                                </PrivateRoute>
-                            } />
-                              <Route path="/usuarios" element={
-                                <PrivateRoute>
-                                    <Usuarios />
-                                </PrivateRoute>
-                            } />
-                                <Route path="/proveed" element={
-                                <PrivateRoute>
-                                    <Proveedores />
-                                </PrivateRoute>
-                            } />
-                                <Route path="/reports" element={
-                                <PrivateRoute>
-                                    <Reportes />
-                                </PrivateRoute>
-                            } />
-                            
-                            {/* Agrega más rutas protegidas aquí */}
-                            <Route path="*" element={<Error404 />} />
-                        </Routes>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    <Menu />
-                    <div className="container mt-3">
-                        <Routes>
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/register" element={<Register />} />
-                            <Route path="/" element={<Home />} />
-                            <Route path="*" element={<Error404 />} />
-                        </Routes>
-                    </div>
-                </>
-            )}
+          <Menu />
+          <div className="container mt-3">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/" element={<Home />} />
+              <Route path="*" element={<Error404 />} />
+            </Routes>
+          </div>
         </>
-    );
+      )}
+    </>
+  );
 };
 
 const Layout = () => {
-    return (
-        <AuthProvider>
-            <BrowserRouter>
-                <AppRoutes />
-            </BrowserRouter>
-        </AuthProvider>
-    );
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </AuthProvider>
+  );
 };
 
 export default Layout;
