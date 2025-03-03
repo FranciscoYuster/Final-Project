@@ -4,7 +4,7 @@ const Home = () => {
   return (
     <div className="container my-5">
       {/* Sección de bienvenida */}
-      <div className="jumbotron bg-light p-5 rounded">
+      <div className="jumbotron p-5 rounded">
         <h1 className="display-4">¡Bienvenido!</h1>
         <p className="lead">
           Esta es una aplicación de ejemplo usando React y Bootstrap para mostrar cómo se pueden presentar datos de manera elegante y responsiva.

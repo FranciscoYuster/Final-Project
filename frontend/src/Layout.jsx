@@ -7,6 +7,7 @@ import Login from './views/Login'
 import { AuthProvider } from './context/AuthContext'
 import PrivateRoute from './views/PrivateRoute'
 import Dashboard from './views/Dashboard'
+import Services from './views/Services'
 
 
 
@@ -16,6 +17,7 @@ const Layout = () => {
             <BrowserRouter>
                 <Menu />
                 <Routes>
+                <Route path='services' element={<Services />} />
                     <Route path='login' element={<Login />} />
                     <Route path='register' element={<Register />} />
                     <Route path='profile' element={

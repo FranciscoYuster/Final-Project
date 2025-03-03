@@ -36,7 +36,9 @@ const Login = () => {
     if (user) return <Navigate to="/profile" replace />
 
     return (
-        <div className='w-75 mx-auto my-5'>
+        <div className="login-container">
+    <div className="login-box">
+        <div className='mx-auto'>
             {error && (
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
                     <strong>Error!</strong> {error}.
@@ -48,8 +50,7 @@ const Login = () => {
                     </button>
                 </div>
             )}
-    <div className="login-container">
-    <div className="login-box">
+
         <h2 className="text-center">Login</h2>
             <form onSubmit={handleSubmit}>
                 <div className="mb-3">
