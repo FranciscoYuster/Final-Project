@@ -28,7 +28,7 @@ const Menu = () => {
             {user ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/profile">Profile</Link>
+                  <Link className="nav-link" to="/profile">Dashboard</Link>
                 </li>
                 <li className="nav-item">
                   <button 

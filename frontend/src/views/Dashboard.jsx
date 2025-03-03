@@ -1,102 +1,43 @@
-// Profile.jsx
-import React, { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+// frontend/src/pages/Dashboard.jsx
+import React from 'react';
 
 const Dashboard = () => {
-
-    const { user, updatedProfile } = useAuth();
-
-    const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
-    const [facebook, setFacebook] = useState('');
-    const [twitter, setTwitter] = useState('');
-    const [instagram, setInstagram] = useState('');
-    const [github, setGithub] = useState('');
-    const [bio, setBio] = useState('');
-
-    const handleSumbit = async (e) => {
-        e.preventDefault()
-        setError(null)
-
-        const data = await updatedProfile({ facebook, twitter, instagram, github, bio, message })
-
-        if (data.error) {
-            setMessage(null)
-            setError(data?.error)
-        } else {
-            setError(null)
-            setMessage(data.message)
-        }
-    }
-
-    useEffect(() => {
-        setBio(user?.profile?.bio)
-        setFacebook(user?.profile?.facebook)
-        setTwitter(user?.profile?.twitter)
-        setInstagram(user?.profile?.instagram)
-        setGithub(user?.profile?.github)
-    }, [])
-    return (
-        <div className="w-75 mx-auto my-5">
-                   {
-                !!error && (
-                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
-                        <strong>Error!</strong> {error}
-                        <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setError(null)}></button>
-                    </div>
-                )
-            }
-
-            {
-                !!message && (
-                    <div className="alert alert-success alert-dismissible fade show" role="alert">
-                        <strong>Success!</strong> {message}
-                        <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close" onClick={() => setMessage(null)}></button>
-                    </div>
-                )
-            }
-            <h3>Profile</h3>
-            <form onSubmit={handleSumbit}>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
-                    <input type="email" id="email" className="form-control" placeholder='email@domain.com'
-                        defaultValue={user.email} disabled
-                    />
-                </div>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="biography" className="form-label">Bio</label>
-                    <textarea id="biography" className="form-control" placeholder='My biography' value={bio} onChange={e => setBio(e.target.value)}></textarea>
-                </div>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="facebook" className="form-label">Facebook</label>
-                    <input type="text" id="facebook" className="form-control" placeholder="Facebook" value={facebook} onChange={e => setFacebook(e.target.value)} />
-                </div>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="instagram" className="form-label">Instagram</label>
-                    <input type="text" id="instagram" className="form-control" placeholder="Instagram" value={instagram} onChange={e => setInstagram(e.target.value)} />
-                </div>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="twitter" className="form-label">Twitter</label>
-                    <input type="text" id="twitter" className="form-control" placeholder="Twitter" value={twitter} onChange={e => setTwitter(e.target.value)} />
-                </div>
-
-                <div className="form-group mb-3">
-                    <label htmlFor="github" className="form-label">Github</label>
-                    <input type="text" id="github" className="form-control" placeholder="Github" value={github} onChange={e => setGithub(e.target.value)} />
-                </div>
-
-                <button className="btn btn-warning btm-sm py-2 w-100">
-                    Update
-                </button>
-
-            </form>
+  return (
+    <div className="container mt-4">
+      <h1 className="mb-4">Dashboard</h1>
+      <p>Bienvenido al panel de control. Aquí verás estadísticas, notificaciones y accesos rápidos a las funcionalidades del sistema.</p>
+      
+      {/* Ejemplo de tarjetas informativas */}
+      <div className="row">
+        <div className="col-md-4 mb-3">
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Productos</h5>
+              <p className="card-text">Visualiza el estado de inventario de productos.</p>
+            </div>
+          </div>
         </div>
-    );
+        <div className="col-md-4 mb-3">
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Ventas</h5>
+              <p className="card-text">Revisa las ventas recientes y métricas clave.</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4 mb-3">
+          <div className="card">
+            <div className="card-body">
+              <h5 className="card-title">Compras</h5>
+              <p className="card-text">Accede a información de compras y proveedores.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Puedes agregar gráficos, tablas u otros componentes personalizados */}
+    </div>
+  );
 };
 
 export default Dashboard;

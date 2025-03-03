@@ -1,35 +1,105 @@
-import React from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import Menu from './components/Menu'
-import Home from './views/Home'
-import Register from './views/Register'
-import Login from './views/Login'
-import { AuthProvider } from './context/AuthContext'
-import PrivateRoute from './views/PrivateRoute'
-import Dashboard from './views/Dashboard'
+// src/Layout.jsx
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Menu from './components/Menu';
+import SideNav from './components/SideNav';
+import Home from './views/Home';
+import Register from './views/Register';
+import Login from './views/Login';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import PrivateRoute from './views/PrivateRoute';
+import Dashboard from './views/Dashboard';
+import Error404 from './views/Error404';
+import Admin from './views/Admin';
+import Productos from './views/Productos';
+import Ventas from './views/Ventas';
+import Compras from './views/Compras';
+import { Usuarios } from './views/Usuarios';
+import Proveedores from './views/Proveedores';
+import Reportes from './views/Reportes';
 
+const AppRoutes = () => {
+    const { user } = useAuth();
 
+    return (
+        <>
+            {user ? (
+                // Estructura con SideNav y contenido principal
+                <div className="d-flex">
+                    <SideNav />
+                    <div className="flex-grow-1 p-4">
+                        <Routes>
+                            <Route path="/profile" element={
+                                <PrivateRoute>
+                                    <Dashboard />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/adm" element={
+                                <PrivateRoute>
+                                    <Admin />
+                                </PrivateRoute>
+                            } />
+                            <Route path="/productos" element={
+                                <PrivateRoute>
+                                    <Productos />
+                                </PrivateRoute>
+                            } />
+                             <Route path="/ventas" element={
+                                <PrivateRoute>
+                                    <Ventas />
+                                </PrivateRoute>
+                            } />
+                             <Route path="/compras" element={
+                                <PrivateRoute>
+                                    <Compras />
+                                </PrivateRoute>
+                            } />
+                              <Route path="/usuarios" element={
+                                <PrivateRoute>
+                                    <Usuarios />
+                                </PrivateRoute>
+                            } />
+                                <Route path="/proveed" element={
+                                <PrivateRoute>
+                                    <Proveedores />
+                                </PrivateRoute>
+                            } />
+                                <Route path="/reports" element={
+                                <PrivateRoute>
+                                    <Reportes />
+                                </PrivateRoute>
+                            } />
+                            
+                            {/* Agrega más rutas protegidas aquí */}
+                            <Route path="*" element={<Error404 />} />
+                        </Routes>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <Menu />
+                    <div className="container mt-3">
+                        <Routes>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/" element={<Home />} />
+                            <Route path="*" element={<Error404 />} />
+                        </Routes>
+                    </div>
+                </>
+            )}
+        </>
+    );
+};
 
 const Layout = () => {
     return (
         <AuthProvider>
             <BrowserRouter>
-                <Menu />
-                <Routes>
-                    <Route path='login' element={<Login />} />
-                    <Route path='register' element={<Register />} />
-                    <Route path='profile' element={
-                        <PrivateRoute>
-                            <Dashboard />
-                        </PrivateRoute>
-                    } />
-                    <Route path='/' element={<Home />} />
-                    <Route path='*' element={<h1>Page Not Found (404)</h1>} />
-                </Routes>
+                <AppRoutes />
             </BrowserRouter>
         </AuthProvider>
-    )
-}
+    );
+};
 
-export default Layout
-
+export default Layout;
