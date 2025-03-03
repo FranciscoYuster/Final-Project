@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Navigate, useNavigate } from 'react-router-dom'
+import "./Login.css";
 
 const Login = () => {
 
@@ -47,25 +48,33 @@ const Login = () => {
                     </button>
                 </div>
             )}
-
-            <h3>Login</h3>
+    <div className="login-container">
+    <div className="login-box">
+        <h2 className="text-center">Login</h2>
             <form onSubmit={handleSubmit}>
-                <div className="form-group mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
-                    <input type="email" id="email" className="form-control" placeholder='email@domain.com'
-                        onChange={e => setEmail(e.target.value)}
-                    />
+                <div className="mb-3">
+                    <input type="email" id="email" className="form-control" placeholder='Email'
+                        onChange={e => setEmail(e.target.value)}/>
                 </div>
                 <div className="form-group mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
-                    <input type="password" id="password" className="form-control" placeholder='********'
-                        onChange={e => setPassword(e.target.value)}
-                    />
+                    <input type="password" id="password" className="form-control" placeholder='Password'
+                        onChange={e => setPassword(e.target.value)}/>
                 </div>
-                <button className="btn btn-primary btm-sm py-2 w-100">
+                <div className="d-flex justify-content-between">
+            <div>
+              <input type="checkbox" id="rememberMe" /> <label htmlFor="rememberMe">Remember Me</label>
+            </div>
+            <a href="#" className="text-decoration-none mb-3">Forgot Password?</a>
+          </div>
+                <button className="btn btn-primary mb-3 w-100">
                     Login
                 </button>
             </form>
+            <p className="text-center mb-3">
+          Don't have an account? <a href="#" className="text-decoration-none" onClick={() => navigate('/register')}>Register</a>
+        </p>
+        </div>
+        </div>
         </div>
     )
 }
