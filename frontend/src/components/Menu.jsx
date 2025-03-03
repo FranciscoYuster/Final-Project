@@ -1,38 +1,57 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import React from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Menu = () => {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <nav
+      className="navbar navbar-expand-lg"
+      style={{
+        background: "rgba(255, 255, 255, 0.2)",
+        padding: "10px 20px",
+        boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+        borderRadius: "12px",
+        margin: "20px auto",
+        width: "95%",
+      }}
+    >
       <div className="container">
-        <Link className="navbar-brand" to="/">App</Link>
-        <button 
-          className="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
-          data-bs-target="#menuNavbar" 
-          aria-controls="menuNavbar" 
-          aria-expanded="false" 
+        <Link className="navbar-brand text-white fw-bold" to="/">
+          MyApp
+        </Link>
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#menuNavbar"
+          aria-controls="menuNavbar"
+          aria-expanded="false"
           aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
-        <div className="collapse navbar-collapse" id="menuNavbar">
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
+        <div className="collapse navbar-collapse justify-content-end" id="menuNavbar">
+          <ul className="navbar-nav">
             <li className="nav-item">
-              <Link className="nav-link" to="/">Home</Link>
+              <Link className="nav-link text-white mx-2 fw-semibold" to="/">
+                Home
+              </Link>
             </li>
+            <li className="nav-item">
+                  <Link className="nav-link text-white mx-2 fw-semibold" to="/services">
+                    Services
+                  </Link>
+                </li>
             {user ? (
               <>
                 <li className="nav-item">
                   <Link className="nav-link" to="/profile">Dashboard</Link>
                 </li>
                 <li className="nav-item">
-                  <button 
-                    className="btn btn-outline-danger btn-sm ms-lg-2" 
+                  <button
+                    className="btn btn-light text-danger fw-semibold ms-lg-2 px-3 py-1 rounded"
                     onClick={logout}
                   >
                     Logout
@@ -42,10 +61,17 @@ const Menu = () => {
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">Login</Link>
+                  <Link className="nav-link text-white mx-2 fw-semibold" to="/login">
+                    Login
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">Register</Link>
+                  <Link
+                    className="nav-link text-white mx-2 fw-semibold"
+                    to="/register"
+                  >
+                    Register
+                  </Link>
                 </li>
               </>
             )}

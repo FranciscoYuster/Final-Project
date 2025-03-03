@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
+
 
 const Register = () => {
 
@@ -49,7 +51,9 @@ const Register = () => {
     if (user) return <Navigate to="/profile" replace />
 
     return (
-        <div className='w-75 mx-auto my-5'>
+        <div className="login-container">
+    <div className="login-box">
+        <div className='mx-auto'>
             {error && (
                 <div className="alert alert-danger alert-dismissible fade show" role="alert">
                     <strong>Error!</strong> {error}.
@@ -72,15 +76,17 @@ const Register = () => {
                     </button>
                 </div>
             )}
-    <div className="login-container">
-    <div className="login-box">
+
             <h2 className="text-center">Register</h2>
             <form onSubmit={handleSubmit}>
             <div className="row">
             <div className="col-md-6 mb-3">
+            <div className="input-group">
+            <span className="input-group-text"><FaUser /></span>
                     <input type="text" id="firstName" className="form-control" placeholder='First Name'
                         onChange={e => setFirstName(e.target.value)} 
                     />
+                    </div>
                 </div>
                 <div className="col-md-6 mb-3">
                     <input type="text" id="lastName" className="form-control" placeholder='Last Name'
