@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Navigate, useNavigate } from 'react-router-dom'
 import "./Login.css";
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
 const Login = () => {
 
@@ -53,11 +54,13 @@ const Login = () => {
 
         <h2 className="text-center">Login</h2>
             <form onSubmit={handleSubmit}>
-                <div className="mb-3">
+                <div className="mb-3 input-container">
+                <FaEnvelope className="input-icon" />
                     <input type="email" id="email" className="form-control" placeholder='Email'
                         onChange={e => setEmail(e.target.value)}/>
                 </div>
-                <div className="form-group mb-3">
+                <div className="form-group mb-3 input-container">
+                <FaLock className="input-icon" />          
                     <input type="password" id="password" className="form-control" placeholder='Password'
                         onChange={e => setPassword(e.target.value)}/>
                 </div>

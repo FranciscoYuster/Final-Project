@@ -80,36 +80,39 @@ const Register = () => {
             <h2 className="text-center">Register</h2>
             <form onSubmit={handleSubmit}>
             <div className="row">
-            <div className="col-md-6 mb-3">
-            <div className="input-group">
-            <span className="input-group-text"><FaUser /></span>
+            <div className="col-md-6 mb-3 input-container">
+            <FaUser className="input-icon" />
                     <input type="text" id="firstName" className="form-control" placeholder='First Name'
                         onChange={e => setFirstName(e.target.value)} 
                     />
-                    </div>
                 </div>
-                <div className="col-md-6 mb-3">
+                <div className="col-md-6 mb-3 input-container">
+                <FaUser className="input-icon" />
                     <input type="text" id="lastName" className="form-control" placeholder='Last Name'
                         onChange={e => setLastName(e.target.value)}
                     />
                 </div>
                 </div>
-                <div className="form-group mb-3">
+                <div className="form-group mb-3 input-container">
+                <FaEnvelope className="input-icon" />
                     <input type="email" id="email" className="form-control" placeholder='Email'
                         onChange={e => setEmail(e.target.value)}
                     />
                 </div>
-                <div className="form-group mb-3">
+                <div className="form-group mb-3 input-container">
+                <FaEnvelope className="input-icon" />
                     <input type="email" id="confirmEmail" className="form-control" placeholder='Confirm Email'
                         onChange={e => setConfirmEmail(e.target.value)}
                     />
                 </div>
-                <div className="form-group mb-3">
+                <div className="form-group mb-3 input-container">
+                <FaLock className="input-icon" />
                     <input type="password" id="password" className="form-control" placeholder='Password'
                         onChange={e => setPassword(e.target.value)}
                     />
                 </div>
-                <div className="form-group mb-3">
+                <div className="form-group mb-3 input-container">
+                <FaLock className="input-icon" />
                     <input type="password" id="confirmPassword" className="form-control" placeholder='Confirm Password'
                         onChange={e => setConfirmPassword(e.target.value)}
                     />

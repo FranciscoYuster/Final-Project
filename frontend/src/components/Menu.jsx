@@ -19,7 +19,7 @@ const Menu = () => {
     >
       <div className="container">
         <Link className="navbar-brand text-white fw-bold" to="/">
-          MyApp
+          LogiGo
         </Link>
         <button
           className="navbar-toggler"
@@ -53,7 +53,7 @@ const Menu = () => {
                 </li>
                 <li className="nav-item">
                   <button
-                    className="btn btn-light text-danger fw-semibold ms-lg-2 px-3 py-1 rounded"
+                    className="btn btn-light text-primary fw-semibold"
                     onClick={logout}
                   >
                     Logout
