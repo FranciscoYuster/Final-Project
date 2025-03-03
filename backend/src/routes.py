@@ -11,35 +11,41 @@ def register():
 
     email = data.get('email')
     password = data.get('password')
-    
+    first_name = data.get('firstName')  # Nuevo campo
+    last_name = data.get('lastName')    # Nuevo campo
+
     if not email:
-        return jsonify({"fail": "Email is required"}), 400  # Mejor usar 400 (Bad Request)
+        return jsonify({"fail": "Email is required"}), 400  
      
     if not password:
         return jsonify({"error": "Password is required"}), 400
+
+    # Se puede agregar validación de first_name y last_name si es necesario
+    if not first_name:
+        return jsonify({"fail": "First name is required"}), 400
+    if not last_name:
+        return jsonify({"fail": "Last name is required"}), 400
 
     found = User.query.filter_by(email=email).first()
     if found:
         return jsonify({"fail": "User already exists"}), 409
 
-   
-    
     profile = Profile()
     user = User()
     user.email = email
     user.set_password(password)
+    user.first_name = first_name  # Asignamos el first name
+    user.last_name = last_name    # Asignamos el last name
     user.profile = profile
 
     user.save()
     if not user:
-        return jsonify({"error": "Error"})
+        return jsonify({"error": "Error"}), 500
 
-    
     return jsonify({"success": "Thanks for register, please login"}), 200
 
 @api.route('/login', methods=['POST'])
 def login():
-
     email = request.json.get('email')
     password = request.json.get('password')
     
@@ -50,59 +56,46 @@ def login():
         return jsonify({"error": "Password is required"}), 400
     
     user = User.query.filter_by(email=email).first()
-
     if not user:
         return jsonify({"error": "User don't exist"}), 401
     
     if not user.verify_password(password):
-        return jsonify({"error": "Credentials are incorrects!"}), 401
-    
+        return jsonify({"error": "Credentials are incorrect!"}), 401
 
-    # expires = timedelta(min=15)
-    # access_token = create_access_token(identity=str(user.id), expires_delta=expires )
     access_token = create_access_token(identity=str(user.id))
-
-
     datos = {
         "access_token": access_token,
         "user": user.serialize()
     }
-
-
-    return jsonify(datos),200
-    
+    return jsonify(datos), 200
 
 @api.route('/profile', methods=['GET'])
 @jwt_required()  # ruta protegida
 def profile():
-
     id = get_jwt_identity() 
     user = User.query.get(id)
-
     if not user:
-        return jsonify({"error": "User not found"}),401
-
+        return jsonify({"error": "User not found"}), 401
 
     return jsonify({
         "status": "success!",
         "user": user.serialize()
-        }),200
+    }), 200
 
 @api.route('/profile', methods=['PUT'])
 @jwt_required()  # ruta protegida
 def update_profile():
-    id = get_jwt_identity()  # 1
+    id = get_jwt_identity()
     user = User.query.get(id)
     data = request.get_json()
 
-    user.profile.bio = data['bio'] if 'bio' in data else user.profile.bio
-    user.profile.github = data['github'] if 'github' in data else user.profile.github
-    user.profile.facebook = data['facebook'] if 'facebook' in data else user.profile.facebook
-    user.profile.instagram = data['instagram'] if 'instagram' in data else user.profile.instagram
-    user.profile.twitter = data['twitter'] if 'twitter' in data else user.profile.twitter
+    user.profile.bio = data.get('bio', user.profile.bio)
+    user.profile.github = data.get('github', user.profile.github)
+    user.profile.facebook = data.get('facebook', user.profile.facebook)
+    user.profile.instagram = data.get('instagram', user.profile.instagram)
+    user.profile.twitter = data.get('twitter', user.profile.twitter)
 
     user.save()
-    
     return jsonify({
         "status": "success",
         "message": "Profile updated!",

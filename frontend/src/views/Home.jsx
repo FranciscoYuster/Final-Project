@@ -15,7 +15,7 @@ const Home = () => {
         </p>
         <a
           className="btn btn-primary btn-lg"
-          href="https://github.com/FranciscoYuster/Authentication-Project"
+          href="https://github.com/FranciscoYuster/Final-Project"
           target="_blank"
           rel="noopener noreferrer"
           role="button"

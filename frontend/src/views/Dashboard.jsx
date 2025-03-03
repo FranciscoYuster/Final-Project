@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
-const Profile = () => {
+const Dashboard = () => {
 
     const { user, updatedProfile } = useAuth();
 
@@ -99,4 +99,4 @@ const Profile = () => {
     );
 };
 
-export default Profile;
+export default Dashboard;

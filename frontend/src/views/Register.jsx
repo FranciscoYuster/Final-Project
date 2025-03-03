@@ -27,12 +27,14 @@ const Register = () => {
             return;
         }
 
-        const data = await register({ email, password });
+
+
+        const data = await register({ firstName, lastName, email, password });
         if (data.error) {
             setError(data.error);
         } else if (data.success) {
             setMessage('Registro exitoso. Iniciando sesión...');
-            
+
             const loginData = await login({ email, password });
             if (loginData.error) {
                 setError(loginData.error);
