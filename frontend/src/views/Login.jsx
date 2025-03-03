@@ -53,11 +53,13 @@ const Login = () => {
                 <div className="login-box">
                     <h2 className="text-center">Login</h2>
                     <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
+                        <div className="form-group mb-3 input-container">
+                        <FaEnvelope className="input-icon" />
                             <input type="email" id="email" className="form-control" placeholder='Email'
                                 onChange={e => setEmail(e.target.value)} />
                         </div>
-                        <div className="form-group mb-3">
+                        <div className="form-group mb-3 input-container">
+                            <FaLock className="input-icon" />
                             <input type="password" id="password" className="form-control" placeholder='Password'
                                 onChange={e => setPassword(e.target.value)} />
                         </div>
