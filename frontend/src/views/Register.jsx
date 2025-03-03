@@ -14,6 +14,8 @@ const Register = () => {
     const [confirmEmail, setConfirmEmail] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -27,7 +29,7 @@ const Register = () => {
             return;
         }
 
-        const data = await register({ email, password });
+        const data = await register({ email, password, firstName, lastName });
         if (data.error) {
             setError(data.error);
         } else if (data.success) {
@@ -70,37 +72,54 @@ const Register = () => {
                     </button>
                 </div>
             )}
-
-            <h3>Register</h3>
+    <div className="login-container">
+    <div className="login-box">
+            <h2 className="text-center">Register</h2>
             <form onSubmit={handleSubmit}>
+            <div className="row">
+            <div className="col-md-6 mb-3">
+                    <input type="text" id="firstName" className="form-control" placeholder='First Name'
+                        onChange={e => setFirstName(e.target.value)} 
+                    />
+                </div>
+                <div className="col-md-6 mb-3">
+                    <input type="text" id="lastName" className="form-control" placeholder='Last Name'
+                        onChange={e => setLastName(e.target.value)}
+                    />
+                </div>
+                </div>
                 <div className="form-group mb-3">
-                    <label htmlFor="email" className="form-label">Email</label>
-                    <input type="email" id="email" className="form-control" placeholder='email@domain.com'
+                    <input type="email" id="email" className="form-control" placeholder='Email'
                         onChange={e => setEmail(e.target.value)}
                     />
                 </div>
                 <div className="form-group mb-3">
-                    <label htmlFor="confirmEmail" className="form-label">Confirm Email</label>
-                    <input type="email" id="confirmEmail" className="form-control" placeholder='email@domain.com'
+                    <input type="email" id="confirmEmail" className="form-control" placeholder='Confirm Email'
                         onChange={e => setConfirmEmail(e.target.value)}
                     />
                 </div>
                 <div className="form-group mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
-                    <input type="password" id="password" className="form-control" placeholder='********'
+                    <input type="password" id="password" className="form-control" placeholder='Password'
                         onChange={e => setPassword(e.target.value)}
                     />
                 </div>
                 <div className="form-group mb-3">
-                    <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
-                    <input type="password" id="confirmPassword" className="form-control" placeholder='********'
+                    <input type="password" id="confirmPassword" className="form-control" placeholder='Confirm Password'
                         onChange={e => setConfirmPassword(e.target.value)}
                     />
                 </div>
-                <button className="btn btn-primary btn-sm py-2 w-100">
+                <div className='mb-3'>
+              <input type="checkbox" id="rememberMe" /> <label htmlFor="rememberMe">Remember Me</label>
+            </div>
+                <button className="btn btn-primary w-100">
                     Register
                 </button>
             </form>
+            <p className="text-center mt-3">
+          Have an account? <a href="#" className="text-decoration-none" onClick={() => navigate('/login')}>Login</a>
+        </p>
+        </div>
+        </div>
         </div>
     )
 }
