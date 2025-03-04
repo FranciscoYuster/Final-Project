@@ -2,6 +2,10 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from datetime import timedelta
 from models import User, Profile
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+import os
+
 
 api = Blueprint("api", __name__)
 
@@ -11,8 +15,8 @@ def register():
 
     email = data.get('email')
     password = data.get('password')
-    first_name = data.get('firstName')  # Nuevo campo
-    last_name = data.get('lastName')    # Nuevo campo
+    first_name = data.get('firstName')  
+    last_name = data.get('lastName')   
 
     if not email:
         return jsonify({"fail": "Email is required"}), 400  
@@ -20,7 +24,6 @@ def register():
     if not password:
         return jsonify({"error": "Password is required"}), 400
 
-    # Se puede agregar validación de first_name y last_name si es necesario
     if not first_name:
         return jsonify({"fail": "First name is required"}), 400
     if not last_name:
@@ -34,8 +37,8 @@ def register():
     user = User()
     user.email = email
     user.set_password(password)
-    user.first_name = first_name  # Asignamos el first name
-    user.last_name = last_name    # Asignamos el last name
+    user.first_name = first_name  
+    user.last_name = last_name    
     user.profile = profile
 
     user.save()
@@ -100,4 +103,42 @@ def update_profile():
         "status": "success",
         "message": "Profile updated!",
         "user": user.serialize()
+    }), 200
+
+@api.route('/login/google', methods=['POST'])
+def google_login():
+    data = request.get_json()
+    id_token_received = data.get('id_token')
+    if not id_token_received:
+        return jsonify({"error": "id_token is required"}), 400
+
+    # Verifica el id_token usando la librería google-auth
+    try:
+        client_id = os.getenv('VITE_GOOGLE_CLIENT_ID')  
+        idinfo = google_id_token.verify_oauth2_token(id_token_received, google_requests.Request(), client_id)
+    except ValueError as e:
+        return jsonify({"error": "Invalid token", "details": str(e)}), 400
+
+    email = idinfo.get('email')
+    if not email:
+        return jsonify({"error": "Email not found in token"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        
+        # Registro del usuario con google-auth
+        profile = Profile()
+        user = User()
+        user.email = email
+        user.first_name = idinfo.get('given_name', '')
+        user.last_name = idinfo.get('family_name', '')
+        user.profile = profile
+        # Se guarda el usuario
+        user.save() 
+
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({
+        "access_token": access_token,
+        "user": user.serialize()  
     }), 200

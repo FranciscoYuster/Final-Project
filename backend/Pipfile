@@ -3,7 +3,6 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [scripts]
 start="python src/app.py"
 init="flask db init"
@@ -11,11 +10,9 @@ migrate="flask db migrate"
 upgrade="flask db upgrade"
 
 [packages]
-flask = "*"
 flask-migrate = "*"
 flask-cors = "*"
 flask-sqlalchemy = "*"
-flask-jwt-extended = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 

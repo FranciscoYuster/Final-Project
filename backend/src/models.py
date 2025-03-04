@@ -19,8 +19,8 @@ class User(db.Model):
         return {
             "id": self.id,
             "email": self.email,
-            "first_name": self.first_name,  # Se incluye en la serialización
-            "last_name": self.last_name,    # Se incluye en la serialización
+            "first_name": self.first_name,  
+            "last_name": self.last_name,    
             "is_active": self.is_active,
             "profile": self.profile.serialize() if self.profile else None
         }
