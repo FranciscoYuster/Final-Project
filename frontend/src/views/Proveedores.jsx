@@ -1,103 +1,101 @@
 import { useState } from "react";
-import { FaSave, FaTrash, FaEraser, FaUpload } from "react-icons/fa"; // Íconos de FontAwesome
+import { FaTrash } from "react-icons/fa";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-export default function ProveedoresDashboard() {
-  const [form, setForm] = useState({
-    nombre: "",
-    tipo: "",
-    documento: "",
-    telefono: "",
-    email: "",
-  });
+export default function EditableTable() {
+  const [rows, setRows] = useState([
+    { id: 1, nombre: "", tipo: "", documento: "", telefono: "", email: "" },
+  ]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const addRow = () => {
+    setRows([...rows, { id: rows.length + 1, nombre: "", tipo: "", documento: "", telefono: "", email: "" }]);
   };
 
-  const handleClear = () => {
-    setForm({ nombre: "", tipo: "", documento: "", telefono: "", email: "" });
+  const deleteRow = (id) => {
+    setRows(rows.filter((row) => row.id !== id));
+  };
+
+  const handleChange = (id, field, value) => {
+    setRows(
+      rows.map((row) =>
+        row.id === id ? { ...row, [field]: value } : row
+      )
+    );
   };
 
   return (
     <div className="container mt-4">
-      <div className="row">
-        {/* Tabla de Proveedores */}
-        <div className="col-md-8">
-          <div className="card">
-            <div className="card-header bg-primary text-white">Lista de Proveedores</div>
-            <div className="card-body">
-              <table className="table table-bordered">
-                <thead className="table-dark">
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Tipo</th>
-                    <th>Documento</th>
-                    <th>Teléfono</th>
-                    <th>Email</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Proveedor 1</td>
-                    <td>RUC</td>
-                    <td>12345678</td>
-                    <td>555-1234</td>
-                    <td>proveedor@empresa.com</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Formulario de Proveedores */}
-        <div className="col-md-4">
-          <div className="card">
-            <div className="card-header bg-success text-white">Agregar/Editar Proveedor</div>
-            <div className="card-body">
-              <form>
-                <div className="mb-3">
-                  <label className="form-label">Nombre / Razón Social</label>
-                  <input type="text" className="form-control" name="nombre" value={form.nombre} onChange={handleChange} />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Tipo de Documento</label>
-                  <input type="text" className="form-control" name="tipo" value={form.tipo} onChange={handleChange} />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Número de Documento</label>
-                  <input type="text" className="form-control" name="documento" value={form.documento} onChange={handleChange} />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Teléfono</label>
-                  <input type="text" className="form-control" name="telefono" value={form.telefono} onChange={handleChange} />
-                </div>
-
-                <div className="mb-3">
-                  <label className="form-label">Email</label>
-                  <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
-                </div>
-
-                <div className="d-flex gap-2">
-                  <button type="button" className="btn btn-primary">
-                    <FaSave /> Guardar
-                  </button>
-                  <button type="button" className="btn btn-warning" onClick={handleClear}>
-                    <FaUpload /> Actualizar
-                  </button>
-                  <button type="button" className="btn btn-danger">
-                    <FaTrash /> Eliminar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+      <table className="table table-bordered">
+        <thead className="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Nombre/Razon Social</th>
+            <th>Tipo de documento</th>
+            <th>Numero de documento</th>
+            <th>Telefono</th>
+            <th>Email</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.id}>
+              <td>{index + 1}</td>
+              <td>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={row.nombre}
+                  onChange={(e) => handleChange(row.id, "nombre", e.target.value)}
+                  placeholder="Nombre/Razon Social"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={row.tipo}
+                  onChange={(e) => handleChange(row.id, "tipo", e.target.value)}
+                  placeholder="Tipo de documento"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={row.documento}
+                  onChange={(e) => handleChange(row.id, "documento", e.target.value)}
+                  placeholder="Numero de documento"
+                />
+              </td>
+              <td>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={row.telefono}
+                  onChange={(e) => handleChange(row.id, "telefono", e.target.value)}
+                  placeholder="Telefono"
+                />
+              </td>
+              <td>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={row.email}
+                  onChange={(e) => handleChange(row.id, "email", e.target.value)}
+                  placeholder="Email"
+                />
+              </td>
+              <td>
+                <button className="btn btn-danger" onClick={() => deleteRow(row.id)}>
+                  <FaTrash />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button className="btn btn-primary" onClick={addRow}>Add new row</button>
     </div>
   );
 }
