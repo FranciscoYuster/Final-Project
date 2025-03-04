@@ -1,12 +1,11 @@
+// src/context/AuthContext.jsx
 import React, { createContext, useEffect, useState, useContext } from "react";
-import { baseUrl } from "../config";
+import { baseUrl } from "../config"; // se extrae desde config.js     
 import { Navigate } from "react-router-dom";
-
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -45,10 +44,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-
-
     const login = async (credentials) => {
-
         try {
             const response = await fetch(`${baseUrl}/api/login`, {
                 method: "POST",
@@ -70,13 +66,16 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = async () => {
-        if (sessionStorage.getItem("access_token")) {
-            sessionStorage.clear()
-            setUser(null)
-        }
+    const loginWithGoogle = (profile) => {
+        setUser(profile);
     };
 
+    const logout = async () => {
+        if (sessionStorage.getItem("access_token")) {
+            sessionStorage.clear();
+            setUser(null);
+        }
+    };
 
     const register = async (datos) => {
         try {
@@ -86,9 +85,9 @@ export const AuthProvider = ({ children }) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(datos)
-            })
+            });
             const data = await response.json();
-            return data
+            return data;
         } catch (error) {
             console.log(error.message);
             return { error: error.message };
@@ -98,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     const updatedProfile = async (datos) => {
         try {
             if (!sessionStorage.getItem("access_token"))
-                return <Navigate to="/login" replace />
+                return <Navigate to="/login" replace />;
 
             const token = sessionStorage.getItem("access_token");
 
@@ -109,33 +108,25 @@ export const AuthProvider = ({ children }) => {
                     "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(datos)
+            });
 
-            })
-
-            if (response.status == 401) <Navigate to="/login" replace />;
-
+            if (response.status === 401) <Navigate to="/login" replace />;
             const data = await response.json();
             setUser(data.user);
-            return data
+            return data;
 
         } catch (error) {
             console.log(error.message);
         } finally {
             setLoading(false);
         }
-    }
-
-
-
-
-
+    };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading, checkAuth, updatedProfile }}>
+        <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, loading, checkAuth, updatedProfile }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-// Custom hook para consumir el contexto
 export const useAuth = () => useContext(AuthContext);

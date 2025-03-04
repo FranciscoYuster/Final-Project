@@ -1,13 +1,20 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+// src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import Layout from './Layout';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min';
+import './index.css';
+import { clientId } from './config';
 
-// CSS Bootstrap
-import 'bootstrap/dist/css/bootstrap.min.css'
-// CSS Bootstrap Icons
-import 'bootstrap-icons/font/bootstrap-icons.min.css'
-// JS Bootstrap
-import 'bootstrap/dist/js/bootstrap.bundle.min'
+console.log("Client ID:", clientId);
 
-import Layout from './Layout'
-
-ReactDOM.createRoot(document.getElementById('root')).render(<Layout />)
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <GoogleOAuthProvider clientId={clientId}>
+    <React.StrictMode>
+      <Layout />
+    </React.StrictMode>
+  </GoogleOAuthProvider>
+);

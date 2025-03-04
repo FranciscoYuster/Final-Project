@@ -1,5 +1,6 @@
+// src/Layout.jsx
 import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import Menu from './components/Menu';
 import SideNav from './components/SideNav';
 import Home from './views/Home';
@@ -24,10 +25,8 @@ const AppRoutes = () => {
   return (
     <>
       {user ? (
-        // Para usuarios autenticados: menú lateral fijo y contenido a la derecha
         <div className="d-flex" style={{ minHeight: '100vh', width: '100vw' }}>
           <SideNav />
-          {/* Contenedor principal con margen izquierdo igual al ancho del SideNav */}
           <div
             className="flex-grow-1"
             style={{
@@ -107,7 +106,6 @@ const AppRoutes = () => {
           </div>
         </div>
       ) : (
-        // Para usuarios no autenticados: menú superior y contenido debajo
         <>
           <Menu />
           <div className="container mt-3">
@@ -128,9 +126,9 @@ const AppRoutes = () => {
 const Layout = () => {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <AppRoutes />
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 };

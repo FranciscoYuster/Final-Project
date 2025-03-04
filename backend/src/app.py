@@ -22,13 +22,16 @@ Migrate(app, db)
 jwt = JWTManager(app)
 CORS(app)
 
+@app.after_request
+def add_security_headers(response):
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    return response
+
 @app.route('/')
 def main():
     return jsonify({"status": "Server running succesfully with JWT and Flask"}), 200
 
 app.register_blueprint(api, url_prefix="/api")
-
-
 
 if __name__ == '__main__':
     app.run()
