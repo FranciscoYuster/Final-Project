@@ -6,6 +6,7 @@ const Services = () => {
     { id: 1, text: 'Expresión regular de los inputs', completed: false },
     { id: 2, text: 'Crear User Stories en gituhb', completed: false },
     { id: 3, text: 'Construir Paginas', completed: false },
+    { id: 4, text: 'Debe quedar responsivo', completed: false },
   ]);
   
   // Estado para el nuevo texto a agregar y para ocultar las tareas completadas

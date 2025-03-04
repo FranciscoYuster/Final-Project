@@ -14,7 +14,7 @@ import Admin from './views/Admin';
 import Productos from './views/Productos';
 import Ventas from './views/Ventas';
 import Compras from './views/Compras';
-import { Usuarios } from './views/Usuarios';
+import Usuarios  from './views/Usuarios';
 import Proveedores from './views/Proveedores';
 import Reportes from './views/Reportes';
 import Services from './views/Services';
