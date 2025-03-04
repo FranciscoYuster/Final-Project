@@ -10,11 +10,13 @@ migrate="flask db migrate"
 upgrade="flask db upgrade"
 
 [packages]
-flask-migrate = "*"
 flask-cors = "*"
 flask-sqlalchemy = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
+google-auth = "*"
+flask-migrate = "*"
+requests = "*"
 
 [dev-packages]
 
