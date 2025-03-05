@@ -1,0 +1,15 @@
+.navbar-custom {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    margin: 20px auto;
+    width: 1080px;
+  }
+  
+  /* Clase para el item activo */
+  .active-item {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+  }
+  

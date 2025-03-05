@@ -1,7 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from datetime import timedelta
-from models import User, Profile
+from models import (
+    db, User, Profile, Inventory, Product, Sale, Purchase, Provider, Movement,
+    create_inventory_for_user
+)
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import os
@@ -11,42 +14,87 @@ api = Blueprint("api", __name__)
 
 @api.route('/register', methods=['POST'])
 def register():
+    """
+    Endpoint para registrar un nuevo usuario y crear su inventario.
+    Se espera un JSON con: email, password, firstName, lastName.
+    En self-registration se asigna created_by=0.
+    """
     data = request.get_json()
-
     email = data.get('email')
     password = data.get('password')
-    first_name = data.get('firstName')  
-    last_name = data.get('lastName')   
+    first_name = data.get('firstName')
+    last_name = data.get('lastName')
 
-    if not email:
-        return jsonify({"fail": "Email is required"}), 400  
-     
-    if not password:
-        return jsonify({"error": "Password is required"}), 400
+    if not all([email, password, first_name, last_name]):
+        return jsonify({"error": "Faltan datos requeridos."}), 400
 
-    if not first_name:
-        return jsonify({"fail": "First name is required"}), 400
-    if not last_name:
-        return jsonify({"fail": "Last name is required"}), 400
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "El usuario ya existe."}), 400
 
-    found = User.query.filter_by(email=email).first()
-    if found:
-        return jsonify({"fail": "User already exists"}), 409
+    # Para self-registration, se asigna created_by=0
+    new_user = User(
+        email=email,
+        first_name=first_name,
+        last_name=last_name,
+        created_by=None
+    )
+    new_user.set_password(password)
+    new_user.save()
 
-    profile = Profile()
-    user = User()
-    user.email = email
-    user.set_password(password)
-    user.first_name = first_name  
-    user.last_name = last_name    
-    user.profile = profile
+    try:
+        create_inventory_for_user(new_user)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
-    user.save()
-    if not user:
-        return jsonify({"error": "Error"}), 500
+    return jsonify({"success": True, "user": new_user.serialize()}), 201
 
-    return jsonify({"success": "Thanks for register, please login"}), 200
 
+@api.route('/admin/register', methods=['POST'])
+@jwt_required()
+def admin_register():
+    try:
+        admin_identity = get_jwt_identity()
+        print("admin_identity:", admin_identity) 
+        admin_id = int(admin_identity)
+    except Exception as e:
+        print("Error al convertir el token:", e)
+        return jsonify({"error": "Token inválido", "details": str(e)}), 400
+
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('firstName')
+    last_name = data.get('lastName')
+
+    if not all([email, password, first_name, last_name]):
+        return jsonify({"error": "Faltan datos requeridos."}), 400
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "El usuario ya existe."}), 400
+
+    try:
+        new_user = User(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            created_by=admin_id
+        )
+        new_user.set_password(password)
+        new_user.save()
+        print("Nuevo usuario creado, ID:", new_user.id)
+    except Exception as e:
+        print("Error al guardar el usuario:", e)
+        return jsonify({"error": "Error al guardar el usuario", "details": str(e)}), 500
+
+    try:
+        create_inventory_for_user(new_user)
+    except ValueError as e:
+        print("Error al crear inventario:", e)
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({"success": True, "user": new_user.serialize()}), 201
+
+# Ruta de login 
 @api.route('/login', methods=['POST'])
 def login():
     email = request.json.get('email')
@@ -60,7 +108,7 @@ def login():
     
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({"error": "User don't exist"}), 401
+        return jsonify({"error": "User doesn't exist"}), 401
     
     if not user.verify_password(password):
         return jsonify({"error": "Credentials are incorrect!"}), 401
@@ -73,10 +121,10 @@ def login():
     return jsonify(datos), 200
 
 @api.route('/profile', methods=['GET'])
-@jwt_required()  # ruta protegida
+@jwt_required()  # Ruta protegida
 def profile():
-    id = get_jwt_identity() 
-    user = User.query.get(id)
+    user_id = get_jwt_identity() 
+    user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 401
 
@@ -86,12 +134,15 @@ def profile():
     }), 200
 
 @api.route('/profile', methods=['PUT'])
-@jwt_required()  # ruta protegida
+@jwt_required()  
 def update_profile():
-    id = get_jwt_identity()
-    user = User.query.get(id)
-    data = request.get_json()
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or not user.profile:
+        return jsonify({"error": "User or profile not found"}), 404
 
+    data = request.get_json()
+    # Actualiza solo los campos enviados; si no existen, se mantienen los actuales.
     user.profile.bio = data.get('bio', user.profile.bio)
     user.profile.github = data.get('github', user.profile.github)
     user.profile.facebook = data.get('facebook', user.profile.facebook)
@@ -105,6 +156,8 @@ def update_profile():
         "user": user.serialize()
     }), 200
 
+# Ruta para Login con Google
+
 @api.route('/login/google', methods=['POST'])
 def google_login():
     data = request.get_json()
@@ -114,7 +167,7 @@ def google_login():
 
     # Verifica el id_token usando la librería google-auth
     try:
-        client_id = os.getenv('VITE_GOOGLE_CLIENT_ID')  
+        client_id = os.getenv('VITE_GOOGLE_CLIENT_ID')
         idinfo = google_id_token.verify_oauth2_token(id_token_received, google_requests.Request(), client_id)
     except ValueError as e:
         return jsonify({"error": "Invalid token", "details": str(e)}), 400
@@ -126,19 +179,338 @@ def google_login():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        
-        # Registro del usuario con google-auth
+        # Registro del usuario con Google
         profile = Profile()
-        user = User()
-        user.email = email
-        user.first_name = idinfo.get('given_name', '')
-        user.last_name = idinfo.get('family_name', '')
+        user = User(
+            email=email,
+            first_name=idinfo.get('given_name', ''),
+            last_name=idinfo.get('family_name', '')
+        )
         user.profile = profile
-        # Se guarda el usuario
         user.save() 
+        # Opcional: Puedes crear el inventario automáticamente aquí si lo deseas
+        try:
+            create_inventory_for_user(user)
+        except ValueError:
+            pass
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({
         "access_token": access_token,
         "user": user.serialize()  
     }), 200
+
+@api.route('/admin/users', methods=['GET'])
+@jwt_required()
+def get_created_users():
+    try:
+        token = get_jwt_identity()
+        print("Token recibido:", token)  # Verifica en la consola del servidor
+        admin_id = int(token)
+        users = User.query.filter_by(created_by=admin_id).all()
+        return jsonify([user.serialize() for user in users]), 200
+    except Exception as e:
+        print("Error en get_created_users:", e)
+        return jsonify({"error": "Error al obtener los usuarios", "details": str(e)}), 500
+
+# Productos
+products_api = Blueprint("products_api", __name__)
+
+@products_api.route('/products', methods=['GET'])
+def get_products():
+    products = Product.get_all()
+    return jsonify([product.serialize() for product in products]), 200
+
+@products_api.route('/products/<int:id>', methods=['GET'])
+def get_product(id):
+    product = Product.query.get(id)
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+    return jsonify(product.serialize()), 200
+
+@products_api.route('/products', methods=['POST'])
+def create_product():
+    data = request.get_json()
+    if not data.get('name') or data.get('price') is None:
+        return jsonify({"error": "Name and price are required"}), 400
+    product = Product(
+        name=data.get('name'),
+        description=data.get('description', ''),
+        price=data.get('price'),
+        stock=data.get('stock', 0)
+    )
+    product.save()
+    return jsonify(product.serialize()), 201
+
+@products_api.route('/products/<int:id>', methods=['PUT'])
+def update_product(id):
+    product = Product.query.get(id)
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+    data = request.get_json()
+    product.name = data.get('name', product.name)
+    product.description = data.get('description', product.description)
+    product.price = data.get('price', product.price)
+    product.stock = data.get('stock', product.stock)
+    product.update()
+    return jsonify(product.serialize()), 200
+
+@products_api.route('/products/<int:id>', methods=['DELETE'])
+def delete_product(id):
+    product = Product.query.get(id)
+    if not product:
+        return jsonify({"error": "Product not found"}), 404
+    product.delete()
+    return jsonify({"message": "Product deleted"}), 200
+
+# Ventas
+sales_api = Blueprint("sales_api", __name__)
+
+@sales_api.route('/sales', methods=['GET'])
+def get_sales():
+    sales = Sale.get_all()
+    return jsonify([sale.serialize() for sale in sales]), 200
+
+@sales_api.route('/sales/<int:id>', methods=['GET'])
+def get_sale(id):
+    sale = Sale.find_by_id(id)
+    if not sale:
+        return jsonify({"error": "Sale not found"}), 404
+    return jsonify(sale.serialize()), 200
+
+@sales_api.route('/sales', methods=['POST'])
+def create_sale():
+    data = request.get_json()
+    required_fields = ['user_id', 'product_id', 'quantity', 'total']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"{field} is required"}), 400
+    sale = Sale(
+        user_id=data['user_id'],
+        product_id=data['product_id'],
+        quantity=data['quantity'],
+        total=data['total']
+    )
+    sale.save()
+    return jsonify(sale.serialize()), 201
+
+@sales_api.route('/sales/<int:id>', methods=['PUT'])
+def update_sale(id):
+    sale = Sale.find_by_id(id)
+    if not sale:
+        return jsonify({"error": "Sale not found"}), 404
+    data = request.get_json()
+    sale.user_id = data.get('user_id', sale.user_id)
+    sale.product_id = data.get('product_id', sale.product_id)
+    sale.quantity = data.get('quantity', sale.quantity)
+    sale.total = data.get('total', sale.total)
+    sale.update()
+    return jsonify(sale.serialize()), 200
+
+@sales_api.route('/sales/<int:id>', methods=['DELETE'])
+def delete_sale(id):
+    sale = Sale.find_by_id(id)
+    if not sale:
+        return jsonify({"error": "Sale not found"}), 404
+    sale.delete()
+    return jsonify({"message": "Sale deleted"}), 200
+
+# Compras
+purchases_api = Blueprint("purchases_api", __name__)
+
+@purchases_api.route('/purchases', methods=['GET'])
+def get_purchases():
+    purchases = Purchase.get_all()
+    return jsonify([purchase.serialize() for purchase in purchases]), 200
+
+@purchases_api.route('/purchases/<int:id>', methods=['GET'])
+def get_purchase(id):
+    purchase = Purchase.find_by_id(id)
+    if not purchase:
+        return jsonify({"error": "Purchase not found"}), 404
+    return jsonify(purchase.serialize()), 200
+
+@purchases_api.route('/purchases', methods=['POST'])
+def create_purchase():
+    data = request.get_json()
+    required_fields = ['provider_id', 'product_id', 'quantity', 'total']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"{field} is required"}), 400
+    purchase = Purchase(
+        provider_id=data['provider_id'],
+        product_id=data['product_id'],
+        quantity=data['quantity'],
+        total=data['total']
+    )
+    purchase.save()
+    return jsonify(purchase.serialize()), 201
+
+@purchases_api.route('/purchases/<int:id>', methods=['PUT'])
+def update_purchase(id):
+    purchase = Purchase.find_by_id(id)
+    if not purchase:
+        return jsonify({"error": "Purchase not found"}), 404
+    data = request.get_json()
+    purchase.provider_id = data.get('provider_id', purchase.provider_id)
+    purchase.product_id = data.get('product_id', purchase.product_id)
+    purchase.quantity = data.get('quantity', purchase.quantity)
+    purchase.total = data.get('total', purchase.total)
+    purchase.update()
+    return jsonify(purchase.serialize()), 200
+
+@purchases_api.route('/purchases/<int:id>', methods=['DELETE'])
+def delete_purchase(id):
+    purchase = Purchase.find_by_id(id)
+    if not purchase:
+        return jsonify({"error": "Purchase not found"}), 404
+    purchase.delete()
+    return jsonify({"message": "Purchase deleted"}), 200
+
+# Blueprint para Proveedores
+providers_api = Blueprint("providers_api", __name__)
+
+@providers_api.route('/providers', methods=['GET'])
+def get_providers():
+    providers = Provider.get_all()
+    return jsonify([provider.serialize() for provider in providers]), 200
+
+@providers_api.route('/providers/<int:id>', methods=['GET'])
+def get_provider(id):
+    provider = Provider.find_by_id(id)
+    if not provider:
+        return jsonify({"error": "Provider not found"}), 404
+    return jsonify(provider.serialize()), 200
+
+@providers_api.route('/providers', methods=['POST'])
+def create_provider():
+    data = request.get_json()
+    if not data.get('name'):
+        return jsonify({"error": "Name is required"}), 400
+    provider = Provider(
+        name=data['name'],
+        contact=data.get('contact', ''),
+        phone=data.get('phone', ''),
+        email=data.get('email', '')
+    )
+    provider.save()
+    return jsonify(provider.serialize()), 201
+
+@providers_api.route('/providers/<int:id>', methods=['PUT'])
+def update_provider(id):
+    provider = Provider.find_by_id(id)
+    if not provider:
+        return jsonify({"error": "Provider not found"}), 404
+    data = request.get_json()
+    provider.name = data.get('name', provider.name)
+    provider.contact = data.get('contact', provider.contact)
+    provider.phone = data.get('phone', provider.phone)
+    provider.email = data.get('email', provider.email)
+    provider.update()
+    return jsonify(provider.serialize()), 200
+
+@providers_api.route('/providers/<int:id>', methods=['DELETE'])
+def delete_provider(id):
+    provider = Provider.find_by_id(id)
+    if not provider:
+        return jsonify({"error": "Provider not found"}), 404
+    provider.delete()
+    return jsonify({"message": "Provider deleted"}), 200
+
+# Blueprint para Movimientos
+movements_api = Blueprint("movements_api", __name__)
+
+@movements_api.route('/movements', methods=['GET'])
+def get_movements():
+    movements = Movement.get_all()
+    return jsonify([movement.serialize() for movement in movements]), 200
+
+@movements_api.route('/movements/<int:id>', methods=['GET'])
+def get_movement(id):
+    movement = Movement.find_by_id(id)
+    if not movement:
+        return jsonify({"error": "Movement not found"}), 404
+    return jsonify(movement.serialize()), 200
+
+@movements_api.route('/movements', methods=['POST'])
+def create_movement():
+    data = request.get_json()
+    required_fields = ['product_id', 'type', 'quantity']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({"error": f"{field} is required"}), 400
+    movement = Movement(
+        product_id=data['product_id'],
+        type=data['type'],
+        quantity=data['quantity']
+    )
+    movement.save()
+    return jsonify(movement.serialize()), 201
+
+@movements_api.route('/movements/<int:id>', methods=['PUT'])
+def update_movement(id):
+    movement = Movement.find_by_id(id)
+    if not movement:
+        return jsonify({"error": "Movement not found"}), 404
+    data = request.get_json()
+    movement.product_id = data.get('product_id', movement.product_id)
+    movement.type = data.get('type', movement.type)
+    movement.quantity = data.get('quantity', movement.quantity)
+    movement.update()
+    return jsonify(movement.serialize()), 200
+
+@movements_api.route('/movements/<int:id>', methods=['DELETE'])
+def delete_movement(id):
+    movement = Movement.find_by_id(id)
+    if not movement:
+        return jsonify({"error": "Movement not found"}), 404
+    movement.delete()
+    return jsonify({"message": "Movement deleted"}), 200
+
+inventory_api = Blueprint("inventory_api", __name__)
+
+@inventory_api.route('/inventory', methods=['GET'])
+@jwt_required()
+def get_inventory():
+    """
+    Obtiene el inventario del usuario autenticado.
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or not user.inventory:
+        return jsonify({"error": "Inventario no encontrado."}), 404
+    return jsonify(user.inventory.serialize()), 200
+
+@inventory_api.route('/inventory', methods=['POST'])
+@jwt_required()
+def create_inventory():
+    """
+    Crea un inventario para el usuario autenticado, si es que aún no tiene uno.
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if user.inventory:
+        return jsonify({"error": "El inventario ya existe."}), 400
+    try:
+        # Utilizamos la función que se encarga de crear y asociar el inventario
+        create_inventory_for_user(user)
+        return jsonify(user.inventory.serialize()), 201
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+@inventory_api.route('/inventory', methods=['DELETE'])
+@jwt_required()
+def delete_inventory():
+    """
+    Elimina el inventario del usuario autenticado.
+    """
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or not user.inventory:
+        return jsonify({"error": "Inventario no encontrado."}), 404
+    try:
+        user.inventory.delete()
+        return jsonify({"message": "Inventario eliminado"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    

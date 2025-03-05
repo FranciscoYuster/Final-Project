@@ -1,6 +1,6 @@
 // src/Layout.jsx
 import React from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Menu from './components/Menu';
 import SideNav from './components/SideNav';
 import Home from './views/Home';
@@ -126,9 +126,9 @@ const AppRoutes = () => {
 const Layout = () => {
   return (
     <AuthProvider>
-      <HashRouter>
+      <BrowserRouter>
         <AppRoutes />
-      </HashRouter>
+      </BrowserRouter>  
     </AuthProvider>
   );
 };
