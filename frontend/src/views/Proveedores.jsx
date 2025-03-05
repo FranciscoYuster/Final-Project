@@ -98,4 +98,4 @@ export default function EditableTable() {
       <button className="btn btn-primary" onClick={addRow}>Add new row</button>
     </div>
   );
-}
+};

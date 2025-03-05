@@ -1,9 +1,9 @@
 // src/components/SideNav.jsx
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
-import './SideNav.css';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { motion } from "framer-motion";
+import "./SideNav.css";
 
 const sideNavVariants = {
   hidden: { x: -205, opacity: 0, y: -25 },
@@ -11,14 +11,14 @@ const sideNavVariants = {
     x: 0,
     opacity: 1,
     transition: {
-      type: 'spring',
-      stiffness: 120,  // Ajusta la rigidez según sea necesario
-      damping: 25,     // Mayor damping reduce el rebote
-      delay: 0       // Pequeño retardo para suavizar la entrada
-    }
-  }
+      type: "spring",
+      stiffness: 120, // Ajusta la rigidez según sea necesario
+      damping: 25, // Mayor damping reduce el rebote
+      delay: 0, // Pequeño retardo para suavizar la entrada
+    },
+  },
 };
- 
+
 const linkVariants = {
   hover: { scale: 1.05, transition: { duration: 0.2 } },
 };
@@ -29,19 +29,19 @@ const SideNav = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // Redirige a la ruta de inicio o a '/login'
+    navigate("/"); // Redirige a la ruta de inicio o a '/login'
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="side-nav-container"
       initial="hidden"
       animate="visible"
       variants={sideNavVariants}
     >
       <nav className="side-nav">
-        <motion.h4 
-          initial={{ opacity: 0 }} 
+        <motion.h4
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { delay: 0.2, duration: 0.5 } }}
         >
           Menú
@@ -71,9 +71,9 @@ const SideNav = () => {
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/reports">Reportes Dinamicos</Link>
           </motion.li>
-          <motion.li style={{ marginTop: '300px' }}>
-            <motion.button 
-              className="btn btn-outline-danger btn-sm" 
+          <motion.li style={{ marginTop: "300px" }}>
+            <motion.button
+              className="btn btn-outline-danger btn-sm"
               whileHover={{ scale: 1.1 }}
               onClick={handleLogout}
             >
