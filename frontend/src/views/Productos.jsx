@@ -98,8 +98,11 @@ export default function EditableTable() {
                 />
               </td>
               <td>
-                <button className="btn btn-darger" onClick={() => deleteRow(row.id)}>
-                  <FaTrash/>
+                <button
+                  className="btn btn-darger"
+                  onClick={() => deleteRow(row.id)}
+                >
+                  <FaTrash />
                 </button>
               </td>
             </tr>
@@ -107,8 +110,8 @@ export default function EditableTable() {
         </tbody>
       </table>
       <button className="btn btn-primary" onClick={addRow}>
-          Add new row
+        Add new row
       </button>
     </div>
   );
-};
+}
