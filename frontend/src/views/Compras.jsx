@@ -127,6 +127,17 @@ export default function EditableTable() {
                 />
               </td>
               <td>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={row.total}
+                  onChange={(e) =>
+                    handleChange(row.id, "total", e.target.value)
+                  }
+                  placeholder="total"
+                />
+              </td>
+              <td>
                 <button
                   className="btn btn-danger"
                   onClick={() => deleteRow(row.id)}
@@ -143,4 +154,4 @@ export default function EditableTable() {
       </button>
     </div>
   );
-};
+}

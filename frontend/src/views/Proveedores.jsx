@@ -8,7 +8,17 @@ export default function EditableTable() {
   ]);
 
   const addRow = () => {
-    setRows([...rows, { id: rows.length + 1, nombre: "", tipo: "", documento: "", telefono: "", email: "" }]);
+    setRows([
+      ...rows,
+      {
+        id: rows.length + 1,
+        nombre: "",
+        tipo: "",
+        documento: "",
+        telefono: "",
+        email: "",
+      },
+    ]);
   };
 
   const deleteRow = (id) => {
@@ -17,9 +27,7 @@ export default function EditableTable() {
 
   const handleChange = (id, field, value) => {
     setRows(
-      rows.map((row) =>
-        row.id === id ? { ...row, [field]: value } : row
-      )
+      rows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
     );
   };
 
@@ -46,7 +54,9 @@ export default function EditableTable() {
                   type="text"
                   className="form-control"
                   value={row.nombre}
-                  onChange={(e) => handleChange(row.id, "nombre", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(row.id, "nombre", e.target.value)
+                  }
                   placeholder="Nombre/Razon Social"
                 />
               </td>
@@ -64,7 +74,9 @@ export default function EditableTable() {
                   type="text"
                   className="form-control"
                   value={row.documento}
-                  onChange={(e) => handleChange(row.id, "documento", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(row.id, "documento", e.target.value)
+                  }
                   placeholder="Numero de documento"
                 />
               </td>
@@ -73,7 +85,9 @@ export default function EditableTable() {
                   type="text"
                   className="form-control"
                   value={row.telefono}
-                  onChange={(e) => handleChange(row.id, "telefono", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(row.id, "telefono", e.target.value)
+                  }
                   placeholder="Telefono"
                 />
               </td>
@@ -82,12 +96,17 @@ export default function EditableTable() {
                   type="email"
                   className="form-control"
                   value={row.email}
-                  onChange={(e) => handleChange(row.id, "email", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(row.id, "email", e.target.value)
+                  }
                   placeholder="Email"
                 />
               </td>
               <td>
-                <button className="btn btn-danger" onClick={() => deleteRow(row.id)}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => deleteRow(row.id)}
+                >
                   <FaTrash />
                 </button>
               </td>
@@ -95,7 +114,9 @@ export default function EditableTable() {
           ))}
         </tbody>
       </table>
-      <button className="btn btn-primary" onClick={addRow}>Add new row</button>
+      <button className="btn btn-primary" onClick={addRow}>
+        Add new row
+      </button>
     </div>
   );
-};
+}
