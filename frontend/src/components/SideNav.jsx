@@ -54,6 +54,9 @@ const SideNav = () => {
             <Link to="/profile">Dashboard</Link>
           </motion.li>
           <motion.li variants={linkVariants} whileHover="hover">
+            <Link to="/facturas">Facturas</Link>
+          </motion.li>
+          <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/productos">Productos</Link>
           </motion.li>
           <motion.li variants={linkVariants} whileHover="hover">

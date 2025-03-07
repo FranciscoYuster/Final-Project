@@ -21,6 +21,7 @@ import Services from './views/Services';
 import Forgot from './views/ForgotPassword';
 import ForgotPassword from './views/ForgotPassword';
 import ResetPassword from './views/ResetPassword';
+import Cliente from './views/Cliente';
 
 
 const AppRoutes = () => {
@@ -53,6 +54,14 @@ const AppRoutes = () => {
                 element={
                   <PrivateRoute>
                     <Admin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/facturas"
+                element={
+                  <PrivateRoute>
+                    <Cliente />
                   </PrivateRoute>
                 }
               />

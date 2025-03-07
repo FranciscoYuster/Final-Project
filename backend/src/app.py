@@ -8,6 +8,7 @@ from routes import api
 from dotenv import load_dotenv
 from datetime import timedelta
 from flask_mail import Mail
+from invoices_api import invoices_api
 
 load_dotenv()
 
@@ -44,6 +45,7 @@ def main():
     return jsonify({"status": "Server running succesfully with JWT and Flask"}), 200
 
 app.register_blueprint(api, url_prefix="/api")
+app.register_blueprint(invoices_api, url_prefix="/api")
 
 if __name__ == '__main__':
     app.run()

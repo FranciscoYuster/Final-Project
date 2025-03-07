@@ -5,7 +5,6 @@ import datetime
 import jwt
 from flask import current_app
 
-
 db = SQLAlchemy()
 
 # Tabla Inventory (Inventario)
@@ -15,14 +14,13 @@ class Inventory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
     
-    # Ejemplo de relación: productos asociados a este inventario
+    # Relación: productos asociados a este inventario
     products = db.relationship("Product", backref="inventory", lazy=True)
     
     def serialize(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
-            # Puedes incluir otros campos o relaciones según necesites
         }
     
     def save(self):
@@ -38,7 +36,7 @@ class User(db.Model):
     password = db.Column(db.String, nullable=False)
     first_name = db.Column(db.String, nullable=False)
     last_name = db.Column(db.String, nullable=False)
-    role = db.Column(db.String, nullable=False, default='admin')  # 'admin' o 'empleado'
+    role = db.Column(db.String, nullable=False) 
     is_active = db.Column(db.Boolean, default=True)
     
     # Campo para saber quién creó el usuario (self-referencial)
@@ -88,20 +86,19 @@ class User(db.Model):
     
     def generate_reset_token(self, expires_in=600):
         payload = {
-        "user_id": self.id,
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
-    }
+            "user_id": self.id,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
+        }
         return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
     def verify_reset_token(token):
-            try:
-                payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-                return User.query.get(payload['user_id'])
-            except jwt.ExpiredSignatureError:
-                return None  # Token expirado
-            except jwt.InvalidTokenError:
-                return None  # Token inválido
-
+        try:
+            payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+            return User.query.get(payload['user_id'])
+        except jwt.ExpiredSignatureError:
+            return None  # Token expirado
+        except jwt.InvalidTokenError:
+            return None  # Token inválido
 
 # Función para crear un inventario para un usuario, garantizando que no se cree más de uno.
 def create_inventory_for_user(user):
@@ -146,7 +143,6 @@ class Profile(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-        
 # Tabla de productos
 class Product(db.Model):
     __tablename__ = 'products'
@@ -159,7 +155,7 @@ class Product(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
     
-    # Nuevo campo para vincular al inventario
+    # Vinculación al inventario
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
 
     def serialize(self):
@@ -185,13 +181,11 @@ class Product(db.Model):
         db.session.delete(self)
         db.session.commit()
 
-# Tabla de ventas
-
+# Tabla de ventas (Sale)
 class Sale(db.Model):
     __tablename__ = 'sales'
     
     id = db.Column(db.Integer, primary_key=True)
-    # Puede ser útil mantener ambos, dependiendo de cómo consultes los datos
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
@@ -232,8 +226,40 @@ class Sale(db.Model):
     def get_all(cls):
         return cls.query.all()
 
-# Tabla de compras
+# Nuevo modelo: Tabla de facturas (Invoice)
+class Invoice(db.Model):
+    __tablename__ = 'invoices'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
+    
+    # Información del cliente
+    customer_name = db.Column(db.String, nullable=False)
+    customer_email = db.Column(db.String, nullable=False)
+    
+    # Información financiera
+    total = db.Column(db.Float, nullable=False)
+    invoice_date = db.Column(db.DateTime, server_default=db.func.now())
+    status = db.Column(db.String, nullable=False, default="Pending")  # "Pending" o "Paid"
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "inventory_id": self.inventory_id,
+            "customer_name": self.customer_name,
+            "customer_email": self.customer_email,
+            "total": self.total,
+            "invoice_date": self.invoice_date.isoformat() if self.invoice_date else None,
+            "status": self.status
+        }
+        
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
 
+# Tabla de compras
 class Purchase(db.Model):
     __tablename__ = 'purchases'
     
@@ -279,7 +305,6 @@ class Purchase(db.Model):
         return cls.query.all()
 
 # Tabla de proveedores
-
 class Provider(db.Model):
     __tablename__ = 'providers'
     
@@ -289,7 +314,7 @@ class Provider(db.Model):
     phone = db.Column(db.String, default='')
     email = db.Column(db.String, default='')
     
-    # Vincular al inventario
+    # Vinculación al inventario
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     
     def serialize(self):
@@ -325,7 +350,6 @@ class Provider(db.Model):
         return cls.query.all()
 
 # Tabla de movimientos
-
 class Movement(db.Model):
     __tablename__ = 'movements'
     
@@ -367,4 +391,3 @@ class Movement(db.Model):
     @classmethod
     def get_all(cls):
         return cls.query.all()
-

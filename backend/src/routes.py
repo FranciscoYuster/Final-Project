@@ -68,7 +68,8 @@ def register():
         email=email,
         first_name=first_name,
         last_name=last_name,
-        created_by=None
+        created_by=None,
+        role="admin"
     )
     new_user.set_password(password)
     new_user.save()
@@ -80,7 +81,129 @@ def register():
 
     return jsonify({"success": True, "user": new_user.serialize()}), 201
 
+# Ruta de login 
+@api.route('/login', methods=['POST'])
+def login():
+    email = request.json.get('email')
+    password = request.json.get('password')
+    
+    if not email:
+        return jsonify({"error": "Email is required"}), 400  
+     
+    if not password:
+        return jsonify({"error": "Password is required"}), 400
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "User doesn't exist"}), 401
+    
+    if not user.verify_password(password):
+        return jsonify({"error": "Credentials are incorrect!"}), 401
 
+    access_token = create_access_token(identity=str(user.id))
+    datos = {
+        "access_token": access_token,
+        "user": user.serialize()
+    }
+    return jsonify(datos), 200
+
+# Ruta para Login con Google
+@api.route('/login/google', methods=['POST'])
+def google_login():
+    data = request.get_json()
+    id_token_received = data.get('id_token')
+    if not id_token_received:
+        return jsonify({"error": "id_token is required"}), 400
+
+    # Verifica el id_token usando la librería google-auth
+    try:
+        client_id = os.getenv('VITE_GOOGLE_CLIENT_ID')
+        idinfo = google_id_token.verify_oauth2_token(id_token_received, google_requests.Request(), client_id)
+    except ValueError as e:
+        return jsonify({"error": "Invalid token", "details": str(e)}), 400
+
+    email = idinfo.get('email')
+    if not email:
+        return jsonify({"error": "Email not found in token"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        # Registro del usuario con Google
+        profile = Profile()
+        user = User(
+            email=email,
+            first_name=idinfo.get('given_name', ''),
+            last_name=idinfo.get('family_name', '')
+        )
+        user.profile = profile
+        user.save() 
+        # Opcional: Puedes crear el inventario automáticamente aquí si lo deseas
+        try:
+            create_inventory_for_user(user)
+        except ValueError:
+            pass
+
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({
+        "access_token": access_token,
+        "user": user.serialize()  
+    }), 200
+
+
+@api.route('/profile', methods=['GET'])
+@jwt_required()  # Ruta protegida
+def profile():
+    user_id = get_jwt_identity() 
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 401
+
+    return jsonify({
+        "status": "success!",
+        "user": user.serialize()
+    }), 200
+
+@api.route('/profile', methods=['PUT'])
+@jwt_required()  
+def update_profile():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user or not user.profile:
+        return jsonify({"error": "User or profile not found"}), 404
+
+    data = request.get_json()
+    # Actualiza solo los campos enviados; si no existen, se mantienen los actuales.
+    user.profile.bio = data.get('bio', user.profile.bio)
+    user.profile.github = data.get('github', user.profile.github)
+    user.profile.facebook = data.get('facebook', user.profile.facebook)
+    user.profile.instagram = data.get('instagram', user.profile.instagram)
+    user.profile.twitter = data.get('twitter', user.profile.twitter)
+
+    user.save()
+    return jsonify({
+        "status": "success",
+        "message": "Profile updated!",
+        "user": user.serialize()
+    }), 200
+
+
+
+# Endpoint para obtener los usuarios ya creadis
+@api.route('/admin/users', methods=['GET'])
+@jwt_required()
+def get_created_users():
+    try:
+        token = get_jwt_identity()
+        print("Token recibido:", token)  
+        admin_id = int(token)
+        users = User.query.filter_by(created_by=admin_id).all()
+        return jsonify([user.serialize() for user in users]), 200
+    except Exception as e:
+        print("Error en get_created_users:", e)
+        return jsonify({"error": "Error al obtener los usuarios", "details": str(e)}), 500
+
+# Tabla para crear usuarios desde Usuarios.jsx
 @api.route('/admin/register', methods=['POST'])
 @jwt_required()
 def admin_register():
@@ -126,124 +249,6 @@ def admin_register():
 
     return jsonify({"success": True, "user": new_user.serialize()}), 201
 
-# Ruta de login 
-@api.route('/login', methods=['POST'])
-def login():
-    email = request.json.get('email')
-    password = request.json.get('password')
-    
-    if not email:
-        return jsonify({"error": "Email is required"}), 400  
-     
-    if not password:
-        return jsonify({"error": "Password is required"}), 400
-    
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        return jsonify({"error": "User doesn't exist"}), 401
-    
-    if not user.verify_password(password):
-        return jsonify({"error": "Credentials are incorrect!"}), 401
-
-    access_token = create_access_token(identity=str(user.id))
-    datos = {
-        "access_token": access_token,
-        "user": user.serialize()
-    }
-    return jsonify(datos), 200
-
-@api.route('/profile', methods=['GET'])
-@jwt_required()  # Ruta protegida
-def profile():
-    user_id = get_jwt_identity() 
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 401
-
-    return jsonify({
-        "status": "success!",
-        "user": user.serialize()
-    }), 200
-
-@api.route('/profile', methods=['PUT'])
-@jwt_required()  
-def update_profile():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if not user or not user.profile:
-        return jsonify({"error": "User or profile not found"}), 404
-
-    data = request.get_json()
-    # Actualiza solo los campos enviados; si no existen, se mantienen los actuales.
-    user.profile.bio = data.get('bio', user.profile.bio)
-    user.profile.github = data.get('github', user.profile.github)
-    user.profile.facebook = data.get('facebook', user.profile.facebook)
-    user.profile.instagram = data.get('instagram', user.profile.instagram)
-    user.profile.twitter = data.get('twitter', user.profile.twitter)
-
-    user.save()
-    return jsonify({
-        "status": "success",
-        "message": "Profile updated!",
-        "user": user.serialize()
-    }), 200
-
-# Ruta para Login con Google
-
-@api.route('/login/google', methods=['POST'])
-def google_login():
-    data = request.get_json()
-    id_token_received = data.get('id_token')
-    if not id_token_received:
-        return jsonify({"error": "id_token is required"}), 400
-
-    # Verifica el id_token usando la librería google-auth
-    try:
-        client_id = os.getenv('VITE_GOOGLE_CLIENT_ID')
-        idinfo = google_id_token.verify_oauth2_token(id_token_received, google_requests.Request(), client_id)
-    except ValueError as e:
-        return jsonify({"error": "Invalid token", "details": str(e)}), 400
-
-    email = idinfo.get('email')
-    if not email:
-        return jsonify({"error": "Email not found in token"}), 400
-
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        # Registro del usuario con Google
-        profile = Profile()
-        user = User(
-            email=email,
-            first_name=idinfo.get('given_name', ''),
-            last_name=idinfo.get('family_name', '')
-        )
-        user.profile = profile
-        user.save() 
-        # Opcional: Puedes crear el inventario automáticamente aquí si lo deseas
-        try:
-            create_inventory_for_user(user)
-        except ValueError:
-            pass
-
-    access_token = create_access_token(identity=str(user.id))
-    return jsonify({
-        "access_token": access_token,
-        "user": user.serialize()  
-    }), 200
-
-@api.route('/admin/users', methods=['GET'])
-@jwt_required()
-def get_created_users():
-    try:
-        token = get_jwt_identity()
-        print("Token recibido:", token)  # Verifica en la consola del servidor
-        admin_id = int(token)
-        users = User.query.filter_by(created_by=admin_id).all()
-        return jsonify([user.serialize() for user in users]), 200
-    except Exception as e:
-        print("Error en get_created_users:", e)
-        return jsonify({"error": "Error al obtener los usuarios", "details": str(e)}), 500
 
 # Productos
 products_api = Blueprint("products_api", __name__)

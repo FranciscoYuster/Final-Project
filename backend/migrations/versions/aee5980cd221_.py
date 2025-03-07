@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 943f9b459c4c
+Revision ID: aee5980cd221
 Revises: 
-Create Date: 2025-03-05 14:42:54.739947
+Create Date: 2025-03-07 14:57:03.873193
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '943f9b459c4c'
+revision = 'aee5980cd221'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -48,6 +48,19 @@ def upgrade():
     sa.Column('avatar', sa.String(), nullable=True),
     sa.Column('users_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['users_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('invoices',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('inventory_id', sa.Integer(), nullable=False),
+    sa.Column('customer_name', sa.String(), nullable=False),
+    sa.Column('customer_email', sa.String(), nullable=False),
+    sa.Column('total', sa.Float(), nullable=False),
+    sa.Column('invoice_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('status', sa.String(), nullable=False),
+    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('products',
@@ -119,6 +132,7 @@ def downgrade():
     op.drop_table('movements')
     op.drop_table('providers')
     op.drop_table('products')
+    op.drop_table('invoices')
     op.drop_table('profiles')
     op.drop_table('inventories')
     op.drop_table('users')
