@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { baseUrl } from '../config';
 
 const Usuarios = () => {
   const [users, setUsers] = useState([]);
@@ -22,7 +21,7 @@ const Usuarios = () => {
 
   // Obtiene los usuarios creados por el admin
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/api/admin/users', {
+    axios.get(`${baseUrl}/api/admin/users`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
     })
       .then(response => {
