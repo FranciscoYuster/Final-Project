@@ -9,18 +9,20 @@ const Usuarios = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: 'empleado' 
+    role: 'empleado' // Valor por defecto
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Verifica que el token exista y lo muestra en consola para depuración
   useEffect(() => {
     const token = sessionStorage.getItem('access_token');
     console.log("Token desde sessionStorage:", token);
   }, []);
 
+  // Obtiene los usuarios creados por el admin
   useEffect(() => {
-    axios.get(`${baseUrl}/api/admin/users`, {
+    axios.get('http://127.0.0.1:5000/api/admin/users', {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
     })
       .then(response => {
