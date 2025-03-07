@@ -9,7 +9,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min';
 import './index.css';
 import { clientId } from './config';
 
-console.log("Client ID:", clientId);
+
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <GoogleOAuthProvider clientId={clientId}>

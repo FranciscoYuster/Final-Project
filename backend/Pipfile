@@ -17,6 +17,7 @@ psycopg2-binary = "*"
 google-auth = "*"
 flask-migrate = "*"
 requests = "*"
+flask-mail = "*"
 
 [dev-packages]
 

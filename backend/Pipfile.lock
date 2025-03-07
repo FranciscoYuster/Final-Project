@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "02c34fc65494c0e2484d9af9156d1891b8e2798fd92a4d15291eb9b43bcdf542"
+            "sha256": "4e7d87e3f71da7ae77305f8b22765ce3864070b87d810d465c42d89722cf225c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -188,6 +188,15 @@
             "markers": "python_version >= '3.9' and python_version < '4'",
             "version": "==4.7.1"
         },
+        "flask-mail": {
+            "hashes": [
+                "sha256:44083e7b02bbcce792209c06252f8569dd5a325a7aaa76afe7330422bd97881d",
+                "sha256:a451e490931bb3441d9b11ebab6812a16bfa81855792ae1bf9c1e1e22c4e51e7"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==0.10.0"
+        },
         "flask-migrate": {
             "hashes": [
                 "sha256:1a336b06eb2c3ace005f5f2ded8641d534c18798d64061f6ff11f79e1434126d",
@@ -312,11 +321,11 @@
         },
         "jinja2": {
             "hashes": [
-                "sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb",
-                "sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb"
+                "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d",
+                "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==3.1.5"
+            "version": "==3.1.6"
         },
         "mako": {
             "hashes": [
