@@ -63,24 +63,28 @@ const Cliente = () => {
 
   const handleSubmitInvoice = async (e) => {
     e.preventDefault();
-    // Preparar datos para la nueva factura.
-    // Aquí se asume que user_id e inventory_id son fijos para fines de prueba (por ejemplo, 1)
     const invoiceData = {
       customer_name: newInvoice.customer_name,
       customer_email: newInvoice.customer_email,
       total: parseFloat(newInvoice.total),
-      user_id: 1,         // Reemplaza según la lógica de tu aplicación
-      inventory_id: 1,    // Reemplaza según la lógica de tu aplicación
       status: 'Pending',
     };
+
+      const token = sessionStorage.getItem('access_token');
+
     try {
-      const response = await axios.post('/api/invoices', invoiceData);
+      const response = await axios.post('/api/invoices', invoiceData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // Asegúrate de enviar el token JWT
+        },
+      });
       setInvoices([...invoices, response.data]);
       handleCloseModal();
     } catch (error) {
       console.error('Error creating invoice:', error);
     }
   };
+  
 
   return (
     <div className="container mt-4">
