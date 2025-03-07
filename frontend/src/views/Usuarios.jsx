@@ -55,7 +55,7 @@ const Usuarios = () => {
     }
 
     try {
-      const response = await axios.post(`${baseUrl}/api/admin/register`, formData, {
+      const response = await axios.post('http://localhost:5000/api/admin/register', formData, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
       if (response.data && response.data.user) {
