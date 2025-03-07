@@ -122,8 +122,52 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const forgotPassword = async (email) => {
+        try {
+          const response = await fetch(`${baseUrl}/api/forgot-password`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email }),
+          });
+      
+          const data = await response.json();
+      
+          if (response.ok) {
+            return { success: true, message: 'Check your email for password reset instructions.' };
+          } else {
+            return { error: data.error || 'An error occurred.' };
+          }
+        } catch (err) {
+          return { error: 'Failed to connect to the server.' };
+        }
+      };
+      
+      const resetPassword = async (token, newPassword) => {
+        try {
+          const response = await fetch(`${baseUrl}/api/reset-password/${token}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_password: newPassword }), // Asegúrate de enviar el parámetro correcto
+          });
+    
+          const data = await response.json();
+    
+          if (response.ok) {
+            return { success: true, message: 'Your password has been successfully reset.' };
+          } else {
+            return { error: data.error || 'An error occurred while resetting your password.' };
+          }
+        } catch (err) {
+          return { error: 'Failed to connect to the server.' };
+        }
+      };
+      
     return (
-        <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, loading, checkAuth, updatedProfile }}>
+        <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, loading, checkAuth, updatedProfile, forgotPassword, resetPassword }}>
             {children}
         </AuthContext.Provider>
     );

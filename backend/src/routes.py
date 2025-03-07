@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
-from datetime import timedelta
+from datetime import timedelta, datetime
 from models import (
     db, User, Profile, Inventory, Product, Sale, Purchase, Provider, Movement,
     create_inventory_for_user
@@ -8,6 +8,8 @@ from models import (
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import os
+from flask_mail import Message, Mail
+
 
 
 api = Blueprint("api", __name__)
@@ -514,3 +516,52 @@ def delete_inventory():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+mail = Mail()
+@api.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    # Aquí buscarías al usuario en tu base de datos por el correo
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "No user found with this email"}), 404
+
+    # Generar el enlace de restablecimiento de contraseña
+    reset_token = user.generate_reset_token()  # Necesitarás implementar esta función
+    reset_url = f"http://localhost:5173/reset-password/{reset_token}"
+
+    # Crear el mensaje de correo
+    msg = Message("Password Reset Request",sender="myprojectsexample1@gmail.com", recipients=[email])
+    msg.body = f"To reset your password, click on the following link: {reset_url}"
+    msg.html = f'<p>To reset your password, click <a href="{reset_url}">here</a>.</p>'
+    print(f"📩 Enviando correo a: {email}")
+    try:
+        # Enviar el correo
+        mail.send(msg)
+        return jsonify({"message": "Password reset link has been sent to your email"}), 200
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@api.route('/reset-password/<token>', methods=['POST'])
+def reset_password(token):
+    data = request.get_json()
+    new_password = data.get('new_password')
+
+    if not new_password:
+        return jsonify({"error": "New password is required"}), 400
+
+    # Verificar si el token es válido
+    user = User.verify_reset_token(token)
+    if not user:
+        return jsonify({"error": "Invalid or expired token"}), 400
+
+    # Actualizar la contraseña del usuario
+    user.set_password(new_password)  # Necesitas implementar esta función
+    db.session.commit()
+
+    return jsonify({"message": "Password has been reset successfully"}), 200

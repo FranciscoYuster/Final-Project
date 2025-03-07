@@ -21,7 +21,7 @@ const Usuarios = () => {
 
   // Obtiene los usuarios creados por el admin
   useEffect(() => {
-    axios.get('http://localhost:5000/api/admin/users', {
+    axios.get('http://127.0.0.1:5000/api/admin/users', {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
     })
       .then(response => {

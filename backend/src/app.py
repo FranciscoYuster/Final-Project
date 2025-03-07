@@ -7,6 +7,7 @@ from models import db
 from routes import api
 from dotenv import load_dotenv
 from datetime import timedelta
+from flask_mail import Mail
 
 load_dotenv()
 
@@ -16,6 +17,17 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 465  # Usar SSL (465)
+app.config['MAIL_USE_TLS'] = False  # No usar TLS, usamos SSL
+app.config['MAIL_USE_SSL'] = True  # Usar SSL
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+
+
+mail = Mail(app)
 
 db.init_app(app)
 Migrate(app, db)

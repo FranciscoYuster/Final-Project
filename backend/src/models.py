@@ -1,5 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import create_access_token
+import datetime
+import jwt
+from flask import current_app
+
 
 db = SQLAlchemy()
 
@@ -80,8 +85,13 @@ class User(db.Model):
 
     def verify_password(self, password):
         return check_password_hash(self.password, password)
-
-
+    
+    def generate_reset_token(self, expires_in=600):
+        payload = {
+        "user_id": self.id,
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=expires_in)
+    }
+        return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
 # Función para crear un inventario para un usuario, garantizando que no se cree más de uno.
 def create_inventory_for_user(user):

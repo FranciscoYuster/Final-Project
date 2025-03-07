@@ -18,6 +18,10 @@ import Usuarios  from './views/Usuarios';
 import Proveedores from './views/Proveedores';
 import Reportes from './views/Reportes';
 import Services from './views/Services';
+import Forgot from './views/ForgotPassword';
+import ForgotPassword from './views/ForgotPassword';
+import ResetPassword from './views/ResetPassword';
+
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -112,6 +116,8 @@ const AppRoutes = () => {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/services" element={<Services />} />
               <Route path="/" element={<Home />} />
               <Route path="*" element={<Error404 />} />

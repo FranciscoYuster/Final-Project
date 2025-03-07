@@ -107,7 +107,7 @@ const Login = () => {
                 <input type="checkbox" id="rememberMe" />{' '}
                 <label htmlFor="rememberMe">Remember Me</label>
               </div>
-              <a href="#" className="text-decoration-none mb-3">Forgot Password?</a>
+              <a href="#" className="text-decoration-none mb-3" onClick={() => navigate('/forgot')}>Forgot Password?</a>
             </div>
             <button className="btn btn-primary mb-3 w-100" type="submit">
               Login
