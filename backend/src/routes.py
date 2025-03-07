@@ -36,7 +36,30 @@ def verificar_token():
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        try:
+            # Asignamos valores por defecto para los campos requeridos
+            default_password = ""  # O puedes generar un hash de una cadena aleatoria
+            default_role = "admin"  # Define el rol por defecto que consideres apropiado
+
+            # Crear perfil vacío (ajusta según tus necesidades)
+            profile = Profile()
+            user = User(
+                email=email,
+                first_name=idinfo.get('given_name', 'Google'),
+                last_name=idinfo.get('family_name', 'User'),
+                password=default_password,
+                role=default_role
+            )
+            user.profile = profile
+            user.save()
+            # Crear inventario para el usuario, si es necesario
+            try:
+                create_inventory_for_user(user)
+            except ValueError:
+                # Si el usuario ya tiene un inventario, se ignora
+                pass
+        except Exception as e:
+            return jsonify({"error": "Error creating user", "details": str(e)}), 500
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({
