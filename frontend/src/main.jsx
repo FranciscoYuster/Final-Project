@@ -10,7 +10,6 @@ import './index.css';
 import { clientId } from './config';
 
 
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <GoogleOAuthProvider clientId={clientId}>
     <React.StrictMode>
