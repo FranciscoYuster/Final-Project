@@ -100,6 +100,7 @@ const Login = () => {
                 })
                   .then((response) => response.json())
                   .then((data) => {
+                    console.log("wenaklo", data)
                     sessionStorage.setItem('access_token', data.access_token)
                     const authData = checkAuth();
                     if (authData.error) {
