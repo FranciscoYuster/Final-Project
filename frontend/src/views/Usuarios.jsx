@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { baseUrl } from '../config';
 
 const Usuarios = () => {
   const [users, setUsers] = useState([]);
@@ -8,20 +9,18 @@ const Usuarios = () => {
     password: '',
     firstName: '',
     lastName: '',
-    role: 'empleado' // Valor por defecto
+    role: 'empleado' 
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Verifica que el token exista y lo muestra en consola para depuración
   useEffect(() => {
     const token = sessionStorage.getItem('access_token');
     console.log("Token desde sessionStorage:", token);
   }, []);
 
-  // Obtiene los usuarios creados por el admin
   useEffect(() => {
-    axios.get('http://127.0.0.1:5000/api/admin/users', {
+    axios.get(`${baseUrl}/api/admin/users`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
     })
       .then(response => {
@@ -54,7 +53,7 @@ const Usuarios = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/admin/register', formData, {
+      const response = await axios.post(`${baseUrl}/api/admin/register`, formData, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem('access_token')}` }
       });
       if (response.data && response.data.user) {
