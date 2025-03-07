@@ -68,8 +68,7 @@ def register():
         email=email,
         first_name=first_name,
         last_name=last_name,
-        created_by=None,
-        role="admin"
+        created_by=None
     )
     new_user.set_password(password)
     new_user.save()
