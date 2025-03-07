@@ -32,12 +32,12 @@ const Login = () => {
       if (authData.error) {
         navigate('/login', { replace: true });
       } else {
-        navigate('/dashboard');
+        navigate('/profile');
       }
     }
   };
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/profile" replace />;
 
   return (
     <>
@@ -105,7 +105,7 @@ const Login = () => {
                     if (authData.error) {
                       navigate('/login', { replace: true });
                     } else {
-                      navigate('/dashboard');
+                      navigate('/profile');
                     }
                   })
 
