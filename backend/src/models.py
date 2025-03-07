@@ -93,6 +93,16 @@ class User(db.Model):
     }
         return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
+    def verify_reset_token(token):
+            try:
+                payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+                return User.query.get(payload['user_id'])
+            except jwt.ExpiredSignatureError:
+                return None  # Token expirado
+            except jwt.InvalidTokenError:
+                return None  # Token inválido
+
+
 # Función para crear un inventario para un usuario, garantizando que no se cree más de uno.
 def create_inventory_for_user(user):
     if user.inventory is not None:
