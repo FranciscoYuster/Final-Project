@@ -42,7 +42,7 @@ const AppRoutes = () => {
           >
             <Routes>
               <Route
-                path="/profile"
+                path="/dashboard"
                 element={
                   <PrivateRoute>
                     <Dashboard />
