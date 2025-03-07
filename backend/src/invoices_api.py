@@ -8,11 +8,14 @@ from models import db, Invoice
 invoices_api = Blueprint("invoices_api", __name__)
 
 @invoices_api.route('/invoices', methods=['GET'])
+@jwt_required()
 def get_invoices():
-    invoices = Invoice.query.all()
+    user_id = get_jwt_identity()
+    invoices = Invoice.query.filter_by(user_id=user_id).all()
     return jsonify([invoice.serialize() for invoice in invoices]), 200
 
 @invoices_api.route('/invoices/<int:id>', methods=['GET'])
+@jwt_required()
 def get_invoice(id):
     invoice = Invoice.query.get(id)
     if not invoice:

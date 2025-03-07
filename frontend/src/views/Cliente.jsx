@@ -14,7 +14,10 @@ const Cliente = () => {
   // Función para obtener las facturas desde el backend
   const fetchInvoices = async () => {
     try {
-      const response = await axios.get('/api/invoices');
+      const token = sessionStorage.getItem('access_token');
+      const response = await axios.get('/api/invoices', {
+        headers: { Authorization:  `Bearer ${token}` }
+      });
       setInvoices(response.data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
