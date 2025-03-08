@@ -1,4 +1,3 @@
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from functions import verify_google_token, verify_google_access_token
@@ -36,30 +35,7 @@ def verificar_token():
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        try:
-            # Asignamos valores por defecto para los campos requeridos
-            default_password = ""  # O puedes generar un hash de una cadena aleatoria
-            default_role = "admin"  # Define el rol por defecto que consideres apropiado
-
-            # Crear perfil vacío (ajusta según tus necesidades)
-            profile = Profile()
-            user = User(
-                email=email,
-                first_name=idinfo.get('given_name', 'Google'),
-                last_name=idinfo.get('family_name', 'User'),
-                password=default_password,
-                role=default_role
-            )
-            user.profile = profile
-            user.save()
-            # Crear inventario para el usuario, si es necesario
-            try:
-                create_inventory_for_user(user)
-            except ValueError:
-                # Si el usuario ya tiene un inventario, se ignora
-                pass
-        except Exception as e:
-            return jsonify({"error": "Error creating user", "details": str(e)}), 500
+        return jsonify({"error": "User not found"}), 404
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({
@@ -212,65 +188,138 @@ def update_profile():
 
 
 
-# Endpoint para obtener los usuarios ya creadis
 @api.route('/admin/users', methods=['GET'])
-@jwt_required()
+@jwt_required()  # Asegura que solo los usuarios autenticados puedan acceder a la lista de usuarios
 def get_created_users():
     try:
+        # Obtiene la identidad del administrador desde el JWT
         token = get_jwt_identity()
-        print("Token recibido:", token)  
-        admin_id = int(token)
+        print("Token recibido:", token)  # Para depuración
+
+        try:
+            admin_id = int(token)  # Convierte el token en ID de administrador
+        except ValueError:
+            return jsonify({"error": "Token inválido"}), 400  # Si el token no es válido, devuelve un error
+
+        # Obtiene todos los usuarios creados por este administrador
         users = User.query.filter_by(created_by=admin_id).all()
+        
+        # Devuelve los usuarios en formato JSON
         return jsonify([user.serialize() for user in users]), 200
     except Exception as e:
+        # Si ocurre algún error, se maneja y devuelve el mensaje de error
         print("Error en get_created_users:", e)
         return jsonify({"error": "Error al obtener los usuarios", "details": str(e)}), 500
 
 # Tabla para crear usuarios desde Usuarios.jsx
 @api.route('/admin/register', methods=['POST'])
-@jwt_required()
+@jwt_required()  # Asegura que solo usuarios autenticados puedan registrar a un nuevo usuario
 def admin_register():
     try:
+        # Obtiene la identidad del administrador desde el JWT
         admin_identity = get_jwt_identity()
-        print("admin_identity:", admin_identity) 
         admin_id = int(admin_identity)
     except Exception as e:
-        print("Error al convertir el token:", e)
         return jsonify({"error": "Token inválido", "details": str(e)}), 400
 
+    # Obtiene los datos enviados en la solicitud
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     first_name = data.get('firstName')
     last_name = data.get('lastName')
+    role = data.get('role', 'empleado')
 
-    if not all([email, password, first_name, last_name]):
+    # Verifica que todos los campos requeridos estén presentes
+    if not all([email, password, first_name, last_name, role]):
         return jsonify({"error": "Faltan datos requeridos."}), 400
 
+    # Verifica si el email ya está registrado
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "El usuario ya existe."}), 400
 
     try:
+        # Crea un nuevo usuario
         new_user = User(
             email=email,
             first_name=first_name,
             last_name=last_name,
+            role=role,
             created_by=admin_id
         )
-        new_user.set_password(password)
-        new_user.save()
-        print("Nuevo usuario creado, ID:", new_user.id)
+        new_user.set_password(password)  # Encripta la contraseña
+
+        db.session.add(new_user)  # Agrega el nuevo usuario a la base de datos
+        db.session.commit()  # Guarda el usuario en la base de datos
+
+        try:
+            # Intenta crear un inventario para el nuevo usuario
+            create_inventory_for_user(new_user)
+        except ValueError as e:
+            # Si hay un error al crear el inventario, se maneja y se devuelve un mensaje
+            print("Error al crear inventario:", e)
+            return jsonify({"error": "El usuario fue creado, pero hubo un problema con el inventario", "details": str(e)}), 400
+
+        # Si todo salió bien, responde con éxito y los datos del usuario
+        return jsonify({"success": True, "user": new_user.serialize()}), 201
     except Exception as e:
-        print("Error al guardar el usuario:", e)
+        # Si ocurre un error al guardar el usuario, revierte los cambios y responde con el error
+        db.session.rollback()
         return jsonify({"error": "Error al guardar el usuario", "details": str(e)}), 500
 
+@api.route('/admin/users/<int:user_id>', methods=['PUT'])
+@jwt_required()  # Asegura que el usuario esté autenticado
+def update_user(user_id):
     try:
-        create_inventory_for_user(new_user)
-    except ValueError as e:
-        print("Error al crear inventario:", e)
-        return jsonify({"error": str(e)}), 400
+        # Busca el usuario a actualizar
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "Usuario no encontrado"}), 404
 
-    return jsonify({"success": True, "user": new_user.serialize()}), 201
+        # Obtiene los datos enviados en la solicitud
+        data = request.get_json()
+
+        # Verifica si el nuevo email ya está en uso
+        if 'email' in data:
+            existing_user = User.query.filter_by(email=data['email']).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({"error": "El email ya está en uso."}), 400
+
+        # Actualiza los campos del usuario
+        user.email = data.get('email', user.email)
+        user.first_name = data.get('firstName', user.first_name)
+        user.last_name = data.get('lastName', user.last_name)
+        user.role = data.get('role', user.role)
+
+        db.session.commit()  # Aplica los cambios a la base de datos
+        return jsonify({"success": True, "user": user.serialize()}), 200
+
+    except Exception as e:
+        db.session.rollback()  # Revierte cambios si ocurre un error
+        return jsonify({"error": "Error al actualizar el usuario", "details": str(e)}), 500
+
+
+@api.route('/admin/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()  # Asegura que el usuario esté autenticado
+def delete_user(user_id):
+    try:
+        # Elimina las relaciones dependientes del usuario (ejemplo: registros de inventario)
+        Inventory.query.filter_by(user_id=user_id).delete()
+
+        # Busca el usuario en la base de datos
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+        
+        # Elimina el usuario
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "Usuario eliminado correctamente"}), 200
+
+    except Exception as e:
+        db.session.rollback()  # Revierte cambios en caso de error
+        return jsonify({"error": "Error al eliminar usuario", "details": str(e)}), 500
 
 
 # Productos
