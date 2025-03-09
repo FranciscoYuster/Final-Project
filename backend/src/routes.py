@@ -68,7 +68,8 @@ def register():
         email=email,
         first_name=first_name,
         last_name=last_name,
-        created_by=None
+        created_by=None,
+        role='user'
     )
     new_user.set_password(password)
     new_user.save()
@@ -148,6 +149,7 @@ def google_login():
         "access_token": access_token,
         "user": user.serialize()  
     }), 200
+
 
 
 @api.route('/profile', methods=['GET'])
