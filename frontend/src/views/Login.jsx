@@ -5,9 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import "./Login.css";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
 import { baseUrl } from '../config';
-import { Button } from 'bootstrap/dist/js/bootstrap.bundle.min';
 
 const Login = () => {
   const navigate = useNavigate();

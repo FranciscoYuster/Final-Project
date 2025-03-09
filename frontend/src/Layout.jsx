@@ -1,27 +1,26 @@
 // src/Layout.jsx
 import React from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Menu from './components/Menu';
-import SideNav from './components/SideNav';
+import Menu from './components/Menu/Menu';
+import SideNav from './components/SideNav/SideNav';
 import Home from './views/Home';
 import Register from './views/Register';
 import Login from './views/Login';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './views/PrivateRoute';
-import Dashboard from './views/Dashboard';
 import Error404 from './views/Error404';
-import Admin from './views/Admin';
 import Productos from './views/Productos';
 import Ventas from './views/Ventas';
 import Compras from './views/Compras';
-import Usuarios  from './views/Usuarios';
+import Usuarios from './views/Usuarios';
 import Proveedores from './views/Proveedores';
 import Reportes from './views/Reportes';
 import Services from './views/Services';
-import Forgot from './views/ForgotPassword';
 import ForgotPassword from './views/ForgotPassword';
 import ResetPassword from './views/ResetPassword';
-import Cliente from './views/Cliente';
+import Facturas from './views/Facturas';
+import Dashboard from './views/Dashboard';
+import Clientes from './views/Clientes';
 
 
 const AppRoutes = () => {
@@ -32,13 +31,11 @@ const AppRoutes = () => {
       {user ? (
         <div className="d-flex" style={{ minHeight: '100vh', width: '100vw' }}>
           <SideNav />
-          <div
-            className="flex-grow-1"
-            style={{
-              marginLeft: '205px',
-              padding: '30px',
-              textAlign: 'left'
-            }}
+          <div className="flex-grow-1" style={{
+            marginLeft: '205px',
+            padding: '30px',
+            textAlign: 'left'
+          }}
           >
             <Routes>
               <Route
@@ -50,18 +47,18 @@ const AppRoutes = () => {
                 }
               />
               <Route
-                path="/adm"
+                path="/facturas"
                 element={
                   <PrivateRoute>
-                    <Admin />
+                    <Facturas />
                   </PrivateRoute>
                 }
               />
               <Route
-                path="/facturas"
+                path="/clientes"
                 element={
                   <PrivateRoute>
-                    <Cliente />
+                    <Clientes />
                   </PrivateRoute>
                 }
               />
@@ -143,7 +140,7 @@ const Layout = () => {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
-      </BrowserRouter>  
+      </BrowserRouter>
     </AuthProvider>
   );
 };
