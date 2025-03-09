@@ -12,6 +12,7 @@ export default function EditableTable() {
       precio: "",
     },
   ]);
+  const [pagaCon, setPagaCon] = useState(0);
 
   const addRow = () => {
     setRows([
@@ -36,10 +37,17 @@ export default function EditableTable() {
     );
   };
 
+  const totalPagar = rows.reduce(
+    (sum, row) => sum + row.categoria * row.precio,
+    0
+  );
+  const cambio = pagaCon - totalPagar;
+
   return (
     <div className="container mt-4">
       <table className="table table-bordered">
         <thead className="table-dark">
+          <h1>Productos</h1>
           <tr>
             <th>#</th>
             <th>Nombre</th>
@@ -68,11 +76,11 @@ export default function EditableTable() {
                 <input
                   type="text"
                   className="form-control"
-                  value={row.cantidad}
+                  value={row.categoria}
                   onChange={(e) =>
-                    handleChange(row.id, "cantidad", e.target.value)
+                    handleChange(row.id, "categoria", e.target.value)
                   }
-                  placeholder="Cantidad"
+                  placeholder="categoria"
                 />
               </td>
               <td>
@@ -98,17 +106,61 @@ export default function EditableTable() {
                 />
               </td>
               <td>
-                <button className="btn btn-darger" onClick={() => deleteRow(row.id)}>
-                  <FaTrash/>
+                <button className="btn btn-primary" onClick={addRow}>
+                ✔️
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => deleteRow(row.id)}
+                >
+                  <FaTrash />
                 </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button className="btn btn-primary" onClick={addRow}>
-          Add new row
-      </button>
+
+      <table className="table table-bordered">
+        <br />
+        <tbody>
+          <tr>
+            <td className="table-dark">Categorias</td>
+            <td>{totalPagar.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td className="table-dark">cantidad</td>
+            <td>
+              <input
+                type="number"
+                className="form-control"
+                value={pagaCon}
+                onChange={(e) => setPagaCon(Number(e.target.value))}
+                placeholder="Ingrese el monto"
+              />
+            </td>
+          </tr>
+          <tr>
+            <td className="table-dark">Precio</td>
+            <td>${cambio >= 0 ? cambio.toFixed(2) : "Insuficiente"}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div className="d-flex gap-2">
+        <button className="btn btn-success">Registrar Compra</button>
+        <button
+          className="btn btn-warning"
+          onClick={() =>
+            setRows([{ id: 1, producto: "", categoria: 1, precio: 0 }])
+          }
+        >
+          Limpiar
+        </button>
+        <button className="btn btn-danger" onClick={() => setRows([])}>
+          Eliminar
+        </button>
+      </div>
     </div>
   );
-};
+}

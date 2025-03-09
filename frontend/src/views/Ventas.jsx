@@ -9,7 +9,10 @@ export default function Ventas() {
   const [pagaCon, setPagaCon] = useState(0);
 
   const addRow = () => {
-    setRows([...rows, { id: rows.length + 1, producto: "", cantidad: 1, precio: 0 }]);
+    setRows([
+      ...rows,
+      { id: rows.length + 1, producto: "", cantidad: 1, precio: 0 },
+    ]);
   };
 
   const deleteRow = (id) => {
@@ -18,19 +21,21 @@ export default function Ventas() {
 
   const handleChange = (id, field, value) => {
     setRows(
-      rows.map((row) =>
-        row.id === id ? { ...row, [field]: value } : row
-      )
+      rows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
     );
   };
 
-  const totalPagar = rows.reduce((sum, row) => sum + row.cantidad * row.precio, 0);
+  const totalPagar = rows.reduce(
+    (sum, row) => sum + row.cantidad * row.precio,
+    0
+  );
   const cambio = pagaCon - totalPagar;
 
   return (
     <div className="container mt-4">
       <table className="table table-bordered">
         <thead className="table-dark">
+          <h1>Ventas</h1>
           <tr>
             <th>#</th>
             <th>Producto</th>
@@ -48,7 +53,9 @@ export default function Ventas() {
                   type="text"
                   className="form-control"
                   value={row.producto}
-                  onChange={(e) => handleChange(row.id, "producto", e.target.value)}
+                  onChange={(e) =>
+                    handleChange(row.id, "producto", e.target.value)
+                  }
                   placeholder="Producto"
                 />
               </td>
@@ -57,7 +64,9 @@ export default function Ventas() {
                   type="number"
                   className="form-control"
                   value={row.cantidad}
-                  onChange={(e) => handleChange(row.id, "cantidad", Number(e.target.value))}
+                  onChange={(e) =>
+                    handleChange(row.id, "cantidad", Number(e.target.value))
+                  }
                   placeholder="Cantidad"
                 />
               </td>
@@ -66,12 +75,17 @@ export default function Ventas() {
                   type="number"
                   className="form-control"
                   value={row.precio}
-                  onChange={(e) => handleChange(row.id, "precio", Number(e.target.value))}
+                  onChange={(e) =>
+                    handleChange(row.id, "precio", Number(e.target.value))
+                  }
                   placeholder="Precio"
                 />
               </td>
               <td>
-                <button className="btn btn-danger" onClick={() => deleteRow(row.id)}>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => deleteRow(row.id)}
+                >
                   <FaTrash />
                 </button>
               </td>
@@ -79,7 +93,9 @@ export default function Ventas() {
           ))}
         </tbody>
       </table>
-      <button className="btn btn-primary mb-3" onClick={addRow}>Agregar Producto</button>
+      <button className="btn btn-primary mb-3" onClick={addRow}>
+        Agregar Producto
+      </button>
 
       <table className="table table-bordered">
         <tbody>
@@ -108,8 +124,17 @@ export default function Ventas() {
 
       <div className="d-flex gap-2">
         <button className="btn btn-success">Registrar Compra</button>
-        <button className="btn btn-warning" onClick={() => setRows([{ id: 1, producto: "", cantidad: 1, precio: 0 }])}>Limpiar</button>
-        <button className="btn btn-danger" onClick={() => setRows([])}>Eliminar</button>
+        <button
+          className="btn btn-warning"
+          onClick={() =>
+            setRows([{ id: 1, producto: "", cantidad: 1, precio: 0 }])
+          }
+        >
+          Limpiar
+        </button>
+        <button className="btn btn-danger" onClick={() => setRows([])}>
+          Eliminar
+        </button>
       </div>
     </div>
   );

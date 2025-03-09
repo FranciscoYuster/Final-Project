@@ -46,6 +46,7 @@ export default function EditableTable() {
     <div className="container mt-4">
       <table className="table table-bordered">
         <thead className="table-dark">
+          <h1>Compras</h1>
           <tr>
             <th>#</th>
             <th>Cantidad</th>
