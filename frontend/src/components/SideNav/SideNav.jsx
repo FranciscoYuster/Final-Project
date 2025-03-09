@@ -1,7 +1,7 @@
 // src/components/SideNav.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import "./SideNav.css";
 
@@ -9,15 +9,17 @@ const sideNavVariants = {
   hidden: { x: -205, opacity: 0, y: -25 },
   visible: {
     x: 0,
+    y: 0, // Asegura que se posicione en Y=0 al animar
     opacity: 1,
     transition: {
       type: "spring",
-      stiffness: 120, // Ajusta la rigidez según sea necesario
-      damping: 25, // Mayor damping reduce el rebote
-      delay: 0, // Pequeño retardo para suavizar la entrada
+      stiffness: 120,
+      damping: 25,
+      delay: 0,
     },
   },
 };
+
 
 const linkVariants = {
   hover: { scale: 1.05, transition: { duration: 0.2 } },
@@ -48,13 +50,13 @@ const SideNav = () => {
         </motion.h4>
         <ul>
           <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/adm">Admin</Link>
-          </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/profile">Dashboard</Link>
           </motion.li>
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/facturas">Facturas</Link>
+          </motion.li>
+          <motion.li variants={linkVariants} whileHover="hover">
+            <Link to="/clientes">Clientes</Link>
           </motion.li>
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/productos">Productos</Link>
@@ -74,7 +76,7 @@ const SideNav = () => {
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/reports">Reportes Dinamicos</Link>
           </motion.li>
-          <motion.li style={{ marginTop: "300px" }}>
+          <motion.li>
             <motion.button
               className="btn btn-outline-danger btn-sm"
               whileHover={{ scale: 1.1 }}

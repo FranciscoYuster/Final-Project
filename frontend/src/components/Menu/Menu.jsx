@@ -1,9 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { motion } from "framer-motion";
-import "./SideNav.css";
+import "../SideNav/SideNav.css";
 import "./Menu.css"; // Asegúrate de importar el archivo de estilos
+import { useAuth } from "../../context/AuthContext";
 
 const Menu = () => {
   const { user, logout } = useAuth();
