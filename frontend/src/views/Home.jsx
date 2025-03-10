@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 const Home = () => {
   // Estado inicial con algunas tareas
     const [tasks, setTasks] = useState([
-      { id: 1, text: 'Expresión regular de los inputs', completed: false },
+      { id: 1, text: 'Expresión regular de los inputs', completed: true },
       { id: 2, text: 'Crear User Stories en gituhb', completed: false },
-      { id: 3, text: 'Construir Paginas', completed: false },
-      { id: 4, text: 'Debe quedar responsivo', completed: false },
+      { id: 3, text: 'Construir Paginas', completed: true },
+      { id: 4, text: 'Debe quedar responsivo', completed: true },
     ]);
     
     // Estado para el nuevo texto a agregar y para ocultar las tareas completadas
     const [newTask, setNewTask] = useState('');
-    const [hideCompleted, setHideCompleted] = useState(false);
+    const [hideCompleted, setHideCompleted] = useState(true);
   
     // Alternar el estado "completed" de una tarea
     const toggleTask = (id) => {

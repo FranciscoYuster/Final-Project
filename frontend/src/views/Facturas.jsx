@@ -6,10 +6,10 @@ const Facturas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
 
-  // Inicializa newInvoice incluyendo un campo 'customer' para guardar el id del cliente seleccionado
+  // Estado para la nueva factura; "customer" guardará el id si se selecciona uno.
   const [newInvoice, setNewInvoice] = useState({
-    customer: '', // nuevo campo para almacenar el id del cliente
-    customer_name: '',
+    customer: '', // id del cliente (si se selecciona de la lista)
+    customer_name: '', // entrada manual si no se selecciona
     customer_email: '',
     total: '',
     status: 'Pending',
@@ -42,7 +42,7 @@ const Facturas = () => {
   // Función para obtener la lista de clientes
   const fetchCustomers = () => {
     const token = sessionStorage.getItem('access_token');
-    fetch('/api/customers', { // Asegúrate de que este endpoint exista y devuelva la lista de clientes
+    fetch('/api/customers', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -63,7 +63,6 @@ const Facturas = () => {
       });
   };
 
-  // Se llama al montar el componente para facturas y clientes
   useEffect(() => {
     fetchInvoices();
     fetchCustomers();
@@ -73,10 +72,13 @@ const Facturas = () => {
     setSearchTerm(e.target.value);
   };
 
-  // Filtrar las facturas por el término de búsqueda (por nombre o email)
+  // Ahora filtramos las facturas usando las propiedades del objeto "customer"
   const filteredInvoices = invoices.filter(invoice =>
-    invoice.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.customer_email.toLowerCase().includes(searchTerm.toLowerCase())
+    invoice.customer &&
+    (
+      invoice.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   const handleDelete = (id) => {
@@ -116,7 +118,7 @@ const Facturas = () => {
     });
   };
 
-  // Actualiza el newInvoice cuando se selecciona un cliente desde el dropdown
+  // Al seleccionar un cliente desde el dropdown, actualizamos los campos
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
     const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
@@ -139,12 +141,20 @@ const Facturas = () => {
     e.preventDefault();
     const token = sessionStorage.getItem('access_token');
 
-    const invoiceData = {
-      customer_name: newInvoice.customer_name,
-      customer_email: newInvoice.customer_email,
+    // Construir el objeto a enviar
+    let invoiceData = {
       total: parseFloat(newInvoice.total),
       status: newInvoice.status,
     };
+
+    // Si se seleccionó un cliente (customer id), se envía ese dato; 
+    // de lo contrario se envían los campos manuales
+    if (newInvoice.customer) {
+      invoiceData.customer_id = newInvoice.customer;
+    } else {
+      invoiceData.customer_name = newInvoice.customer_name;
+      invoiceData.customer_email = newInvoice.customer_email;
+    }
 
     fetch('/api/invoices', {
       method: 'POST',
@@ -198,7 +208,7 @@ const Facturas = () => {
             <th>Amount</th>
             <th>Date</th>
             <th>Status</th>
-            <th>Edit</th>
+            <th>Delete</th>
           </tr>
         </thead>
         <tbody>
@@ -207,16 +217,16 @@ const Facturas = () => {
               <td>
                 <div className="d-flex align-items-center">
                   <img 
-                    src={invoice.profilePicture || 'https://via.placeholder.com/40'}
-                    alt={`${invoice.customer_name}'s profile`}
+                    src={invoice.customer.profilePicture || 'https://via.placeholder.com/40'}
+                    alt={`${invoice.customer.name}'s profile`}
                     className="rounded-circle me-2"
                     width="40" 
                     height="40"
                   />
-                  {invoice.customer_name}
+                  {invoice.customer.name}
                 </div>
               </td>
-              <td>{invoice.customer_email}</td>
+              <td>{invoice.customer.email}</td>
               <td>${invoice.total.toLocaleString(undefined, { 
                 minimumFractionDigits: 2, 
                 maximumFractionDigits: 2 
@@ -282,7 +292,7 @@ const Facturas = () => {
                       ))}
                     </select>
                   </div>
-                  {/* Campo de Amount */}
+                  {/* Campo para el Amount */}
                   <div className="mb-3">
                     <label className="form-label">Amount</label>
                     <input
@@ -295,7 +305,7 @@ const Facturas = () => {
                       required
                     />
                   </div>
-                  {/* Campo para seleccionar status */}
+                  {/* Campo para seleccionar el status */}
                   <div className="mb-3">
                     <label className="form-label">Status</label>
                     <select

@@ -1,14 +1,26 @@
+import sys
 import os
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+
 from flask import Flask, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from models import db
-from routes import api
+from src.routes.routes import api
 from dotenv import load_dotenv
 from datetime import timedelta
 from flask_mail import Mail
-from invoices_api import invoices_api
+from src.routes.invoices_api import invoices_api
+from src.routes.customers_api import customers_api
+
+
+
+
 
 load_dotenv()
 
@@ -29,7 +41,6 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
 mail = Mail(app)
-
 db.init_app(app)
 Migrate(app, db)
 jwt = JWTManager(app)
@@ -46,6 +57,7 @@ def main():
 
 app.register_blueprint(api, url_prefix="/api")
 app.register_blueprint(invoices_api, url_prefix="/api")
+app.register_blueprint(customers_api, url_prefix="/api")
 
 if __name__ == '__main__':
     app.run()

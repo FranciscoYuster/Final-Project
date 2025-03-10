@@ -1,9 +1,7 @@
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Invoice
-
-# invoices_api.py
+from models import User, Invoice, Customer  # Asegúrate de importar Customer
 from flask import Blueprint, request, jsonify
-from models import db, Invoice
+from models import db
 
 invoices_api = Blueprint("invoices_api", __name__)
 
@@ -26,10 +24,10 @@ def get_invoice(id):
 @jwt_required()
 def create_invoice():
     data = request.get_json()
-    required_fields = ["customer_name", "customer_email", "total"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
+    
+    # Se requiere el campo total
+    if "total" not in data:
+        return jsonify({"error": "total is required"}), 400
 
     # Obtener el usuario autenticado
     user_id = get_jwt_identity()
@@ -39,14 +37,39 @@ def create_invoice():
     if not user.inventory:
         return jsonify({"error": "No inventory found for the user"}), 400
 
+    # Determinar el cliente a asociar:
+    # Si se envía customer_id, se usa ese; de lo contrario, se requieren customer_name y customer_email.
+    if "customer_id" in data:
+        customer_id = data["customer_id"]
+    else:
+        for field in ["customer_name", "customer_email"]:
+            if field not in data:
+                return jsonify({"error": f"{field} is required"}), 400
+
+        # Buscar si ya existe un cliente con ese email para este usuario
+        customer = Customer.query.filter_by(email=data["customer_email"], user_id=user.id).first()
+        if not customer:
+            customer = Customer(
+                name=data["customer_name"],
+                email=data["customer_email"],
+                phone=data.get("phone", ""),
+                user_id=user.id
+            )
+            try:
+                customer.save()
+            except Exception as e:
+                return jsonify({"error": "Error saving customer", "details": str(e)}), 500
+        customer_id = customer.id
+
+    # Crear la factura usando customer_id
     invoice = Invoice(
-        customer_name=data["customer_name"],
-        customer_email=data["customer_email"],
         total=data["total"],
         user_id=user.id,
         inventory_id=user.inventory.id,
         status=data.get("status", "Pending")
     )
+    invoice.customer_id = customer_id
+
     try:
         invoice.save()
     except Exception as e:
@@ -61,8 +84,7 @@ def update_invoice(id):
         return jsonify({"error": "Invoice not found"}), 404
 
     data = request.get_json()
-    invoice.customer_name = data.get("customer_name", invoice.customer_name)
-    invoice.customer_email = data.get("customer_email", invoice.customer_email)
+    # Para actualizar, si deseas actualizar los datos del cliente, deberás manejarlo aparte.
     invoice.total = data.get("total", invoice.total)
     invoice.status = data.get("status", invoice.status)
     db.session.commit()

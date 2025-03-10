@@ -9,10 +9,6 @@ import os
 from flask_mail import Message, Mail
 
 
-
-api = Blueprint("api", __name__)
-
-
 api = Blueprint("api", __name__)
 
 @api.route('/verificar-token', methods=['POST'])

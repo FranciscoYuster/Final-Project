@@ -54,6 +54,9 @@ class User(db.Model):
     # Relación uno a uno con inventario
     inventory = db.relationship("Inventory", backref='user', uselist=False)
 
+    # Relación: clientes creados por el usuario
+    customers = db.relationship("Customer", backref="creator", lazy=True)
+
     def serialize(self):
         return {
             "id": self.id,
@@ -64,7 +67,8 @@ class User(db.Model):
             "is_active": self.is_active,
             "created_by": self.created_by,
             "profile": self.profile.serialize() if self.profile else None,
-            "inventory": self.inventory.serialize() if self.inventory else None
+            "inventory": self.inventory.serialize() if self.inventory else None,
+            "customers": [customer.serialize() for customer in self.customers]
         }
     
     def save(self):
@@ -132,6 +136,37 @@ class Profile(db.Model):
             "avatar": self.avatar
         }
     
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
+    def update(self):
+        db.session.commit()
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+# Nuevo modelo: Tabla de Customers
+class Customer(db.Model):
+    __tablename__ = 'customers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, nullable=False)
+    phone = db.Column(db.String, default='')
+    # Relación: cada cliente es creado por un usuario
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "phone": self.phone,
+            "user_id": self.user_id
+        }
+        
     def save(self):
         db.session.add(self)
         db.session.commit()
@@ -226,30 +261,29 @@ class Sale(db.Model):
     def get_all(cls):
         return cls.query.all()
 
-# Nuevo modelo: Tabla de facturas (Invoice)
+# Modificada: Tabla de facturas (Invoice)
 class Invoice(db.Model):
     __tablename__ = 'invoices'
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
+    # Se asigna la factura a un Customer
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     
-    # Información del cliente
-    customer_name = db.Column(db.String, nullable=False)
-    customer_email = db.Column(db.String, nullable=False)
-    
-    # Información financiera
     total = db.Column(db.Float, nullable=False)
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
-    status = db.Column(db.String, nullable=False, default="Pending")  # "Pending" o "Paid"
+    status = db.Column(db.String, nullable=False, default="Pending")
+    
+    # Relación para acceder al cliente asociado
+    customer = db.relationship("Customer", backref="invoices")
     
     def serialize(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
             "inventory_id": self.inventory_id,
-            "customer_name": self.customer_name,
-            "customer_email": self.customer_email,
+            "customer": self.customer.serialize() if self.customer else None,
             "total": self.total,
             "invoice_date": self.invoice_date.isoformat() if self.invoice_date else None,
             "status": self.status

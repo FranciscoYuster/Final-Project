@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 7528cfd4f415
+Revision ID: ba0eeff80f7f
 Revises: 
-Create Date: 2025-03-09 17:03:14.168967
+Create Date: 2025-03-10 01:50:04.722353
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7528cfd4f415'
+revision = 'ba0eeff80f7f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,6 +30,15 @@ def upgrade():
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
+    )
+    op.create_table('customers',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('email', sa.String(), nullable=False),
+    sa.Column('phone', sa.String(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('inventories',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -54,11 +63,11 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
-    sa.Column('customer_name', sa.String(), nullable=False),
-    sa.Column('customer_email', sa.String(), nullable=False),
+    sa.Column('customer_id', sa.Integer(), nullable=False),
     sa.Column('total', sa.Float(), nullable=False),
     sa.Column('invoice_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('status', sa.String(), nullable=False),
+    sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -135,5 +144,6 @@ def downgrade():
     op.drop_table('invoices')
     op.drop_table('profiles')
     op.drop_table('inventories')
+    op.drop_table('customers')
     op.drop_table('users')
     # ### end Alembic commands ###

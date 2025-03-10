@@ -1,4 +1,3 @@
-// frontend/src/pages/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend } from 'chart.js';
@@ -56,8 +55,12 @@ const Dashboard = () => {
         .filter(inv => inv.status === 'Pending')
         .reduce((acc, inv) => acc + inv.total, 0);
 
-      // - totalCustomers: número de clientes únicos por email
-      const uniqueCustomers = new Set(allInvoices.map(inv => inv.customer_email));
+      // - totalCustomers: número de clientes únicos usando la propiedad "email" del objeto customer
+      const uniqueCustomers = new Set(
+        allInvoices
+          .filter(inv => inv.customer && inv.customer.email)
+          .map(inv => inv.customer.email)
+      );
       const totalCustomers = uniqueCustomers.size;
 
       setKpiData({
@@ -67,17 +70,14 @@ const Dashboard = () => {
         totalCustomers,
       });
 
-      // 4. Opcional: generar datos dinámicos para el gráfico de ingresos recientes
-      //    Aquí podrías agrupar facturas por mes, semana, etc.
-      //    Para el ejemplo, simplemente haré una agrupación por mes (abreviado):
+      // 4. Agrupar facturas por mes para el gráfico de ingresos recientes
       const monthlyData = {};
       allInvoices.forEach(invoice => {
         const date = new Date(invoice.invoice_date);
-        const month = date.toLocaleString('default', { month: 'short' }); 
+        const month = date.toLocaleString('default', { month: 'short' });
         monthlyData[month] = (monthlyData[month] || 0) + invoice.total;
       });
 
-      // Construir arrays de labels y data
       const labels = Object.keys(monthlyData);
       const dataValues = Object.values(monthlyData);
 
@@ -153,8 +153,8 @@ const Dashboard = () => {
               <ul className="list-group list-group-flush">
                 {latestInvoices.map(invoice => (
                   <li key={invoice.id} className="list-group-item">
-                    <strong>{invoice.customer_name}</strong>:
-                    {' $' + invoice.total.toFixed(2)} <br/>
+                    {/* Se muestra el nombre del cliente a través del objeto customer */}
+                    <strong>{invoice.customer ? invoice.customer.name : 'Sin Cliente'}</strong>: {' $' + invoice.total.toFixed(2)} <br/>
                     <small>{new Date(invoice.invoice_date).toLocaleDateString()}</small>
                   </li>
                 ))}
