@@ -1,7 +1,7 @@
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Invoice, Customer  # Asegúrate de importar Customer
+from src.models import User, Invoice, Customer  # Asegúrate de importar Customer
 from flask import Blueprint, request, jsonify
-from models import db
+from src.models import db
 
 invoices_api = Blueprint("invoices_api", __name__)
 

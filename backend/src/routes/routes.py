@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
-from functions import verify_google_token, verify_google_access_token
+from src.functions import verify_google_token, verify_google_access_token
 from datetime import timedelta
-from models import (db, User, Profile, Inventory, Product, Sale, Purchase, Provider, Movement,create_inventory_for_user)
+from src.models import (db, User, Profile, Inventory, Product, Sale, Purchase, Provider, Movement,create_inventory_for_user)
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import os

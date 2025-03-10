@@ -10,7 +10,7 @@ from flask import Flask, jsonify
 from flask_migrate import Migrate
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from models import db
+from src.models import db
 from src.routes.routes import api
 from dotenv import load_dotenv
 from datetime import timedelta
@@ -42,7 +42,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 mail = Mail(app)
 db.init_app(app)
-Migrate(app, db)
+migrate = Migrate(app, db)
 jwt = JWTManager(app)
 CORS(app)
 
