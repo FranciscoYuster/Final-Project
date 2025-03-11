@@ -192,7 +192,6 @@ def get_created_users():
     try:
         # Obtiene la identidad del administrador desde el JWT
         token = get_jwt_identity()
-        print("Token recibido:", token)  # Para depuración
 
         try:
             admin_id = int(token)  # Convierte el token en ID de administrador
@@ -423,105 +422,6 @@ def delete_purchase(id):
     purchase.delete()
     return jsonify({"message": "Purchase deleted"}), 200
 
-# Blueprint para Proveedores
-providers_api = Blueprint("providers_api", __name__)
-
-@providers_api.route('/providers', methods=['GET'])
-def get_providers():
-    providers = Provider.get_all()
-    return jsonify([provider.serialize() for provider in providers]), 200
-
-@providers_api.route('/providers/<int:id>', methods=['GET'])
-def get_provider(id):
-    provider = Provider.find_by_id(id)
-    if not provider:
-        return jsonify({"error": "Provider not found"}), 404
-    return jsonify(provider.serialize()), 200
-
-@providers_api.route('/providers', methods=['POST'])
-def create_provider():
-    data = request.get_json()
-    if not data.get('name'):
-        return jsonify({"error": "Name is required"}), 400
-    provider = Provider(
-        name=data['name'],
-        contact=data.get('contact', ''),
-        phone=data.get('phone', ''),
-        email=data.get('email', '')
-    )
-    provider.save()
-    return jsonify(provider.serialize()), 201
-
-@providers_api.route('/providers/<int:id>', methods=['PUT'])
-def update_provider(id):
-    provider = Provider.find_by_id(id)
-    if not provider:
-        return jsonify({"error": "Provider not found"}), 404
-    data = request.get_json()
-    provider.name = data.get('name', provider.name)
-    provider.contact = data.get('contact', provider.contact)
-    provider.phone = data.get('phone', provider.phone)
-    provider.email = data.get('email', provider.email)
-    provider.update()
-    return jsonify(provider.serialize()), 200
-
-@providers_api.route('/providers/<int:id>', methods=['DELETE'])
-def delete_provider(id):
-    provider = Provider.find_by_id(id)
-    if not provider:
-        return jsonify({"error": "Provider not found"}), 404
-    provider.delete()
-    return jsonify({"message": "Provider deleted"}), 200
-
-# Blueprint para Movimientos
-movements_api = Blueprint("movements_api", __name__)
-
-@movements_api.route('/movements', methods=['GET'])
-def get_movements():
-    movements = Movement.get_all()
-    return jsonify([movement.serialize() for movement in movements]), 200
-
-@movements_api.route('/movements/<int:id>', methods=['GET'])
-def get_movement(id):
-    movement = Movement.find_by_id(id)
-    if not movement:
-        return jsonify({"error": "Movement not found"}), 404
-    return jsonify(movement.serialize()), 200
-
-@movements_api.route('/movements', methods=['POST'])
-def create_movement():
-    data = request.get_json()
-    required_fields = ['product_id', 'type', 'quantity']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
-    movement = Movement(
-        product_id=data['product_id'],
-        type=data['type'],
-        quantity=data['quantity']
-    )
-    movement.save()
-    return jsonify(movement.serialize()), 201
-
-@movements_api.route('/movements/<int:id>', methods=['PUT'])
-def update_movement(id):
-    movement = Movement.find_by_id(id)
-    if not movement:
-        return jsonify({"error": "Movement not found"}), 404
-    data = request.get_json()
-    movement.product_id = data.get('product_id', movement.product_id)
-    movement.type = data.get('type', movement.type)
-    movement.quantity = data.get('quantity', movement.quantity)
-    movement.update()
-    return jsonify(movement.serialize()), 200
-
-@movements_api.route('/movements/<int:id>', methods=['DELETE'])
-def delete_movement(id):
-    movement = Movement.find_by_id(id)
-    if not movement:
-        return jsonify({"error": "Movement not found"}), 404
-    movement.delete()
-    return jsonify({"message": "Movement deleted"}), 200
 
 inventory_api = Blueprint("inventory_api", __name__)
 

@@ -21,6 +21,7 @@ import ResetPassword from './views/ResetPassword';
 import Facturas from './views/Facturas';
 import Dashboard from './views/Dashboard';
 import Clientes from './views/Clientes';
+import InventoryManagement from './views/InventoryManagement';
 
 
 const AppRoutes = () => {
@@ -45,7 +46,14 @@ const AppRoutes = () => {
                     <Dashboard />
                   </PrivateRoute>
                 }
-              />
+              />  <Route
+              path="/inventory"
+              element={
+                <PrivateRoute>
+                  <InventoryManagement />
+                </PrivateRoute>
+              }
+            />
               <Route
                 path="/facturas"
                 element={

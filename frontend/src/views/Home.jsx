@@ -2,16 +2,28 @@ import React, { useState } from 'react';
 
 const Home = () => {
   // Estado inicial con algunas tareas
-    const [tasks, setTasks] = useState([
-      { id: 1, text: 'Expresión regular de los inputs', completed: true },
-      { id: 2, text: 'Crear User Stories en gituhb', completed: false },
-      { id: 3, text: 'Construir Paginas', completed: true },
-      { id: 4, text: 'Debe quedar responsivo', completed: true },
-    ]);
-    
+  const [tasks, setTasks] = useState([
+    { id: 1, text: 'Home - Página principal (ruta: /)', completed: true },
+    { id: 2, text: 'Login - Página para iniciar sesión (ruta: /login)', completed: true },
+    { id: 3, text: 'Register - Página para registrarse (ruta: /register)', completed: true },
+    { id: 4, text: 'ForgotPassword - Recuperar contraseña (ruta: /forgot)', completed: true },
+    { id: 6, text: 'Services - Página de servicios (ruta: /services)', completed: false },
+    { id: 7, text: 'Error404 - Página de error (ruta: *)', completed: true },
+    { id: 8, text: 'Dashboard - Perfil o panel principal (ruta: /profile)', completed: true },
+    { id: 9, text: 'Facturas - Gestión de facturas (ruta: /facturas)', completed: true },
+    { id: 10, text: 'Clientes - Administración de clientes (ruta: /clientes)', completed: true },
+    { id: 11, text: 'Productos - Gestión de productos (ruta: /productos)', completed: false },
+    { id: 12, text: 'Ventas - Manejo de ventas (ruta: /ventas)', completed: false },
+    { id: 13, text: 'Compras - Gestión de compras (ruta: /compras)', completed: false },
+    { id: 14, text: 'Usuarios - Administración de usuarios (ruta: /usuarios)', completed: false },
+    { id: 15, text: 'Proveedores - Gestión de proveedores (ruta: /proveed)', completed: true },
+    { id: 16, text: 'Reportes - Visualización de reportes (ruta: /reports)', completed: false },
+    { id: 17, text: 'InventoryManagement - Gestión de inventario (ruta: /inventory)', completed: false }
+  ]);
+  
     // Estado para el nuevo texto a agregar y para ocultar las tareas completadas
     const [newTask, setNewTask] = useState('');
-    const [hideCompleted, setHideCompleted] = useState(true);
+    const [hideCompleted, setHideCompleted] = useState(false);
   
     // Alternar el estado "completed" de una tarea
     const toggleTask = (id) => {
@@ -44,21 +56,6 @@ const Home = () => {
             Revisa el estado de las tareas:
           </p>
           <hr className="my-4" />
-  
-          {/* Checkbox para ocultar tareas completadas */}
-          <div className="form-check mb-3">
-            <input 
-              className="form-check-input" 
-              type="checkbox" 
-              id="hideCompleted"
-              checked={hideCompleted}
-              onChange={() => setHideCompleted(!hideCompleted)}
-            />
-            <label className="form-check-label" htmlFor="hideCompleted">
-              Ocultar tareas completadas
-            </label>
-          </div>
-  
           {/* Lista de tareas */}
           <ul className="list-group">
             {visibleTasks.map(task => (

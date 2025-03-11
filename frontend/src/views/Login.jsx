@@ -87,8 +87,6 @@ const Login = () => {
                 Login
               </button>
               <GoogleLogin onSuccess={(response) => {
-
-                console.log(response)
                 fetch(`${baseUrl}/api/verificar-token`, {
                   method: 'POST',
                   body: JSON.stringify({ token: response.credential }),
@@ -98,7 +96,6 @@ const Login = () => {
                 })
                   .then((response) => response.json())
                   .then((data) => {
-                    console.log("wenaklo", data)
                     sessionStorage.setItem('access_token', data.access_token)
                     const authData = checkAuth();
                     if (authData.error) {

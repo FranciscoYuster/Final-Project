@@ -1,141 +1,195 @@
-import { useState } from "react";
-import { FaTrash } from "react-icons/fa";
-import "bootstrap/dist/css/bootstrap.min.css";
+import React, { useState, useEffect } from 'react';
+import './Ventas.css';
 
-export default function Ventas() {
-  const [rows, setRows] = useState([
-    { id: 1, producto: "", cantidad: 1, precio: 0 },
-  ]);
-  const [pagaCon, setPagaCon] = useState(0);
+const Ventas = () => {
+  const [products, setProducts] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [saleItems, setSaleItems] = useState([{ productId: '', quantity: 1 }]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const addRow = () => {
-    setRows([
-      ...rows,
-      { id: rows.length + 1, producto: "", cantidad: 1, precio: 0 },
-    ]);
+  // Obtener token desde sessionStorage (igual que en Clientes.jsx)
+  const token = sessionStorage.getItem('access_token');
+
+  // Cargar productos
+  useEffect(() => {
+    fetch('/products')
+      .then((res) => res.json())
+      .then((data) => setProducts(data))
+      .catch((err) => console.error('Error al obtener productos', err));
+  }, []);
+
+  // Cargar clientes
+  useEffect(() => {
+    fetch('/api/customers', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setCustomers(data))
+      .catch((err) => console.error('Error al obtener clientes', err));
+  }, [token]);
+
+  // Calcular total de la venta
+  useEffect(() => {
+    const newTotal = saleItems.reduce((acc, item) => {
+      const product = products.find((p) => p.id === parseInt(item.productId));
+      return product ? acc + product.price * item.quantity : acc;
+    }, 0);
+    setTotal(newTotal);
+  }, [saleItems, products]);
+
+  // Manejo de cambios en los items de venta
+  const handleSaleItemChange = (index, field, value) => {
+    const newItems = [...saleItems];
+    newItems[index][field] = value;
+    setSaleItems(newItems);
   };
 
-  const deleteRow = (id) => {
-    setRows(rows.filter((row) => row.id !== id));
+  const addSaleItem = () => {
+    setSaleItems([...saleItems, { productId: '', quantity: 1 }]);
   };
 
-  const handleChange = (id, field, value) => {
-    setRows(
-      rows.map((row) => (row.id === id ? { ...row, [field]: value } : row))
-    );
+  const removeSaleItem = (index) => {
+    setSaleItems(saleItems.filter((_, i) => i !== index));
   };
 
-  const totalPagar = rows.reduce(
-    (sum, row) => sum + row.cantidad * row.precio,
-    0
-  );
-  const cambio = pagaCon - totalPagar;
+  // Enviar la venta: primero crea la factura y luego los items de venta
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    try {
+      if (!selectedCustomerId) {
+        throw new Error('Debe seleccionar un cliente.');
+      }
+      // Crear factura asociada al cliente seleccionado
+      const invoicePayload = {
+        total: total,
+        customer_id: selectedCustomerId,
+        status: 'Pending'
+      };
+
+      const invoiceResponse = await fetch('/invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(invoicePayload)
+      });
+
+      if (!invoiceResponse.ok) {
+        throw new Error('Error al crear la factura');
+      }
+      const invoiceData = await invoiceResponse.json();
+
+      // Registrar cada item de venta
+      for (const item of saleItems) {
+        const product = products.find((p) => p.id === parseInt(item.productId));
+        if (!product) continue;
+
+        const salePayload = {
+          product_id: product.id,
+          quantity: item.quantity,
+          total: product.price * item.quantity,
+          // Opcional: invoice_id: invoiceData.id si el backend requiere asociar la venta a la factura
+        };
+
+        const saleResponse = await fetch('/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(salePayload)
+        });
+        if (!saleResponse.ok) {
+          throw new Error(`Error al crear la venta para ${product.name}`);
+        }
+      }
+      setMessage('Venta y factura generadas exitosamente.');
+      // Reiniciar formulario
+      setSaleItems([{ productId: '', quantity: 1 }]);
+      setSelectedCustomerId('');
+    } catch (error) {
+      console.error(error);
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="container mt-4">
-      <table className="table table-bordered">
-        <thead className="table-dark">
-          <h1>Ventas</h1>
-          <tr>
-            <th>#</th>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Precio</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={row.id}>
-              <td>{index + 1}</td>
-              <td>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={row.producto}
-                  onChange={(e) =>
-                    handleChange(row.id, "producto", e.target.value)
-                  }
-                  placeholder="Producto"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={row.cantidad}
-                  onChange={(e) =>
-                    handleChange(row.id, "cantidad", Number(e.target.value))
-                  }
-                  placeholder="Cantidad"
-                />
-              </td>
-              <td>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={row.precio}
-                  onChange={(e) =>
-                    handleChange(row.id, "precio", Number(e.target.value))
-                  }
-                  placeholder="Precio"
-                />
-              </td>
-              <td>
-                <button
-                  className="btn btn-danger"
-                  onClick={() => deleteRow(row.id)}
-                >
-                  <FaTrash />
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <button className="btn btn-primary mb-3" onClick={addRow}>
-        Agregar Producto
-      </button>
+    <div className="ventas-container">
+      <h1>Generar Venta</h1>
+      <form onSubmit={handleSubmit} className="ventas-form">
+        <section className="ventas-section">
+          <h2>Seleccionar Cliente</h2>
+          <select 
+            value={selectedCustomerId} 
+            onChange={(e) => setSelectedCustomerId(e.target.value)}
+            className="ventas-select"
+            required
+          >
+            <option value="">Seleccione un cliente</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>
+                {customer.name} - {customer.email}
+              </option>
+            ))}
+          </select>
+        </section>
 
-      <table className="table table-bordered">
-        <tbody>
-          <tr>
-            <td>Total a Pagar</td>
-            <td>${totalPagar.toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td>Paga Con</td>
-            <td>
+        <section className="ventas-section">
+          <h2>Productos</h2>
+          {saleItems.map((item, index) => (
+            <div key={index} className="ventas-item">
+              <select
+                value={item.productId}
+                onChange={(e) => handleSaleItemChange(index, 'productId', e.target.value)}
+                className="ventas-select"
+                required
+              >
+                <option value="">Seleccione un producto</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.name} (${product.price})
+                  </option>
+                ))}
+              </select>
               <input
                 type="number"
-                className="form-control"
-                value={pagaCon}
-                onChange={(e) => setPagaCon(Number(e.target.value))}
-                placeholder="Ingrese el monto"
+                min="1"
+                value={item.quantity}
+                onChange={(e) =>
+                  handleSaleItemChange(index, 'quantity', parseInt(e.target.value))
+                }
+                className="ventas-input"
+                required
               />
-            </td>
-          </tr>
-          <tr>
-            <td>Cambio</td>
-            <td>${cambio >= 0 ? cambio.toFixed(2) : "Insuficiente"}</td>
-          </tr>
-        </tbody>
-      </table>
+              {saleItems.length > 1 && (
+                <button type="button" onClick={() => removeSaleItem(index)} className="ventas-delete-button">
+                  Eliminar
+                </button>
+              )}
+            </div>
+          ))}
+          <button type="button" onClick={addSaleItem} className="ventas-add-button">
+            Agregar producto
+          </button>
+        </section>
 
-      <div className="d-flex gap-2">
-        <button className="btn btn-success">Registrar Compra</button>
-        <button
-          className="btn btn-warning"
-          onClick={() =>
-            setRows([{ id: 1, producto: "", cantidad: 1, precio: 0 }])
-          }
-        >
-          Limpiar
+        <h3 className="ventas-total">Total: ${total.toFixed(2)}</h3>
+        <button type="submit" className="ventas-button" disabled={loading}>
+          {loading ? 'Procesando...' : 'Generar Venta'}
         </button>
-        <button className="btn btn-danger" onClick={() => setRows([])}>
-          Eliminar
-        </button>
-      </div>
+      </form>
+      {message && <p className="ventas-message">{message}</p>}
     </div>
   );
-}
+};
+
+export default Ventas;
