@@ -17,6 +17,7 @@ from datetime import timedelta
 from flask_mail import Mail
 from src.routes.invoices_api import invoices_api
 from src.routes.customers_api import customers_api
+from src.routes.products_api import products_api
 
 
 
@@ -58,6 +59,7 @@ def main():
 app.register_blueprint(api, url_prefix="/api")
 app.register_blueprint(invoices_api, url_prefix="/api")
 app.register_blueprint(customers_api, url_prefix="/api")
+app.register_blueprint(products_api, url_prefix="/api")
 
 if __name__ == '__main__':
     app.run()

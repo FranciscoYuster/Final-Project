@@ -182,39 +182,38 @@ class Customer(db.Model):
 class Product(db.Model):
     __tablename__ = 'products'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
-    description = db.Column(db.String, default='')
-    price = db.Column(db.Float, nullable=False)
-    stock = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, onupdate=db.func.now())
-    
-    # Vinculación al inventario
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)  # ID único para cada producto
+    codigo = db.Column(db.String(50), unique=True, nullable=False)  # Código del producto
+    nombre = db.Column(db.String(100), nullable=False)  # Nombre del producto
+    stock = db.Column(db.Integer, nullable=False)  # Cantidad disponible
+    precio = db.Column(db.Float, nullable=False)  # Precio del producto
+    categoria = db.Column(db.String(50), nullable=False)  # Categoría del producto
+        # Vinculación al inventario
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    
     def serialize(self):
         return {
             "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "price": self.price,
+            "codigo": self.codigo,
+            "nombre": self.nombre,
             "stock": self.stock,
-            "inventory_id": self.inventory_id,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
+            "precio": self.precio,
+            "categoria": self.categoria
         }
-    
+        
     def save(self):
         db.session.add(self)
         db.session.commit()
-    
+
     def update(self):
         db.session.commit()
-    
+
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+    
 
 # Tabla de ventas (Sale)
 class Sale(db.Model):
