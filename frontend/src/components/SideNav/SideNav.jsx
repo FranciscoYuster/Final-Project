@@ -1,8 +1,12 @@
-// src/components/SideNav.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+import { 
+  FaTachometerAlt, FaBox, FaFileInvoiceDollar, FaUsers, FaBoxOpen,
+  FaShoppingCart, FaCartPlus, FaUser, FaTruck, FaChartLine, FaSignOutAlt,
+  FaAngleDown, FaAngleUp
+} from "react-icons/fa";
 import "./SideNav.css";
 
 const sideNavVariants = {
@@ -20,7 +24,6 @@ const sideNavVariants = {
   },
 };
 
-
 const linkVariants = {
   hover: { scale: 1.05, transition: { duration: 0.2 } },
 };
@@ -28,6 +31,12 @@ const linkVariants = {
 const SideNav = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  // Estados para controlar la visibilidad de cada submenú
+  const [showGestion, setShowGestion] = useState(false);
+  const [showClientesProveedores, setShowClientesProveedores] = useState(false);
+  const [showOperaciones, setShowOperaciones] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -50,42 +59,99 @@ const SideNav = () => {
         </motion.h4>
         <ul>
           <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/profile">Dashboard</Link>
+            <Link to="/profile">
+              <FaTachometerAlt className="me-2" /> Dashboard
+            </Link>
           </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/inventory">Inventario</Link>
+
+          {/* Submenú de Gestión */}
+          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowGestion(!showGestion)} style={{cursor: 'pointer'}}>
+            <div className="d-flex align-items-center">
+              <FaBox className="me-2" /> Gestión {showGestion ? <FaAngleUp /> : <FaAngleDown />}
+            </div>
           </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/facturas">Facturas</Link>
+          {showGestion && (
+            <ul className="sub-menu">
+              <li>
+                <Link to="/inventory">Inventario</Link>
+              </li>
+              <li>
+                <Link to="/facturas">Facturas</Link>
+              </li>
+              <li>
+                <Link to="/movements">Movimientos</Link>
+              </li>
+              <li>
+                <Link to="/ubications">Ubicaciones</Link>
+              </li>
+            </ul>
+          )}
+
+          {/* Submenú de Clientes y Proveedores */}
+          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowClientesProveedores(!showClientesProveedores)} style={{cursor: 'pointer'}}>
+            <div className="d-flex align-items-center">
+              <FaUsers className="me-2" /> Proveedores {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
+            </div>
           </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/clientes">Clientes</Link>
+          {showClientesProveedores && (
+            <ul className="sub-menu">
+              <li>
+                <Link to="/clientes">Clientes</Link>
+              </li>
+              <li>
+                <Link to="/proveed">Proveedores</Link>
+              </li>
+            </ul>
+          )}
+
+          {/* Submenú de Operaciones */}
+          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowOperaciones(!showOperaciones)} style={{cursor: 'pointer'}}>
+            <div className="d-flex align-items-center">
+              <FaShoppingCart className="me-2" /> Operaciones {showOperaciones ? <FaAngleUp /> : <FaAngleDown />}
+            </div>
           </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/productos">Productos</Link>
+          {showOperaciones && (
+            <ul className="sub-menu">
+              <li>
+                <Link to="/productos">Productos</Link>
+              </li>
+              <li>
+                <Link to="/ventas">Ventas</Link>
+              </li>
+              <li>
+                <Link to="/compras">Compras</Link>
+              </li>
+            </ul>
+          )}
+
+          {/* Submenú de Administración */}
+          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowAdmin(!showAdmin)} style={{cursor: 'pointer'}}>
+            <div className="d-flex align-items-center">
+              <FaBoxOpen className="me-2" /> Administración {showAdmin ? <FaAngleUp /> : <FaAngleDown />}
+            </div>
           </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/ventas">Ventas</Link>
-          </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/compras">Compras</Link>
-          </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/usuarios">Usuarios</Link>
-          </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/proveed">Proveedores</Link>
-          </motion.li>
-          <motion.li variants={linkVariants} whileHover="hover">
-            <Link to="/reports">Reportes Dinamicos</Link>
-          </motion.li>
+          {showAdmin && (
+            <ul className="sub-menu">
+              
+              <li>
+                <Link to="/usuarios">Usuarios</Link>
+              </li>
+              <li>
+                <Link to="/reports">Reportes Dinámicos</Link>
+              </li>
+              <li>
+                <Link to="/configurations">Confifiguración</Link>
+              </li>
+            </ul>
+          )}
+
           <motion.li>
             <motion.button
               className="btn btn-outline-danger btn-sm"
               whileHover={{ scale: 1.1 }}
               onClick={handleLogout}
             >
-              <i className="bi bi-box-arrow-right me-2"></i> Logout
+              <FaSignOutAlt className="me-2" /> Logout
             </motion.button>
           </motion.li>
         </ul>

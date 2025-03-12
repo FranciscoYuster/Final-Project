@@ -38,24 +38,17 @@ const Dashboard = () => {
       const allInvoices = response.data; // Array con todas las facturas del usuario
 
       // 2. Últimas 3 facturas (o las que quieras mostrar)
-      const lastThree = allInvoices.slice(-3); // Ajusta según el criterio que prefieras
+      const lastThree = allInvoices.slice(-3);
       setLatestInvoices(lastThree);
 
-      // 3. Calcular KPIs
-      // - totalInvoices: número total de facturas
+      // 3. Calcular KPIs usando total_final
       const totalInvoices = allInvoices.length;
-
-      // - moneyCollected: suma de 'total' de facturas con status "Paid" (o tu criterio)
       const moneyCollected = allInvoices
         .filter(inv => inv.status === 'Paid')
-        .reduce((acc, inv) => acc + inv.total, 0);
-
-      // - moneyPending: suma de 'total' de facturas con status "Pending"
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
       const moneyPending = allInvoices
         .filter(inv => inv.status === 'Pending')
-        .reduce((acc, inv) => acc + inv.total, 0);
-
-      // - totalCustomers: número de clientes únicos usando la propiedad "email" del objeto customer
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
       const uniqueCustomers = new Set(
         allInvoices
           .filter(inv => inv.customer && inv.customer.email)
@@ -70,12 +63,12 @@ const Dashboard = () => {
         totalCustomers,
       });
 
-      // 4. Agrupar facturas por mes para el gráfico de ingresos recientes
+      // 4. Agrupar facturas por mes para el gráfico de ingresos recientes (usando total_final)
       const monthlyData = {};
       allInvoices.forEach(invoice => {
         const date = new Date(invoice.invoice_date);
         const month = date.toLocaleString('default', { month: 'short' });
-        monthlyData[month] = (monthlyData[month] || 0) + invoice.total;
+        monthlyData[month] = (monthlyData[month] || 0) + (invoice.total_final || 0);
       });
 
       const labels = Object.keys(monthlyData);
@@ -99,13 +92,14 @@ const Dashboard = () => {
   return (
     <div className="container mt-4">
       <h1 className="mb-4">Dashboard</h1>
+      
       {/* Tarjetas de KPIs */}
       <div className="row">
         <div className="col-md-3 mb-3">
           <div className="card">
             <div className="card-body">
               <h5 className="card-title">Dinero Recogido</h5>
-              <p className="card-text">${kpiData.moneyCollected.toFixed(2)}</p>
+              <p className="card-text">${(kpiData.moneyCollected || 0).toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -113,7 +107,7 @@ const Dashboard = () => {
           <div className="card">
             <div className="card-body">
               <h5 className="card-title">Dinero Pendiente</h5>
-              <p className="card-text">${kpiData.moneyPending.toFixed(2)}</p>
+              <p className="card-text">${(kpiData.moneyPending || 0).toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -135,7 +129,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Gráfico de ingresos recientes y card de últimas facturas */}
+      {/* Gráfico de ingresos recientes y últimas facturas */}
       <div className="row">
         <div className="col-md-8 mb-3">
           <div className="card">
@@ -153,8 +147,7 @@ const Dashboard = () => {
               <ul className="list-group list-group-flush">
                 {latestInvoices.map(invoice => (
                   <li key={invoice.id} className="list-group-item">
-                    {/* Se muestra el nombre del cliente a través del objeto customer */}
-                    <strong>{invoice.customer ? invoice.customer.name : 'Sin Cliente'}</strong>: {' $' + invoice.total.toFixed(2)} <br/>
+                    <strong>{invoice.customer ? invoice.customer.name : 'Sin Cliente'}</strong>: {' $' + (invoice.total_final || 0).toFixed(2)} <br/>
                     <small>{new Date(invoice.invoice_date).toLocaleDateString()}</small>
                   </li>
                 ))}

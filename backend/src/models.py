@@ -16,6 +16,7 @@ class Inventory(db.Model):
     
     # Relación: productos asociados a este inventario
     products = db.relationship("Product", backref="inventory", lazy=True)
+    ubicaciones = db.relationship("Ubicacion", backref="inventory", lazy=True)
     
     def serialize(self):
         return {
@@ -191,6 +192,7 @@ class Product(db.Model):
         # Vinculación al inventario
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
 
     
     def serialize(self):
@@ -200,7 +202,8 @@ class Product(db.Model):
             "nombre": self.nombre,
             "stock": self.stock,
             "precio": self.precio,
-            "categoria": self.categoria
+            "categoria": self.categoria,
+            "ubicacion": self.ubicacion.serialize() if self.ubicacion else None
         }
         
     def save(self):
@@ -267,14 +270,14 @@ class Invoice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
-    # Se asigna la factura a un Customer
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     
-    total = db.Column(db.Float, nullable=False)
+    monto_base = db.Column(db.Float, nullable=False)           # Monto ingresado por el usuario
+    impuesto_aplicado = db.Column(db.Float, nullable=False)      # Monto del impuesto aplicado
+    total_final = db.Column(db.Float, nullable=False)            # Total final (monto_base - impuesto_aplicado)
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
     status = db.Column(db.String, nullable=False, default="Pending")
     
-    # Relación para acceder al cliente asociado
     customer = db.relationship("Customer", backref="invoices")
     
     def serialize(self):
@@ -283,7 +286,9 @@ class Invoice(db.Model):
             "user_id": self.user_id,
             "inventory_id": self.inventory_id,
             "customer": self.customer.serialize() if self.customer else None,
-            "total": self.total,
+            "monto_base": self.monto_base,
+            "impuesto_aplicado": self.impuesto_aplicado,
+            "total_final": self.total_final,
             "invoice_date": self.invoice_date.isoformat() if self.invoice_date else None,
             "status": self.status
         }
@@ -291,6 +296,7 @@ class Invoice(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+
 
 # Tabla de compras
 class Purchase(db.Model):
@@ -389,10 +395,15 @@ class Movement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
-    type = db.Column(db.String, nullable=False)  # Puede ser 'sale' o 'purchase'
+    type = db.Column(db.String, nullable=False)  # Ejemplo: 'sale', 'purchase', 'ingreso'
     quantity = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, server_default=db.func.now())
+    # Nuevo campo para identificar al usuario que registró el movimiento
+    registered_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
+    # Relación para acceder al usuario que registró el movimiento
+    registered_by_user = db.relationship("User", foreign_keys=[registered_by])
+
     def serialize(self):
         return {
             "id": self.id,
@@ -400,8 +411,14 @@ class Movement(db.Model):
             "inventory_id": self.inventory_id,
             "type": self.type,
             "quantity": self.quantity,
-            "date": self.date.isoformat() if self.date else None
+            "date": self.date.isoformat() if self.date else None,
+            "registered_by": {
+                "name": f"{self.registered_by_user.first_name} {self.registered_by_user.last_name}" if self.registered_by_user else None,
+                "role": self.registered_by_user.role if self.registered_by_user else None,
+            }
         }
+    
+    # Métodos save, update, delete, etc.
     
     def save(self):
         db.session.add(self)
@@ -424,3 +441,63 @@ class Movement(db.Model):
     @classmethod
     def get_all(cls):
         return cls.query.all()
+
+# Nueva tabla: Ubicaciones
+class Ubicacion(db.Model):
+    __tablename__ = 'ubicaciones'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.String, nullable=True)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
+    
+    # Relación: productos asignados a esta ubicación
+    products = db.relationship("Product", backref="ubicacion", lazy=True)
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "descripcion": self.descripcion,
+            "inventory_id": self.inventory_id
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+    
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+class Configuration(db.Model):
+    __tablename__ = 'configurations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    impuesto = db.Column(db.Float, nullable=False, default=0.0)  # Ej. 0.15 para 15%
+    moneda = db.Column(db.String(10), nullable=False, default='USD')
+    formato_facturacion = db.Column(db.String(50), nullable=False, default='Factura Electrónica')
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "impuesto": self.impuesto,
+            "moneda": self.moneda,
+            "formato_facturacion": self.formato_facturacion,
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+    
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()

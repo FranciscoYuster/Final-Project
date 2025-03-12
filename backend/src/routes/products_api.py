@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.models import db, Product
+from src.models import db, Product, Movement, User
 
 products_api = Blueprint("products_api", __name__)
 
@@ -16,7 +16,7 @@ def get_products():
 def get_products_id(id):
     product = Product.query.get(id)
     if not product:
-        return jsonify({"error": "Invoice not found"}), 404
+        return jsonify({"error": "Product not found"}), 404
     return jsonify(product.serialize()), 200
 
 @products_api.route('/products', methods=['POST'])
@@ -26,20 +26,36 @@ def create_product():
     
     if not data.get("nombre"):
         return jsonify({"error": "Name is required"}), 400
-    product=Product(
+
+    user_id = get_jwt_identity()  # El usuario autenticado
+    user = User.query.get(user_id)
+    if not user or not user.inventory:
+        return jsonify({"error": "User or inventory not found"}), 404
+
+    # Usar el inventory_id del usuario en lugar de depender de los datos entrantes
+    product = Product(
         nombre=data.get("nombre"),
         precio=data.get("precio"),
         codigo=data.get("codigo"),
         stock=data.get("stock"),
         categoria=data.get("categoria"),
-        inventory_id=data.get("inventory_id"),
-        user_id=get_jwt_identity()
+        inventory_id=user.inventory.id,  # Se usa el inventario del usuario
+        user_id=user_id
     )
     try:
         product.save()
+        # Registrar el movimiento de ingreso con el inventory_id obtenido del usuario
+        movement = Movement(
+            product_id=product.id,
+            inventory_id=user.inventory.id,
+            type="ingreso",
+            quantity=product.stock,
+            registered_by=user_id
+        )
+        movement.save()
     except Exception as e:
         print(f"error al guardar el producto: {e}")
-        return jsonify({"error": 'error al guardar el producto',"detalles":str(e)}), 500
+        return jsonify({"error": "error al guardar el producto", "detalles": str(e)}), 500
     return jsonify(product.serialize()), 201
 
 @products_api.route('/products/<int:id>', methods=['PUT'])
@@ -51,19 +67,20 @@ def update_product(id):
     data = request.get_json()
     if data.get("nombre"):
         product.nombre = data["nombre"]
+    if data.get("descripcion"):
+        product.descripcion = data["descripcion"]
     if data.get("precio"):
         product.precio = data["precio"]
-    if data.get("codigo"):
-        product.codigo = data["codigo"]
     if data.get("stock"):
         product.stock = data["stock"]
-    if data.get("categoria"):
-        product.categoria = data["categoria"]
+    if data.get("ubicacion_id"):
+        product.ubicacion_id = data["ubicacion_id"]
     try:
         product.save()
     except Exception as e:
         return jsonify({"error": "Error updating product", "details": str(e)}), 500
     return jsonify(product.serialize()), 200
+
 
 @products_api.route('/products/<int:id>', methods=['DELETE'])
 @jwt_required()

@@ -23,7 +23,7 @@ const Home = () => {
   
     // Estado para el nuevo texto a agregar y para ocultar las tareas completadas
     const [newTask, setNewTask] = useState('');
-    const [hideCompleted, setHideCompleted] = useState(false);
+    const [hideCompleted, setHideCompleted] = useState(true);
   
     // Alternar el estado "completed" de una tarea
     const toggleTask = (id) => {

@@ -19,6 +19,10 @@ from src.routes.invoices_api import invoices_api
 from src.routes.customers_api import customers_api
 from src.routes.products_api import products_api
 from src.routes.providers_api import providers_api 
+from src.routes.movements_api import movements_api  
+from src.routes.ubications_api import ubications_api
+from src.routes.configurations_api import configurations_api 
+
 
 
 
@@ -63,6 +67,10 @@ app.register_blueprint(invoices_api, url_prefix="/api")
 app.register_blueprint(customers_api, url_prefix="/api")
 app.register_blueprint(products_api, url_prefix="/api")
 app.register_blueprint(providers_api, url_prefix="/api")
+app.register_blueprint(movements_api, url_prefix="/api")
+app.register_blueprint(ubications_api, url_prefix="/api")
+app.register_blueprint(configurations_api, url_prefix="/api")
+
 
 if __name__ == '__main__':
     app.run()

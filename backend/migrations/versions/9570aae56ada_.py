@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: a627113f4fc5
+Revision ID: 9570aae56ada
 Revises: 
-Create Date: 2025-03-11 15:49:57.300060
+Create Date: 2025-03-12 02:08:23.278575
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'a627113f4fc5'
+revision = '9570aae56ada'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -30,6 +30,16 @@ def upgrade():
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
+    )
+    op.create_table('configurations',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('impuesto', sa.Float(), nullable=False),
+    sa.Column('moneda', sa.String(length=10), nullable=False),
+    sa.Column('formato_facturacion', sa.String(length=50), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id')
     )
     op.create_table('customers',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -64,27 +74,16 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
     sa.Column('customer_id', sa.Integer(), nullable=False),
-    sa.Column('total', sa.Float(), nullable=False),
+    sa.Column('monto_base', sa.Float(), nullable=False),
+    sa.Column('impuesto_aplicado', sa.Float(), nullable=False),
+    sa.Column('descuento_aplicado', sa.Float(), nullable=False),
+    sa.Column('total_final', sa.Float(), nullable=False),
     sa.Column('invoice_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('status', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('products',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('codigo', sa.String(length=50), nullable=False),
-    sa.Column('nombre', sa.String(length=100), nullable=False),
-    sa.Column('stock', sa.Integer(), nullable=False),
-    sa.Column('precio', sa.Float(), nullable=False),
-    sa.Column('categoria', sa.String(length=50), nullable=False),
-    sa.Column('inventory_id', sa.Integer(), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('codigo')
     )
     op.create_table('providers',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -96,6 +95,30 @@ def upgrade():
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('ubicaciones',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('nombre', sa.String(length=100), nullable=False),
+    sa.Column('descripcion', sa.String(), nullable=True),
+    sa.Column('inventory_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('products',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('codigo', sa.String(length=50), nullable=False),
+    sa.Column('nombre', sa.String(length=100), nullable=False),
+    sa.Column('stock', sa.Integer(), nullable=False),
+    sa.Column('precio', sa.Float(), nullable=False),
+    sa.Column('categoria', sa.String(length=50), nullable=False),
+    sa.Column('inventory_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('ubicacion_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
+    sa.ForeignKeyConstraint(['ubicacion_id'], ['ubicaciones.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('codigo')
+    )
     op.create_table('movements',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
@@ -103,8 +126,10 @@ def upgrade():
     sa.Column('type', sa.String(), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('registered_by', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
+    sa.ForeignKeyConstraint(['registered_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('purchases',
@@ -141,11 +166,13 @@ def downgrade():
     op.drop_table('sales')
     op.drop_table('purchases')
     op.drop_table('movements')
-    op.drop_table('providers')
     op.drop_table('products')
+    op.drop_table('ubicaciones')
+    op.drop_table('providers')
     op.drop_table('invoices')
     op.drop_table('profiles')
     op.drop_table('inventories')
     op.drop_table('customers')
+    op.drop_table('configurations')
     op.drop_table('users')
     # ### end Alembic commands ###

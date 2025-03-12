@@ -10,7 +10,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import PrivateRoute from './views/PrivateRoute';
 import Error404 from './views/Error404';
 import Productos from './views/Productos';
-import Ventas from './views/Ventas';
+import Ventas from './views/Ventas/Ventas';
 import Compras from './views/Compras';
 import Usuarios from './views/Usuarios';
 import Proveedores from './views/Proveedores';
@@ -21,7 +21,10 @@ import ResetPassword from './views/ResetPassword';
 import Facturas from './views/Facturas';
 import Dashboard from './views/Dashboard';
 import Clientes from './views/Clientes';
-import InventoryManagement from './views/InventoryManagement';
+import InventoryManagement from './views/Inventory/InventoryManagement';
+import Movements from './views/Movements';
+import Ubicaciones from './views/Ubicaciones';
+import Configurations from './views/Configurations/Configurations';
 
 
 const AppRoutes = () => {
@@ -46,11 +49,36 @@ const AppRoutes = () => {
                     <Dashboard />
                   </PrivateRoute>
                 }
-              />  <Route
+              />  
+              <Route
+                path="/configurations"
+                element={
+                  <PrivateRoute>
+                    <Configurations />
+                  </PrivateRoute>
+                }
+              />  
+                <Route
+                path="/ubications"
+                element={
+                  <PrivateRoute>
+                    <Ubicaciones />
+                  </PrivateRoute>
+                }
+              />  
+              <Route
               path="/inventory"
               element={
                 <PrivateRoute>
                   <InventoryManagement />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/movements"
+              element={
+                <PrivateRoute>
+                  <Movements />
                 </PrivateRoute>
               }
             />

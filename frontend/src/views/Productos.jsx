@@ -1,19 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Table, Form, InputGroup, Pagination, Alert } from "react-bootstrap";
+import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showAlert, setShowAlert] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
   const itemsPerPage = 10;
+
+  // Usamos nombres consistentes en el estado del producto
+  const [newProduct, setNewProduct] = useState({
+    nombre: "",
+    descripcion: "",
+    precio: "",
+    stock: "",
+    codigo: "",
+    categoria: "",
+    inventory_id: "",
+    ubicacion_id: "",
+  });
+
+  const token = sessionStorage.getItem("access_token");
 
   const filteredProducts = productos.filter((producto) =>
     producto.nombre.toLowerCase().includes(searchQuery.toLowerCase())
@@ -25,33 +41,57 @@ const Productos = () => {
     currentPage * itemsPerPage
   );
 
-  // Cargar productos al montar el componente
+  // Cargar productos y ubicaciones al montar el componente
   useEffect(() => {
-fetchProducts();
+    fetchProducts();
+    fetchLocations();
   }, []);
 
-  const fetchProducts = () => {    
-    const token = sessionStorage.getItem('access_token');
-    fetch("/api/products",
-    {
-      method: 'GET',
+  const fetchProducts = () => {
+    fetch("/api/products", {
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
-    }
-    )
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
-      return response.json();
-  })
-    .then((data) => {
-      setProductos(data);
     })
-    .catch((err) => console.error("Error al obtener productos:", err));
-}
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setProductos(data);
+      })
+      .catch((err) => {
+        console.error("Error al obtener productos:", err);
+        toast.error("Error al cargar productos.");
+      });
+  };
+
+  const fetchLocations = () => {
+    fetch("/api/ubicaciones", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setLocations(data);
+      })
+      .catch((err) => {
+        console.error("Error al obtener ubicaciones:", err);
+        toast.error("Error al cargar ubicaciones.");
+      });
+  };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -73,171 +113,153 @@ fetchProducts();
     }
   };
 
+  const handleShowModal = (product = null) => {
+    setEditingProduct(product);
+    if (!product) {
+      setNewProduct({
+        nombre: "",
+        descripcion: "",
+        precio: "",
+        stock: "",
+        codigo: "",
+        categoria: "",
+        inventory_id: "",
+        ubicacion_id: "",
+      });
+    }
+    setShowModal(true);
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProduct(null);
   };
 
-  const handleShowModal = (product = null) => {
-    setEditingProduct(product);
-    setShowModal(true);
-  };
+  const isValidStock = (stock) => !isNaN(parseInt(stock)) && parseInt(stock) >= 0;
+  const isValidPrice = (price) => !isNaN(parseFloat(price)) && parseFloat(price) >= 0;
 
   const handleCreateProduct = (nuevoProducto) => {
     const stock = Number(nuevoProducto.stock);
-  const precio = Number(nuevoProducto.precio);
-    console.log({stock, precio});
-    // Si alguna de las conversiones falla, 'stock' o 'precio' será NaN.
-  if (isNaN(stock) || isNaN(precio)) {
-    console.error("Error: stock o precio no son números válidos");
-    return;  // Evita continuar si los valores no son válidos
-  }
-    const token = sessionStorage.getItem('access_token');
-    console.log(token);
+    const precio = Number(nuevoProducto.precio);
+    if (isNaN(stock) || isNaN(precio)) {
+      console.error("Error: stock o precio no son números válidos");
+      toast.error("Stock o precio no son números válidos.");
+      return;
+    }
+    if (!nuevoProducto.ubicacion_id) {
+      toast.error("Debe seleccionar una ubicación.");
+      return;
+    }
     fetch("/api/products", {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json", 
-        'Authorization': `Bearer ${token}` },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        nombre: nuevoProducto.nombre, 
-        stock: nuevoProducto.stock,  // Asegúrate de pasar números aquí
-        precio: nuevoProducto.precio, // Asegúrate de pasar números aquí}),
+        nombre: nuevoProducto.nombre,
+        stock: nuevoProducto.stock,
+        precio: nuevoProducto.precio,
         codigo: nuevoProducto.codigo,
         categoria: nuevoProducto.categoria,
-        inventory_id: nuevoProducto.inventory_id
+        inventory_id: nuevoProducto.inventory_id,
+        ubicacion_id: nuevoProducto.ubicacion_id,
+      }),
     })
-  })
-      .then(
-        (response) => {
-          if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
-          }
-          return response.json();
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
         }
-      )
+        return response.json();
+      })
       .then((productoCreado) => {
-        setProductos([...productos, productoCreado]); // Agregar el nuevo producto a la lista
-        setShowAlert(true);      })
-      .catch((err) => console.error("Error al agregar producto:", err));
-      setShowAlert(true);
+        setProductos([...productos, productoCreado]);
+        toast.success("Producto creado exitosamente.");
+      })
+      .catch((err) => {
+        console.error("Error al agregar producto:", err);
+        toast.error("Error al crear el producto.");
+      });
   };
 
   const handleUpdateProduct = async (id, updatedProductData) => {
     try {
-      const token = sessionStorage.getItem('access_token');
-      console.log(`Requesting update for product ID: ${id}`);
       const response = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify(updatedProductData),
       });
-  
       if (!response.ok) {
         throw new Error(`Error HTTP: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Product updated successfully:', data);
-      // Update the product in the state
       setProductos((prevProductos) =>
         prevProductos.map((producto) => (producto.id === id ? data : producto))
       );
-      setShowAlert(true);
+      toast.success("Producto actualizado exitosamente.");
     } catch (error) {
-      console.error('Error updating product:', error.message);
+      console.error("Error updating product:", error.message);
+      toast.error("Error al actualizar el producto.");
     }
-  };
- 
- 
- 
-
-  // Función para mostrar confirmación de eliminación
-  const handleShowDeleteConfirmation = (id) => {
-    const token = sessionStorage.getItem('access_token');
-    setProductToDelete(id);
-    setShowDeleteConfirmation(true);
   };
 
   const handleDeleteProduct = (id) => {
-    const token = sessionStorage.getItem('access_token');
-
-    // Asegúrate de que el id es un valor válido (número o cadena), no un objeto
-    if (typeof id !== 'string' && typeof id !== 'number') {
-        console.error("ID no válido:", id);
-        return;
-    }
-
-    fetch(`/api/products/${id}`, {  // Usa el id en la URL
+    fetch(`/api/products/${id}`, {
       method: "DELETE",
-      headers: { 
-        "Authorization": `Bearer ${token}` 
+      headers: {
+        "Authorization": `Bearer ${token}`,
       },
     })
-    .then((response) => {
+      .then((response) => {
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+          throw new Error(`Error HTTP: ${response.status}`);
         }
-        return response.json(); // Esto es opcional, dependiendo de la respuesta del servidor
-    })
-    .then(() => {
-        // Actualiza el estado de productos para reflejar la eliminación
+        return response.json();
+      })
+      .then(() => {
         setProductos(productos.filter((producto) => producto.id !== id));
-        setShowDeleteConfirmation(false);  // Cierra la confirmación de eliminación
-        setShowAlert(true);  // Muestra alerta de éxito
-    })
-    .catch((err) => {
+        toast.success("Producto eliminado exitosamente.");
+      })
+      .catch((err) => {
         console.error("Error al eliminar producto:", err);
-    });
-}
-
-
-
-  const handleShowDeleteAllConfirmation = () => {
-    setShowDeleteAllConfirmation(true);
+        toast.error("Error al eliminar el producto.");
+      });
   };
 
   const handleDeleteAllProducts = () => {
-    const token = sessionStorage.getItem('access_token');
-  // Crear un array de promesas de fetch para eliminar cada usuario
-  const deleteRequests = selectedProducts.map(id =>
-    fetch(`/api/products/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`Error al eliminar el producto con ID: ${id}`);
-      }
-    })
-  );
-  // Ejecutar todas las peticiones y actualizar el estado una vez completadas
-  Promise.all(deleteRequests)
-    .then(() => {
-    setProductos(productos.filter((producto) => !selectedProducts.includes(producto.id)));
-    setSelectedProducts([]);
-    setShowDeleteAllConfirmation(false);
-    setShowAlert(true);
-  })
-  .catch(error => {
-    console.error('Error eliminando productos:', error);
-  });
-};
+    const deleteRequests = selectedProducts.map((id) =>
+      fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error(`Error al eliminar el producto con ID: ${id}`);
+        }
+      })
+    );
+    Promise.all(deleteRequests)
+      .then(() => {
+        setProductos(productos.filter((producto) => !selectedProducts.includes(producto.id)));
+        setSelectedProducts([]);
+        toast.success("Productos eliminados exitosamente.");
+      })
+      .catch((error) => {
+        console.error("Error eliminando productos:", error);
+        toast.error("Error al eliminar productos.");
+      });
+  };
 
+  // Cierre del componente
   return (
-    <div className="container mt-4 d-flex justify-content-center">
+    <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
+      <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h2 className="text-center">Lista de Productos</h2>
-
-        {showAlert && (
-          <Alert variant="success" onClose={() => setShowAlert(false)} dismissible>
-            ¡Operación exitosa!
-          </Alert>
-        )}
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
@@ -250,8 +272,8 @@ fetchProducts();
             />
           </InputGroup>
 
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => handleShowModal()}
             className="rounded-pill"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
@@ -260,26 +282,31 @@ fetchProducts();
           </Button>
         </div>
 
-        {/* Contenedor responsivo para la tabla */}
         <div className="table-responsive">
-          <Table 
-            bordered 
-            hover 
-            className="mt-4" 
-            style={{ 
-              borderRadius: "10px", 
-              overflow: "hidden", 
+          <Table
+            bordered
+            hover
+            className="mt-4"
+            style={{
+              borderRadius: "10px",
+              overflow: "hidden",
               backgroundColor: "#E8F8FF",
-              textAlign: "center"
+              textAlign: "center",
             }}
           >
-            <thead style={{ backgroundColor: "#0775e3" }}> {/* Fondo azul aquí */}
+            <thead style={{ backgroundColor: "#0775e3" }}>
               <tr>
                 <th>
                   <Form.Check
                     type="checkbox"
                     checked={selectedProducts.length === currentItems.length}
-                    onChange={handleSelectAll}
+                    onChange={() => {
+                      if (selectedProducts.length === currentItems.length) {
+                        setSelectedProducts([]);
+                      } else {
+                        setSelectedProducts(currentItems.map((producto) => producto.id));
+                      }
+                    }}
                     className="rounded-circle"
                   />
                 </th>
@@ -288,53 +315,55 @@ fetchProducts();
                 <th>Stock</th>
                 <th>Precio</th>
                 <th>Categoría</th>
+                <th>Ubicación</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-  {currentItems.map((producto) => (
-    <tr key={producto.id}>
-      <td>
-        <Form.Check
-          type="checkbox"
-          checked={selectedProducts.includes(producto.id)}
-          onChange={() => handleSelectProduct(producto.id)}
-          className="rounded-circle"
-        />
-      </td>
-      <td>{producto.codigo}</td>
-      <td>{producto.nombre}</td>
-      <td>{producto.stock}</td>
-      <td>{producto.precio}</td>
-      <td>{producto.categoria}</td>
-      <td>
-        <Button 
-          variant="warning" 
-          onClick={() => handleShowModal(producto)} 
-          className="me-2 rounded-pill"
-          style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
-        >
-          Editar
-        </Button>
-        <Button 
-          variant="danger" 
-          onClick={() => handleShowDeleteConfirmation(producto.id)} 
-          className="rounded-pill"
-          style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
-        >
-          Eliminar
-        </Button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+              {currentItems.map((producto) => (
+                <tr key={producto.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedProducts.includes(producto.id)}
+                      onChange={() => handleSelectProduct(producto.id)}
+                      className="rounded-circle"
+                    />
+                  </td>
+                  <td>{producto.codigo}</td>
+                  <td>{producto.nombre}</td>
+                  <td>{producto.stock}</td>
+                  <td>{producto.precio}</td>
+                  <td>{producto.categoria}</td>
+                  <td>{producto.ubicacion ? producto.ubicacion.nombre : "Sin asignar"}</td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      onClick={() => handleShowModal(producto)}
+                      className="me-2 rounded-pill"
+                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDeleteProduct(producto.id)}
+                      className="rounded-pill"
+                      style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </Table>
         </div>
 
-        <Button 
-          variant="danger" 
-          disabled={selectedProducts.length === 0} 
-          onClick={handleShowDeleteAllConfirmation} 
+        <Button
+          variant="danger"
+          disabled={selectedProducts.length === 0}
+          onClick={handleDeleteAllProducts}
           className="mb-3 rounded-pill"
           style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
         >
@@ -354,7 +383,7 @@ fetchProducts();
           ))}
         </Pagination>
 
-        {/* Modal de Confirmación para Eliminar Producto */}
+        {/* Modal para Confirmar Eliminación */}
         <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -372,7 +401,7 @@ fetchProducts();
           </Modal.Footer>
         </Modal>
 
-        {/* Modal de Confirmación para Eliminar Todos los Seleccionados */}
+        {/* Modal para Confirmar Eliminación de Todos */}
         <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
           <Modal.Header closeButton>
             <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -396,101 +425,120 @@ fetchProducts();
             <Modal.Title>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-          <Form
-  onSubmit={(e) => {
-    e.preventDefault();
-    const nombre = e.target.nombre.value;
-    const stock = Number(e.target.stock.value);
-    const codigo = e.target.codigo.value;
-    const precio = Number(e.target.precio.value);
-    const categoria = e.target.categoria.value;
-
-    if (isNaN(stock) || isNaN(precio)) {
-      console.error("Error: stock o precio no son números válidos");
-      return;  // Evita continuar si los valores no son válidos
-    }
-
-    if (editingProduct) {
-      handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria });
-    } else {
-      handleCreateProduct({ nombre, codigo, stock, precio, categoria });
-    }
-    handleCloseModal();
-  }}
->
-  <Form.Group controlId="formCodigo">
-    <Form.Label>Código</Form.Label>
-    <Form.Control
-      type="text"
-      placeholder="Código del producto"
-      defaultValue={editingProduct ? editingProduct.codigo : ""}
-      name="codigo"
-      required
-      className="rounded-pill"
-      style={{ borderColor: "#074de3" }}
-    />
-  </Form.Group>
-  <Form.Group controlId="formNombre">
-    <Form.Label>Nombre</Form.Label>
-    <Form.Control
-      type="text"
-      placeholder="Nombre del producto"
-      defaultValue={editingProduct ? editingProduct.nombre : ""}
-      name="nombre"
-      required
-      className="rounded-pill"
-      style={{ borderColor: "#074de3" }}
-    />
-  </Form.Group>
-  <Form.Group controlId="formStock">
-    <Form.Label>Stock</Form.Label>
-    <Form.Control
-      type="number"
-      placeholder="Stock del producto"
-      defaultValue={editingProduct ? editingProduct.stock : ""}
-      name="stock"
-      required
-      className="rounded-pill"
-      style={{ borderColor: "#074de3" }}
-    />
-  </Form.Group>
-  <Form.Group controlId="formPrecio">
-    <Form.Label>Precio</Form.Label>
-    <Form.Control
-      type="number"
-      placeholder="Precio del producto"
-      defaultValue={editingProduct ? editingProduct.precio : ""}
-      name="precio"
-      required
-      className="rounded-pill"
-      style={{ borderColor: "#074de3" }}
-    />
-  </Form.Group>
-  <Form.Group controlId="formCategoria">
-    <Form.Label>Categoría</Form.Label>
-    <Form.Control
-      type="text"
-      placeholder="Categoría del producto"
-      defaultValue={editingProduct ? editingProduct.categoria : ""}
-      name="categoria"
-      required
-      className="rounded-pill"
-      style={{ borderColor: "#074de3" }}
-    />
-  </Form.Group>
-  <Button 
-    variant="primary" 
-    type="submit" 
-    className="mt-3 rounded-pill"
-    style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-  >
-    {editingProduct ? "Actualizar" : "Crear"}
-  </Button>
-</Form>
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const nombre = e.target.nombre.value;
+                const stock = Number(e.target.stock.value);
+                const codigo = e.target.codigo.value;
+                const precio = Number(e.target.precio.value);
+                const categoria = e.target.categoria.value;
+                const ubicacion_id = e.target.ubicacion.value;
+                
+                if (isNaN(stock) || isNaN(precio)) {
+                  console.error("Error: stock o precio no son números válidos");
+                  toast.error("Stock o precio no son números válidos.");
+                  return;
+                }
+                
+                if (editingProduct) {
+                  handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria, ubicacion_id });
+                } else {
+                  handleCreateProduct({ nombre, codigo, stock, precio, categoria, ubicacion_id });
+                }
+                handleCloseModal();
+              }}
+            >
+              <Form.Group controlId="formCodigo">
+                <Form.Label>Código</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Código del producto"
+                  defaultValue={editingProduct ? editingProduct.codigo : ""}
+                  name="codigo"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formNombre">
+                <Form.Label>Nombre</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Nombre del producto"
+                  defaultValue={editingProduct ? editingProduct.nombre : ""}
+                  name="nombre"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formStock">
+                <Form.Label>Stock</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Stock del producto"
+                  defaultValue={editingProduct ? editingProduct.stock : ""}
+                  name="stock"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formPrecio">
+                <Form.Label>Precio</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Precio del producto"
+                  defaultValue={editingProduct ? editingProduct.precio : ""}
+                  name="precio"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                  step="0.01"
+                />
+              </Form.Group>
+              <Form.Group controlId="formCategoria">
+                <Form.Label>Categoría</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Categoría del producto"
+                  defaultValue={editingProduct ? editingProduct.categoria : ""}
+                  name="categoria"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formUbicacion" className="mb-2">
+                <Form.Label>Ubicación</Form.Label>
+                <Form.Select 
+                  name="ubicacion" 
+                  defaultValue={editingProduct && editingProduct.ubicacion ? editingProduct.ubicacion.id : ""}
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                  required
+                >
+                  <option value="">Seleccione una ubicación</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.nombre}</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+              <Button 
+                variant="primary" 
+                type="submit" 
+                className="mt-3 rounded-pill"
+                style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+              >
+                {editingProduct ? "Actualizar" : "Crear"}
+              </Button>
+            </Form>
           </Modal.Body>
         </Modal>
-      </div>
     </div>
+    </div>
+
   );
 };
 

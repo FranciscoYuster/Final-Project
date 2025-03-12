@@ -14,9 +14,13 @@ def get_movements():
     if not user or not user.inventory:
         return jsonify({"error": "User or inventory not found"}), 404
 
-    # Filtrar movimientos por el inventario del usuario
-    movements = Movement.query.filter_by(inventory_id=user.inventory.id).all()
+    product_id = request.args.get('product_id')
+    if product_id:
+        movements = Movement.query.filter_by(inventory_id=user.inventory.id, product_id=product_id).all()
+    else:
+        movements = Movement.query.filter_by(inventory_id=user.inventory.id).all()
     return jsonify([movement.serialize() for movement in movements]), 200
+
 
 # Obtener un movimiento específico (solo si pertenece al inventario del usuario)
 @movements_api.route('/movements/<int:id>', methods=['GET'])

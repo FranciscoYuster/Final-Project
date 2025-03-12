@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,35 +7,70 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { FaFileCsv, FaFileExcel, FaFilePdf, FaEdit, FaTrash, FaCheck, FaClock } from 'react-icons/fa';
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend);
 
 const Facturas = () => {
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [config, setConfig] = useState({
+    id: '',
+    impuesto: 0,     
+    moneda: '',
+    formato_facturacion: ''
+  });
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  // Estado para la nueva factura
+  const [showModal, setShowModal] = useState(false);
+  
+  // Estado para la nueva factura (monto base)
   const [newInvoice, setNewInvoice] = useState({
-    customer: '',         // id del cliente seleccionado
+    customer: '',         
     customer_name: '',
     customer_email: '',
-    total: '',
+    total: '',            
     status: 'Pending',
   });
-
+  
   const token = sessionStorage.getItem('access_token');
+
+  const fetchConfig = async () => {
+    setLoadingConfig(true);
+    try {
+      const response = await fetch('/api/configuraciones', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setConfig(data);
+      } else {
+        setConfig({ id: '', impuesto: 0, moneda: '', formato_facturacion: '' });
+      }
+    } catch (error) {
+      console.error('Error fetching config:', error);
+      toast.error('Error al cargar la configuración');
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
 
   const fetchInvoices = async () => {
     setLoadingInvoices(true);
     try {
       const response = await fetch('/api/invoices', {
         method: 'GET',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -54,9 +89,9 @@ const Facturas = () => {
     try {
       const response = await fetch('/api/customers', {
         method: 'GET',
-        headers: {
+        headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -71,28 +106,27 @@ const Facturas = () => {
   };
 
   useEffect(() => {
+    fetchConfig();
     fetchInvoices();
     fetchCustomers();
   }, []);
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/invoices/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      await response.json();
-      setInvoices((prev) => prev.filter((invoice) => invoice.id !== id));
-      toast.success('Factura eliminada correctamente.');
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-      toast.error('Error al eliminar la factura.');
-    }
+  const handleCustomerSelect = (e) => {
+    const customerId = e.target.value;
+    const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
+    setNewInvoice({
+      ...newInvoice,
+      customer: customerId,
+      customer_name: selectedCustomer ? selectedCustomer.name : '',
+      customer_email: selectedCustomer ? selectedCustomer.email : '',
+    });
   };
 
-  const handleOpenModal = () => setShowModal(true);
+  const handleInputChange = (e) => {
+    setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
+  };
 
+  // Función para cerrar el modal de creación de factura
   const handleCloseModal = () => {
     setShowModal(false);
     setNewInvoice({
@@ -104,29 +138,21 @@ const Facturas = () => {
     });
   };
 
-  const handleCustomerSelect = (e) => {
-    const customerId = e.target.value;
-    const selectedCustomer = customers.find((c) => c.id === parseInt(customerId));
-    setNewInvoice({
-      ...newInvoice,
-      customer: customerId,
-      customer_name: selectedCustomer ? selectedCustomer.name : '',
-      customer_email: selectedCustomer ? selectedCustomer.email : '',
-    });
-  };
-
-  const handleInputChange = (e) => {
-    setNewInvoice({
-      ...newInvoice,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   const handleSubmitInvoice = async (e) => {
     e.preventDefault();
     try {
+      const baseTotal = parseFloat(newInvoice.total);
+      if (isNaN(baseTotal)) {
+        toast.error("El monto debe ser un número válido.");
+        return;
+      }
+      const tax = config.impuesto || 0;
+      const impuesto_aplicado = baseTotal * tax;
+      const finalTotal = baseTotal - impuesto_aplicado;
       const invoiceData = {
-        total: parseFloat(newInvoice.total),
+        monto_base: baseTotal,
+        impuesto_aplicado: impuesto_aplicado,
+        total_final: finalTotal,
         status: newInvoice.status,
       };
       if (newInvoice.customer) {
@@ -145,7 +171,7 @@ const Facturas = () => {
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const data = await response.json();
-      setInvoices((prev) => [...prev, data]);
+      setInvoices(prev => [...prev, data]);
       toast.success('Factura creada exitosamente.');
       handleCloseModal();
     } catch (error) {
@@ -154,11 +180,26 @@ const Facturas = () => {
     }
   };
 
-  // Funciones para editar factura
+  const handleDelete = async (id) => {
+    try {
+      const response = await fetch(`/api/invoices/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      await response.json();
+      setInvoices(prev => prev.filter(invoice => invoice.id !== id));
+      toast.success('Factura eliminada correctamente.');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      toast.error('Error al eliminar la factura.');
+    }
+  };
+
   const handleOpenEditModal = (invoice) => {
     setEditInvoice({
       id: invoice.id,
-      total: invoice.total,
+      monto_base: invoice.monto_base,
       status: invoice.status,
     });
     setShowEditModal(true);
@@ -170,15 +211,20 @@ const Facturas = () => {
   };
 
   const handleEditInputChange = (e) => {
-    setEditInvoice({
-      ...editInvoice,
-      [e.target.name]: e.target.value,
-    });
+    setEditInvoice({ ...editInvoice, [e.target.name]: e.target.value });
   };
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     try {
+      const baseTotal = parseFloat(editInvoice.monto_base);
+      if (isNaN(baseTotal)) {
+        toast.error("El monto debe ser un número válido.");
+        return;
+      }
+      const tax = config.impuesto || 0;
+      const impuesto_aplicado = baseTotal * tax;
+      const finalTotal = baseTotal - impuesto_aplicado;
       const response = await fetch(`/api/invoices/${editInvoice.id}`, {
         method: 'PUT',
         headers: {
@@ -186,15 +232,15 @@ const Facturas = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          total: parseFloat(editInvoice.total),
+          monto_base: baseTotal,
+          impuesto_aplicado: impuesto_aplicado,
+          total_final: finalTotal,
           status: editInvoice.status,
         }),
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const updated = await response.json();
-      setInvoices((prev) =>
-        prev.map((inv) => (inv.id === updated.id ? updated : inv))
-      );
+      setInvoices(prev => prev.map(inv => inv.id === updated.id ? updated : inv));
       toast.success('Factura actualizada correctamente.');
       handleCloseEditModal();
     } catch (error) {
@@ -203,7 +249,6 @@ const Facturas = () => {
     }
   };
 
-  // Definición de columnas para react-data-table-component
   const columns = [
     {
       name: 'Cliente',
@@ -216,10 +261,20 @@ const Facturas = () => {
       sortable: true,
     },
     {
-      name: 'Monto',
-      selector: row => row.total,
+      name: 'Monto Base',
+      selector: row => row.monto_base,
       sortable: true,
-      format: row => `$${row.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      format: row => `$${row.monto_base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    },
+    {
+      name: 'Impuesto (%)',
+      cell: row => `${(config.impuesto * 100).toFixed(0)}%`,
+      sortable: false,
+    },
+    {
+      name: 'Total Final',
+      cell: row => `$${row.total_final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      sortable: false,
     },
     {
       name: 'Fecha',
@@ -239,16 +294,10 @@ const Facturas = () => {
       name: 'Acciones',
       cell: row => (
         <>
-          <button
-            className="btn btn-warning btn-sm me-1"
-            onClick={() => handleOpenEditModal(row)}
-          >
+          <button className="btn btn-warning btn-sm me-1" onClick={() => handleOpenEditModal(row)}>
             <FaEdit />
           </button>
-          <button
-            className="btn btn-danger btn-sm"
-            onClick={() => handleDelete(row.id)}
-          >
+          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row.id)}>
             <FaTrash />
           </button>
         </>
@@ -259,97 +308,42 @@ const Facturas = () => {
     },
   ];
 
-  const containerStyle = { maxWidth: '800px', margin: '0 auto', fontSize: '0.8rem' };
-
-  // Funciones para exportar datos
-  const exportCSV = () => {
-    const headers = ["ID", "Cliente", "Email", "Monto", "Fecha", "Estado"];
-    const rows = invoices.map(invoice => {
-      const cliente = invoice.customer ? invoice.customer.name : '';
-      const email = invoice.customer ? invoice.customer.email : '';
-      const fecha = invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : '';
-      return [invoice.id, cliente, email, invoice.total, fecha, invoice.status];
-    });
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += headers.join(",") + "\n";
-    rows.forEach(rowArray => {
-      csvContent += rowArray.join(",") + "\n";
-    });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "facturas.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const exportXLSX = () => {
-    const headers = ["ID", "Cliente", "Email", "Monto", "Fecha", "Estado"];
-    const dataArr = invoices.map(invoice => {
-      const cliente = invoice.customer ? invoice.customer.name : '';
-      const email = invoice.customer ? invoice.customer.email : '';
-      const fecha = invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : '';
-      return [invoice.id, cliente, email, invoice.total, fecha, invoice.status];
-    });
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...dataArr]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Facturas");
-    XLSX.writeFile(wb, "facturas.xlsx");
-  };
-
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    const tableColumn = ["ID", "Cliente", "Email", "Monto", "Fecha", "Estado"];
-    const tableRows = invoices.map(invoice => {
-      const cliente = invoice.customer ? invoice.customer.name : '';
-      const email = invoice.customer ? invoice.customer.email : '';
-      const fecha = invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : '';
-      return [invoice.id, cliente, email, invoice.total, fecha, invoice.status];
-    });
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-    });
-    doc.save("facturas.pdf");
-  };
-
   return (
-    <div style={containerStyle} className="mt-4">
+    <div style={{ maxWidth: '1000px', margin: '0 auto', fontSize: '0.8rem' }} className="mt-4">
       <ToastContainer />
       <h1 className="mb-3">Facturas</h1>
       
       {/* Botones de exportación */}
       <div className="mb-2 d-flex gap-2">
-        <button className="btn btn-success btn-sm" onClick={exportCSV}>
+        <button className="btn btn-success btn-sm" onClick={() => {/* exportar CSV */}}>
           <FaFileCsv className="me-1" /> Exportar CSV
         </button>
-        <button className="btn btn-info btn-sm" onClick={exportXLSX}>
+        <button className="btn btn-info btn-sm" onClick={() => {/* exportar XLSX */}}>
           <FaFileExcel className="me-1" /> Exportar XLSX
         </button>
-        <button className="btn btn-danger btn-sm" onClick={exportPDF}>
+        <button className="btn btn-danger btn-sm" onClick={() => {/* exportar PDF */}}>
           <FaFilePdf className="me-1" /> Exportar PDF
         </button>
       </div>
       
-      {/* Filtro global simple */}
+      {/* Filtro global */}
       <div className="mb-2">
         <input
           type="text"
           className="form-control form-control-sm"
           placeholder="Buscar factura..."
           onChange={(e) => {
-            const value = e.target.value || '';
+            const value = e.target.value.toLowerCase() || '';
             const filtered = invoices.filter(invoice => {
               const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : '';
               const email = invoice.customer ? invoice.customer.email.toLowerCase() : '';
-              const total = invoice.total.toString();
+              const monto = invoice.monto_base.toString();
               const status = invoice.status.toLowerCase();
               return (
-                cliente.includes(value.toLowerCase()) ||
-                email.includes(value.toLowerCase()) ||
-                total.includes(value) ||
-                status.includes(value.toLowerCase())
+                cliente.includes(value) ||
+                email.includes(value) ||
+                monto.includes(value) ||
+                status.includes(value)
               );
             });
             setInvoices(filtered);
@@ -360,12 +354,12 @@ const Facturas = () => {
       </div>
       
       <div className="d-flex justify-content-between align-items-center mb-2">
-        <button className="btn btn-primary btn-sm" onClick={handleOpenModal}>
+        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
           Crear Factura
         </button>
       </div>
       
-      {(loadingInvoices || loadingCustomers) && <div>Cargando datos...</div>}
+      {(loadingInvoices || loadingCustomers || loadingConfig) && <div>Cargando datos...</div>}
       
       <DataTable
         columns={columns}
@@ -383,49 +377,25 @@ const Facturas = () => {
         dense
       />
       
-      {/* Modal de edición */}
+      {/* Modal para editar factura */}
       {showEditModal && editInvoice && (
         <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
           <div className="modal-dialog modal-sm">
             <div className="modal-content">
-              <form onSubmit={async e => {
-                e.preventDefault();
-                try {
-                  const response = await fetch(`/api/invoices/${editInvoice.id}`, {
-                    method: 'PUT',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                      total: parseFloat(editInvoice.total),
-                      status: editInvoice.status,
-                    })
-                  });
-                  if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-                  const updated = await response.json();
-                  setInvoices(prev => prev.map(inv => inv.id === updated.id ? updated : inv));
-                  toast.success('Factura actualizada correctamente.');
-                  setShowEditModal(false);
-                  setEditInvoice(null);
-                } catch (error) {
-                  console.error('Error updating invoice:', error);
-                  toast.error('Error al actualizar la factura.');
-                }
-              }}>
+              <form onSubmit={handleSubmitEdit}>
                 <div className="modal-header py-2">
                   <h5 className="modal-title">Editar Factura</h5>
-                  <button type="button" className="btn-close" onClick={() => { setShowEditModal(false); setEditInvoice(null); }}></button>
+                  <button type="button" className="btn-close" onClick={handleCloseEditModal}></button>
                 </div>
                 <div className="modal-body py-2">
                   <div className="mb-2">
-                    <label className="form-label">Monto</label>
+                    <label className="form-label">Monto Base</label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
-                      name="total"
-                      value={editInvoice.total}
-                      onChange={(e) => setEditInvoice({ ...editInvoice, total: e.target.value })}
+                      name="monto_base"
+                      value={editInvoice.monto_base}
+                      onChange={handleEditInputChange}
                       step="0.01"
                       required
                     />
@@ -436,7 +406,7 @@ const Facturas = () => {
                       className="form-select form-select-sm"
                       name="status"
                       value={editInvoice.status}
-                      onChange={(e) => setEditInvoice({ ...editInvoice, status: e.target.value })}
+                      onChange={handleEditInputChange}
                       required
                     >
                       <option value="Pending">Pending</option>
@@ -445,7 +415,7 @@ const Facturas = () => {
                   </div>
                 </div>
                 <div className="modal-footer py-2">
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setShowEditModal(false); setEditInvoice(null); }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleCloseEditModal}>
                     Cancelar
                   </button>
                   <button type="submit" className="btn btn-primary btn-sm">
@@ -487,7 +457,7 @@ const Facturas = () => {
                     </select>
                   </div>
                   <div className="mb-2">
-                    <label className="form-label">Monto</label>
+                    <label className="form-label">Monto Base</label>
                     <input
                       type="number"
                       className="form-control form-control-sm"
@@ -497,6 +467,9 @@ const Facturas = () => {
                       step="0.01"
                       required
                     />
+                    <small className="text-muted">
+                      El impuesto se aplicará automáticamente (configuración global: {(config.impuesto * 100).toFixed(0)}%)
+                    </small>
                   </div>
                   <div className="mb-2">
                     <label className="form-label">Estado</label>

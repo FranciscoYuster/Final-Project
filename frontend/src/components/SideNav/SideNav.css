@@ -80,3 +80,12 @@
   background: rgba(255, 255, 255, 0.2);
   border-radius: 30px;
 }
+
+.sub-menu {
+  padding-left: 20px;
+  list-style: none;
+}
+
+.sub-menu li {
+  margin: 5px 0;
+}

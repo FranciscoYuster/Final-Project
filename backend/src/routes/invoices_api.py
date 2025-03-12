@@ -25,9 +25,9 @@ def get_invoice(id):
 def create_invoice():
     data = request.get_json()
     
-    # Se requiere el campo total
-    if "total" not in data:
-        return jsonify({"error": "total is required"}), 400
+    # Se requiere el campo monto_base
+    if "monto_base" not in data:
+        return jsonify({"error": "monto_base is required"}), 400
 
     # Obtener el usuario autenticado
     user_id = get_jwt_identity()
@@ -37,16 +37,13 @@ def create_invoice():
     if not user.inventory:
         return jsonify({"error": "No inventory found for the user"}), 400
 
-    # Determinar el cliente a asociar:
-    # Si se envía customer_id, se usa ese; de lo contrario, se requieren customer_name y customer_email.
+    # Determinar el cliente a asociar
     if "customer_id" in data:
         customer_id = data["customer_id"]
     else:
         for field in ["customer_name", "customer_email"]:
             if field not in data:
                 return jsonify({"error": f"{field} is required"}), 400
-
-        # Buscar si ya existe un cliente con ese email para este usuario
         customer = Customer.query.filter_by(email=data["customer_email"], user_id=user.id).first()
         if not customer:
             customer = Customer(
@@ -61,14 +58,32 @@ def create_invoice():
                 return jsonify({"error": "Error saving customer", "details": str(e)}), 500
         customer_id = customer.id
 
-    # Crear la factura usando customer_id
+    # Convertir monto_base a float
+    try:
+        monto_base = float(data["monto_base"])
+    except ValueError:
+        return jsonify({"error": "monto_base must be a valid number"}), 400
+
+    # Obtener la configuración global para este usuario
+    # (Se asume que existe un endpoint o que la configuración ya fue insertada para el usuario)
+    from src.models import Configuration  # Asegúrate de que esté importado
+    config = Configuration.query.filter_by(user_id=user.id).first()
+    tax = config.impuesto if config else 0.0
+
+    # Calcular el impuesto aplicado y el total final
+    impuesto_aplicado = monto_base * tax
+    total_final = monto_base - impuesto_aplicado
+
+    # Crear la factura con los nuevos campos
     invoice = Invoice(
-        total=data["total"],
         user_id=user.id,
         inventory_id=user.inventory.id,
+        customer_id=customer_id,
+        monto_base=monto_base,
+        impuesto_aplicado=impuesto_aplicado,
+        total_final=total_final,
         status=data.get("status", "Pending")
     )
-    invoice.customer_id = customer_id
 
     try:
         invoice.save()
