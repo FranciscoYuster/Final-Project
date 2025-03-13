@@ -30,7 +30,7 @@ def create_configuration():
     # Opcional: Validar rol del usuario (por ejemplo, solo admin puede crear configuración)
     data = request.get_json()
     # Se definen valores por defecto si no se reciben
-    impuesto = data.get("impuesto", 0.0)
+    impuesto = data.get("impuesto", 0.20)
     moneda = data.get("moneda", "USD")
     formato_facturacion = data.get("formato_facturacion", "Factura Electrónica")
 

@@ -183,18 +183,15 @@ class Customer(db.Model):
 class Product(db.Model):
     __tablename__ = 'products'
 
-    id = db.Column(db.Integer, primary_key=True)  # ID único para cada producto
-    codigo = db.Column(db.String(50), unique=True, nullable=False)  # Código del producto
-    nombre = db.Column(db.String(100), nullable=False)  # Nombre del producto
-    stock = db.Column(db.Integer, nullable=False)  # Cantidad disponible
-    precio = db.Column(db.Float, nullable=False)  # Precio del producto
-    categoria = db.Column(db.String(50), nullable=False)  # Categoría del producto
-        # Vinculación al inventario
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(50), unique=True, nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
+    stock = db.Column(db.Integer, nullable=False)
+    precio = db.Column(db.Float, nullable=False)
+    categoria = db.Column(db.String(50), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
 
-    
     def serialize(self):
         return {
             "id": self.id,
@@ -203,9 +200,8 @@ class Product(db.Model):
             "stock": self.stock,
             "precio": self.precio,
             "categoria": self.categoria,
-            "ubicacion": self.ubicacion.serialize() if self.ubicacion else None
         }
-        
+
     def save(self):
         db.session.add(self)
         db.session.commit()
@@ -216,6 +212,7 @@ class Product(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
+
     
 
 # Tabla de ventas (Sale)
@@ -271,7 +268,9 @@ class Invoice(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
-    
+    purchase_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), nullable=True, unique=True)
+
+    numero_comprobante = db.Column(db.String(50), nullable=False, unique=True) # Numero comprobante al ser ingresado en compras
     monto_base = db.Column(db.Float, nullable=False)           # Monto ingresado por el usuario
     impuesto_aplicado = db.Column(db.Float, nullable=False)      # Monto del impuesto aplicado
     total_final = db.Column(db.Float, nullable=False)            # Total final (monto_base - impuesto_aplicado)
@@ -286,6 +285,7 @@ class Invoice(db.Model):
             "user_id": self.user_id,
             "inventory_id": self.inventory_id,
             "customer": self.customer.serialize() if self.customer else None,
+            "numero_comprobante": self.numero_comprobante,
             "monto_base": self.monto_base,
             "impuesto_aplicado": self.impuesto_aplicado,
             "total_final": self.total_final,
@@ -303,22 +303,40 @@ class Purchase(db.Model):
     __tablename__ = 'purchases'
     
     id = db.Column(db.Integer, primary_key=True)
+    orden_compra = db.Column(db.String(50), nullable=False, unique=True )
+    metodo = db.Column(db.String(50), nullable=False)
     provider_id = db.Column(db.Integer, db.ForeignKey('providers.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     total = db.Column(db.Float, nullable=False)
     purchase_date = db.Column(db.DateTime, server_default=db.func.now())
+
+    # Relaciones
+
+    inventory = db.relationship("Inventory", backref="purchases", lazy=True)
+    provider = db.relationship("Provider", backref="purchases", lazy=True)
+    products = db.relationship("Product", backref="purchases", lazy=True)
+
+    movements = db.relationship("Movement", backref="purchases", lazy=True)
+    invoice = db.relationship("Invoice", backref="purchases", lazy=True)
     
     def serialize(self):
         return {
             "id": self.id,
+            "orden_compra": self.orden_compra,
+            "metodo": self.metodo,
+            "provider": self.provider.serialize() if self.provider else None ,
+            "product": self.products.serialize() if self.provider else None ,
+            "inventory": self.inventory.serialize() if self.provider else None ,
             "provider_id": self.provider_id,
             "product_id": self.product_id,
             "inventory_id": self.inventory_id,
             "quantity": self.quantity,
             "total": self.total,
-            "purchase_date": self.purchase_date.isoformat() if self.purchase_date else None
+            "purchase_date": self.purchase_date.isoformat() if self.purchase_date else None,
+            "movements": self.movements.serialize() if self.provider else None ,
+            "invoice": self.invoice.serialize() if self.provider else None 
         }
     
     def save(self):
@@ -395,14 +413,17 @@ class Movement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
-    type = db.Column(db.String, nullable=False)  # Ejemplo: 'sale', 'purchase', 'ingreso'
+    type = db.Column(db.String(50), nullable=False)  # Ejemplo: 'sale', 'purchase', 'ingreso'
     quantity = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, server_default=db.func.now())
-    # Nuevo campo para identificar al usuario que registró el movimiento
+    
+    purchase_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), nullable=True)
+
     registered_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Relación para acceder al usuario que registró el movimiento
     registered_by_user = db.relationship("User", foreign_keys=[registered_by])
+    
 
     def serialize(self):
         return {
@@ -451,8 +472,6 @@ class Ubicacion(db.Model):
     descripcion = db.Column(db.String, nullable=True)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     
-    # Relación: productos asignados a esta ubicación
-    products = db.relationship("Product", backref="ubicacion", lazy=True)
     
     def serialize(self):
         return {

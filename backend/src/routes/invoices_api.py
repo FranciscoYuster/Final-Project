@@ -25,9 +25,11 @@ def get_invoice(id):
 def create_invoice():
     data = request.get_json()
     
-    # Se requiere el campo monto_base
+    # Se requiere el campo monto_base y numero_comprobante
     if "monto_base" not in data:
         return jsonify({"error": "monto_base is required"}), 400
+    if "numero_comprobante" not in data:
+        return jsonify({"error": "numero_comprobante is required"}), 400
 
     # Obtener el usuario autenticado
     user_id = get_jwt_identity()
@@ -65,7 +67,6 @@ def create_invoice():
         return jsonify({"error": "monto_base must be a valid number"}), 400
 
     # Obtener la configuración global para este usuario
-    # (Se asume que existe un endpoint o que la configuración ya fue insertada para el usuario)
     from src.models import Configuration  # Asegúrate de que esté importado
     config = Configuration.query.filter_by(user_id=user.id).first()
     tax = config.impuesto if config else 0.0
@@ -74,7 +75,7 @@ def create_invoice():
     impuesto_aplicado = monto_base * tax
     total_final = monto_base - impuesto_aplicado
 
-    # Crear la factura con los nuevos campos
+    # Crear la factura
     invoice = Invoice(
         user_id=user.id,
         inventory_id=user.inventory.id,
@@ -82,7 +83,8 @@ def create_invoice():
         monto_base=monto_base,
         impuesto_aplicado=impuesto_aplicado,
         total_final=total_final,
-        status=data.get("status", "Pending")
+        status=data.get("status", "Pending"),
+        numero_comprobante=data["numero_comprobante"]
     )
 
     try:
@@ -90,7 +92,7 @@ def create_invoice():
     except Exception as e:
         return jsonify({"error": "Error saving invoice", "details": str(e)}), 500
 
-    return jsonify(invoice.serialize()), 201
+    return jsonify(invoice.serialize()), 200
 
 @invoices_api.route('/invoices/<int:id>', methods=['PUT'])
 def update_invoice(id):

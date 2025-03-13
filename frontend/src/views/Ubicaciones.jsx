@@ -1,38 +1,53 @@
-export const baseUrl = import.meta.env.VITE_BASE_URL;
-export const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+import React, { useEffect, useState } from "react";
+import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-import React, { useState, useEffect } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
+export const baseUrl = import.meta.env.VITE_BASE_URL;
 
 const Ubicaciones = () => {
   const [ubicaciones, setUbicaciones] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [newUbicacion, setNewUbicacion] = useState({ nombre: '', descripcion: '' });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUbicaciones, setSelectedUbicaciones] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const [editingUbicacion, setEditingUbicacion] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const token = sessionStorage.getItem('access_token');
+  // Estado para nueva ubicación
+  const [newUbicacion, setNewUbicacion] = useState({
+    nombre: "",
+    descripcion: ""
+  });
 
-  // Función para obtener todas las ubicaciones del inventario del usuario
+  const token = sessionStorage.getItem("access_token");
+
+  const filteredUbicaciones = ubicaciones.filter((ubicacion) =>
+    ubicacion.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredUbicaciones.length / itemsPerPage);
+  const currentItems = filteredUbicaciones.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const fetchUbicaciones = async () => {
-    setLoading(true);
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         }
       });
-      if (!response.ok) throw new Error('Error al obtener ubicaciones');
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const data = await response.json();
       setUbicaciones(data);
-    } catch (error) {
-      console.error('Error fetching ubicaciones:', error);
-      toast.error('Error al cargar ubicaciones');
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error("Error al cargar ubicaciones:", err);
+      toast.error("Error al cargar ubicaciones.");
     }
   };
 
@@ -40,179 +55,305 @@ const Ubicaciones = () => {
     fetchUbicaciones();
   }, []);
 
-  // Agregar nueva ubicación
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleSelectUbicacion = (id) => {
+    if (selectedUbicaciones.includes(id)) {
+      setSelectedUbicaciones(selectedUbicaciones.filter((uid) => uid !== id));
+    } else {
+      setSelectedUbicaciones([...selectedUbicaciones, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUbicaciones.length === currentItems.length) {
+      setSelectedUbicaciones([]);
+    } else {
+      setSelectedUbicaciones(currentItems.map((ubicacion) => ubicacion.id));
+    }
+  };
+
+  const handleShowModal = (ubicacion = null) => {
+    setEditingUbicacion(ubicacion);
+    if (!ubicacion) {
+      setNewUbicacion({ nombre: "", descripcion: "" });
+    } else {
+      setNewUbicacion({ nombre: ubicacion.nombre, descripcion: ubicacion.descripcion });
+    }
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingUbicacion(null);
+  };
+
   const handleAddUbicacion = async (e) => {
     e.preventDefault();
     if (!newUbicacion.nombre) {
-      toast.error('El nombre es requerido');
+      toast.error("El nombre es requerido");
       return;
     }
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify(newUbicacion)
       });
-      if (!response.ok) throw new Error('Error al crear la ubicación');
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const data = await response.json();
-      setUbicaciones(prev => [...prev, data]);
-      setNewUbicacion({ nombre: '', descripcion: '' });
-      toast.success('Ubicación creada exitosamente');
-    } catch (error) {
-      console.error('Error creating ubicacion:', error);
-      toast.error('Error al crear la ubicación');
+      setUbicaciones([...ubicaciones, data]);
+      toast.success("Ubicación creada exitosamente.");
+      handleCloseModal();
+    } catch (err) {
+      console.error("Error al crear ubicación:", err);
+      toast.error("Error al crear la ubicación.");
     }
   };
 
-  // Editar ubicación existente
   const handleEditUbicacion = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones/${editingUbicacion.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(editingUbicacion)
+        body: JSON.stringify(newUbicacion)
       });
-      if (!response.ok) throw new Error('Error al actualizar la ubicación');
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const data = await response.json();
-      setUbicaciones(prev =>
-        prev.map(u => (u.id === data.id ? data : u))
-      );
-      setEditingUbicacion(null);
-      toast.success('Ubicación actualizada exitosamente');
-    } catch (error) {
-      console.error('Error updating ubicacion:', error);
-      toast.error('Error al actualizar la ubicación');
+      setUbicaciones(ubicaciones.map((u) => (u.id === data.id ? data : u)));
+      toast.success("Ubicación actualizada exitosamente.");
+      handleCloseModal();
+    } catch (err) {
+      console.error("Error al actualizar ubicación:", err);
+      toast.error("Error al actualizar la ubicación.");
     }
   };
 
-  // Eliminar ubicación
   const handleDeleteUbicacion = async (id) => {
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${token}`
+          "Authorization": `Bearer ${token}`
         }
       });
-      if (!response.ok) throw new Error('Error al eliminar la ubicación');
-      setUbicaciones(prev => prev.filter(u => u.id !== id));
-      toast.success('Ubicación eliminada correctamente');
-    } catch (error) {
-      console.error('Error deleting ubicacion:', error);
-      toast.error('Error al eliminar la ubicación');
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      setUbicaciones(ubicaciones.filter((u) => u.id !== id));
+      toast.success("Ubicación eliminada correctamente.");
+    } catch (err) {
+      console.error("Error al eliminar ubicación:", err);
+      toast.error("Error al eliminar la ubicación.");
     }
   };
 
+  const handleDeleteAllUbicaciones = () => {
+    const deleteRequests = selectedUbicaciones.map((id) =>
+      fetch(`${baseUrl}/api/ubicaciones/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      }).then((response) => {
+        if (!response.ok) throw new Error(`Error al eliminar la ubicación con ID: ${id}`);
+      })
+    );
+    Promise.all(deleteRequests)
+      .then(() => {
+        setUbicaciones(ubicaciones.filter((u) => !selectedUbicaciones.includes(u.id)));
+        setSelectedUbicaciones([]);
+        toast.success("Ubicaciones eliminadas exitosamente.");
+      })
+      .catch((err) => {
+        console.error("Error eliminando ubicaciones:", err);
+        toast.error("Error al eliminar ubicaciones.");
+      });
+  };
+
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
-      <h1>Gestión de Ubicaciones</h1>
-      
-      {/* Formulario para agregar nueva ubicación */}
-      <form onSubmit={handleAddUbicacion} className="mb-4">
-        <div className="mb-3">
-          <label className="form-label">Nombre</label>
-          <input 
-            type="text" 
-            className="form-control" 
-            value={newUbicacion.nombre}
-            onChange={(e) =>
-              setNewUbicacion({ ...newUbicacion, nombre: e.target.value })
-            }
-            required
-          />
+      <div className="w-100" style={{ maxWidth: "1200px" }}>
+        <h2 className="text-center">Gestión de Ubicaciones</h2>
+
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <InputGroup className="w-50">
+            <Form.Control
+              placeholder="Buscar ubicaciones..."
+              aria-label="Buscar ubicaciones"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="rounded-pill"
+            />
+          </InputGroup>
+
+          <Button
+            variant="primary"
+            onClick={() => handleShowModal()}
+            className="rounded-pill"
+            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+          >
+            Crear Nueva Ubicación
+          </Button>
         </div>
-        <div className="mb-3">
-          <label className="form-label">Descripción</label>
-          <textarea 
-            className="form-control" 
-            value={newUbicacion.descripcion}
-            onChange={(e) =>
-              setNewUbicacion({ ...newUbicacion, descripcion: e.target.value })
-            }
-          />
-        </div>
-        <button type="submit" className="btn btn-primary">Agregar Ubicación</button>
-      </form>
-      
-      {/* Lista de ubicaciones */}
-      {loading ? (
-        <p>Cargando ubicaciones...</p>
-      ) : (
-        <table className="table table-bordered">
-          <thead className="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ubicaciones.map((ubicacion) => (
-              <tr key={ubicacion.id}>
-                <td>{ubicacion.id}</td>
-                <td>
-                  {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      value={editingUbicacion.nombre}
-                      onChange={(e) =>
-                        setEditingUbicacion({ ...editingUbicacion, nombre: e.target.value })
-                      }
-                      required
-                    />
-                  ) : (
-                    ubicacion.nombre
-                  )}
-                </td>
-                <td>
-                  {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
-                    <textarea 
-                      className="form-control" 
-                      value={editingUbicacion.descripcion}
-                      onChange={(e) =>
-                        setEditingUbicacion({ ...editingUbicacion, descripcion: e.target.value })
-                      }
-                    />
-                  ) : (
-                    ubicacion.descripcion
-                  )}
-                </td>
-                <td>
-                  {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
-                    <>
-                      <button className="btn btn-success btn-sm me-2" onClick={handleEditUbicacion}>
-                        Guardar
-                      </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setEditingUbicacion(null)}>
-                        Cancelar
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="btn btn-warning btn-sm me-2" onClick={() => setEditingUbicacion(ubicacion)}>
-                        Editar
-                      </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteUbicacion(ubicacion.id)}>
-                        Eliminar
-                      </button>
-                    </>
-                  )}
-                </td>
+
+        <div className="table-responsive">
+          <Table
+            bordered
+            hover
+            className="mt-4"
+            style={{
+              borderRadius: "10px",
+              overflow: "hidden",
+              backgroundColor: "#E8F8FF",
+              textAlign: "center"
+            }}
+          >
+            <thead style={{ backgroundColor: "#0775e3" }}>
+              <tr>
+                <th>
+                  <Form.Check
+                    type="checkbox"
+                    checked={selectedUbicaciones.length === currentItems.length && currentItems.length > 0}
+                    onChange={handleSelectAll}
+                    className="rounded-circle"
+                  />
+                </th>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="5">No hay ubicaciones.</td>
+                </tr>
+              ) : (
+                currentItems.map((ubicacion) => (
+                  <tr key={ubicacion.id}>
+                    <td>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedUbicaciones.includes(ubicacion.id)}
+                        onChange={() => handleSelectUbicacion(ubicacion.id)}
+                        className="rounded-circle"
+                      />
+                    </td>
+                    <td>{ubicacion.id}</td>
+                    <td>
+                      {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={editingUbicacion.nombre}
+                          onChange={(e) =>
+                            setEditingUbicacion({ ...editingUbicacion, nombre: e.target.value })
+                          }
+                          required
+                        />
+                      ) : (
+                        ubicacion.nombre
+                      )}
+                    </td>
+                    <td>
+                      {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
+                        <textarea
+                          className="form-control"
+                          value={editingUbicacion.descripcion}
+                          onChange={(e) =>
+                            setEditingUbicacion({ ...editingUbicacion, descripcion: e.target.value })
+                          }
+                        />
+                      ) : (
+                        ubicacion.descripcion
+                      )}
+                    </td>
+                    <td>
+                      {editingUbicacion && editingUbicacion.id === ubicacion.id ? (
+                        <>
+                          <Button
+                            variant="success"
+                            size="sm"
+                            className="me-2 rounded-pill"
+                            onClick={handleEditUbicacion}
+                          >
+                            Guardar
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="rounded-pill"
+                            onClick={() => setEditingUbicacion(null)}
+                          >
+                            Cancelar
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="warning"
+                            size="sm"
+                            className="me-2 rounded-pill"
+                            onClick={() => handleShowModal(ubicacion)}
+                            style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            className="rounded-pill"
+                            onClick={() => handleDeleteUbicacion(ubicacion.id)}
+                            style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
+                          >
+                            Eliminar
+                          </Button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+
+        <Button
+          variant="danger"
+          disabled={selectedUbicaciones.length === 0}
+          onClick={handleDeleteAllUbicaciones}
+          className="mb-3 rounded-pill"
+          style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
+        >
+          Eliminar Seleccionadas
+        </Button>
+
+        <Pagination className="mb-3 justify-content-center">
+          {[...Array(totalPages)].map((_, index) => (
+            <Pagination.Item
+              key={index + 1}
+              active={currentPage === index + 1}
+              onClick={() => handlePageChange(index + 1)}
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              {index + 1}
+            </Pagination.Item>
+          ))}
+        </Pagination>
+      </div>
     </div>
   );
 };

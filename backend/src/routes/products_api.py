@@ -44,15 +44,6 @@ def create_product():
     )
     try:
         product.save()
-        # Registrar el movimiento de ingreso con el inventory_id obtenido del usuario
-        movement = Movement(
-            product_id=product.id,
-            inventory_id=user.inventory.id,
-            type="ingreso",
-            quantity=product.stock,
-            registered_by=user_id
-        )
-        movement.save()
     except Exception as e:
         print(f"error al guardar el producto: {e}")
         return jsonify({"error": "error al guardar el producto", "detalles": str(e)}), 500
@@ -73,8 +64,7 @@ def update_product(id):
         product.precio = data["precio"]
     if data.get("stock"):
         product.stock = data["stock"]
-    if data.get("ubicacion_id"):
-        product.ubicacion_id = data["ubicacion_id"]
+
     try:
         product.save()
     except Exception as e:

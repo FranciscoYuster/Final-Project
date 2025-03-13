@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, create_access_token, get_jwt_identity
 from src.functions import verify_google_token, verify_google_access_token
 from datetime import timedelta
-from src.models import (db, User, Profile, Inventory, Product, Sale, Purchase, Provider, Movement,create_inventory_for_user)
+from src.models import (db, User, Profile,Invoice,Inventory, Sale, Purchase,create_inventory_for_user)
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 import os
@@ -388,18 +388,31 @@ def get_purchase(id):
 @purchases_api.route('/purchases', methods=['POST'])
 def create_purchase():
     data = request.get_json()
-    required_fields = ['provider_id', 'product_id', 'quantity', 'total']
+    required_fields = ['numero_comprobante','orden_compra','metodo','inventory_id','provider_id', 'product_id', 'quantity', 'total']
     for field in required_fields:
         if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
+            return jsonify({"error": f"{field} is required"}),
+
     purchase = Purchase(
+        orden_compra=data('orden_compra'),
+        metodo=data('metodo'),
         provider_id=data['provider_id'],
         product_id=data['product_id'],
+        inventory_id=data['inventory_id'],
         quantity=data['quantity'],
         total=data['total']
     )
     purchase.save()
+
+    inventory = purchase.inventory
+
+    # Logica para crear la factura al momento de registrar la compra
+    invoice = Invoice(
+        
+    )
     return jsonify(purchase.serialize()), 201
+
+
 
 @purchases_api.route('/purchases/<int:id>', methods=['PUT'])
 def update_purchase(id):

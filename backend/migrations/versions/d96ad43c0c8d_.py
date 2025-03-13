@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: fd86dbfe605d
+Revision ID: d96ad43c0c8d
 Revises: 
-Create Date: 2025-03-12 15:03:55.647273
+Create Date: 2025-03-13 13:46:21.209708
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'fd86dbfe605d'
+revision = 'd96ad43c0c8d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -74,6 +74,7 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
     sa.Column('customer_id', sa.Integer(), nullable=False),
+    sa.Column('numero_comprobante', sa.String(length=50), nullable=False),
     sa.Column('monto_base', sa.Float(), nullable=False),
     sa.Column('impuesto_aplicado', sa.Float(), nullable=False),
     sa.Column('total_final', sa.Float(), nullable=False),
@@ -82,7 +83,22 @@ def upgrade():
     sa.ForeignKeyConstraint(['customer_id'], ['customers.id'], ),
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('numero_comprobante')
+    )
+    op.create_table('products',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('codigo', sa.String(length=50), nullable=False),
+    sa.Column('nombre', sa.String(length=100), nullable=False),
+    sa.Column('stock', sa.Integer(), nullable=False),
+    sa.Column('precio', sa.Float(), nullable=False),
+    sa.Column('categoria', sa.String(length=50), nullable=False),
+    sa.Column('inventory_id', sa.Integer(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('codigo')
     )
     op.create_table('providers',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -102,22 +118,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('products',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('codigo', sa.String(length=50), nullable=False),
-    sa.Column('nombre', sa.String(length=100), nullable=False),
-    sa.Column('stock', sa.Integer(), nullable=False),
-    sa.Column('precio', sa.Float(), nullable=False),
-    sa.Column('categoria', sa.String(length=50), nullable=False),
-    sa.Column('inventory_id', sa.Integer(), nullable=True),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('ubicacion_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
-    sa.ForeignKeyConstraint(['ubicacion_id'], ['ubicaciones.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('codigo')
-    )
     op.create_table('movements',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
@@ -133,6 +133,8 @@ def upgrade():
     )
     op.create_table('purchases',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('orden_compra', sa.String(length=50), nullable=False),
+    sa.Column('metodo', sa.String(length=50), nullable=False),
     sa.Column('provider_id', sa.Integer(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
@@ -142,7 +144,8 @@ def upgrade():
     sa.ForeignKeyConstraint(['inventory_id'], ['inventories.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
     sa.ForeignKeyConstraint(['provider_id'], ['providers.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('orden_compra')
     )
     op.create_table('sales',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -165,9 +168,9 @@ def downgrade():
     op.drop_table('sales')
     op.drop_table('purchases')
     op.drop_table('movements')
-    op.drop_table('products')
     op.drop_table('ubicaciones')
     op.drop_table('providers')
+    op.drop_table('products')
     op.drop_table('invoices')
     op.drop_table('profiles')
     op.drop_table('inventories')

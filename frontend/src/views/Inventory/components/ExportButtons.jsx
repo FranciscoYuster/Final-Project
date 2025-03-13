@@ -1,5 +1,8 @@
 import React from 'react';
 import { FaFileCsv, FaFileExcel, FaFilePdf } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const ExportButtons = ({ exportCSV, exportXLSX, exportPDF }) => (
   <div className="mb-2 d-flex gap-2">

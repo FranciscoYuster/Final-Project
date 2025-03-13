@@ -1,108 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import DataTable from 'react-data-table-component';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import { FaFileCsv, FaFileExcel, FaFilePdf, FaEdit, FaTrash, FaCheck, FaClock } from 'react-icons/fa';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend);
+import React, { useEffect, useState } from "react";
+import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { FaCheck, FaClock } from "react-icons/fa";
 
 const Facturas = () => {
+  // Estados de facturas, clientes y configuración
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [config, setConfig] = useState({
-    id: '',
-    impuesto: 0,     
-    moneda: '',
-    formato_facturacion: ''
+    id: "",
+    impuesto: 0,
+    moneda: "",
+    formato_facturacion: ""
   });
+
+  // Estados de loading
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
-  const [editInvoice, setEditInvoice] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Estados para búsqueda y paginación
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Estados para modales (crear y editar)
   const [showModal, setShowModal] = useState(false);
-  
-  // Estado para la nueva factura (monto base)
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editInvoice, setEditInvoice] = useState(null);
+
+  // Estado para nueva factura (incluye el campo "numero_comprobante")
   const [newInvoice, setNewInvoice] = useState({
-    customer: '',         
-    customer_name: '',
-    customer_email: '',
-    total: '',            
-    status: 'Pending',
+    customer: "",
+    customer_name: "",
+    customer_email: "",
+    total: "",
+    status: "Pending",
+    numero_comprobante: ""
   });
-  
-  const token = sessionStorage.getItem('access_token');
 
-  const fetchConfig = async () => {
+  // Estado para selección múltiple de facturas
+  const [selectedInvoices, setSelectedInvoices] = useState([]);
+
+  const token = sessionStorage.getItem("access_token");
+
+  // Función para cargar configuración
+  const fetchConfig = () => {
     setLoadingConfig(true);
-    try {
-      const response = await fetch('/api/configuraciones', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setConfig(data);
-      } else {
-        setConfig({ id: '', impuesto: 0, moneda: '', formato_facturacion: '' });
+    fetch("/api/configuraciones", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       }
-    } catch (error) {
-      console.error('Error fetching config:', error);
-      toast.error('Error al cargar la configuración');
-    } finally {
-      setLoadingConfig(false);
-    }
+    })
+      .then(response =>
+        response.ok
+          ? response.json()
+          : Promise.resolve({ id: "", impuesto: 0, moneda: "", formato_facturacion: "" })
+      )
+      .then(data => setConfig(data))
+      .catch(err => {
+        console.error("Error al cargar configuración:", err);
+        toast.error("Error al cargar la configuración.");
+      })
+      .finally(() => setLoadingConfig(false));
   };
 
-  const fetchInvoices = async () => {
+  // Función para cargar facturas
+  const fetchInvoices = () => {
     setLoadingInvoices(true);
-    try {
-      const response = await fetch('/api/invoices', {
-        method: 'GET',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const data = await response.json();
-      setInvoices(data);
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
-      toast.error('No se pudieron cargar las facturas.');
-    } finally {
-      setLoadingInvoices(false);
-    }
+    fetch("/api/invoices", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(data => setInvoices(data))
+      .catch(err => {
+        console.error("Error al cargar facturas:", err);
+        toast.error("Error al cargar facturas.");
+      })
+      .finally(() => setLoadingInvoices(false));
   };
 
-  const fetchCustomers = async () => {
+  // Función para cargar clientes
+  const fetchCustomers = () => {
     setLoadingCustomers(true);
-    try {
-      const response = await fetch('/api/customers', {
-        method: 'GET',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const data = await response.json();
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast.error('No se pudieron cargar los clientes.');
-    } finally {
-      setLoadingCustomers(false);
-    }
+    fetch("/api/customers", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(data => setCustomers(data))
+      .catch(err => {
+        console.error("Error al cargar clientes:", err);
+        toast.error("Error al cargar clientes.");
+      })
+      .finally(() => setLoadingCustomers(false));
   };
 
   useEffect(() => {
@@ -111,96 +119,134 @@ const Facturas = () => {
     fetchCustomers();
   }, []);
 
+  // Filtrado y paginación
+  const filteredInvoices = invoices.filter(invoice => {
+    const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : (invoice.customer_name || "").toLowerCase();
+    const email = invoice.customer ? invoice.customer.email.toLowerCase() : (invoice.customer_email || "").toLowerCase();
+    const monto = invoice.monto_base ? invoice.monto_base.toString() : "";
+    const status = invoice.status ? invoice.status.toLowerCase() : "";
+    const query = searchQuery.toLowerCase();
+    return cliente.includes(query) || email.includes(query) || monto.includes(query) || status.includes(query);
+  });
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const currentItems = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Función para manejar selección de cliente en creación
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
     const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
     setNewInvoice({
       ...newInvoice,
       customer: customerId,
-      customer_name: selectedCustomer ? selectedCustomer.name : '',
-      customer_email: selectedCustomer ? selectedCustomer.email : '',
+      customer_name: selectedCustomer ? selectedCustomer.name : "",
+      customer_email: selectedCustomer ? selectedCustomer.email : ""
     });
   };
 
-  const handleInputChange = (e) => {
-    setNewInvoice({ ...newInvoice, [e.target.name]: e.target.value });
+  // Funciones para selección múltiple de facturas
+  const handleSelectInvoice = (id) => {
+    if (selectedInvoices.includes(id)) {
+      setSelectedInvoices(selectedInvoices.filter(invoiceId => invoiceId !== id));
+    } else {
+      setSelectedInvoices([...selectedInvoices, id]);
+    }
   };
 
-  // Función para cerrar el modal de creación de factura
+  const handleSelectAll = () => {
+    if (selectedInvoices.length === currentItems.length) {
+      setSelectedInvoices([]);
+    } else {
+      setSelectedInvoices(currentItems.map(invoice => invoice.id));
+    }
+  };
+
+  const handleDeleteAllInvoices = () => {
+    const deleteRequests = selectedInvoices.map(id =>
+      fetch(`/api/invoices/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      }).then(response => {
+        if (!response.ok) throw new Error(`Error al eliminar factura con ID: ${id}`);
+      })
+    );
+    Promise.all(deleteRequests)
+      .then(() => {
+        setInvoices(invoices.filter(invoice => !selectedInvoices.includes(invoice.id)));
+        setSelectedInvoices([]);
+        toast.success("Facturas eliminadas exitosamente.");
+      })
+      .catch(error => {
+        console.error("Error eliminando facturas:", error);
+        toast.error("Error al eliminar facturas.");
+      });
+  };
+
+  // Funciones para crear factura
   const handleCloseModal = () => {
     setShowModal(false);
     setNewInvoice({
-      customer: '',
-      customer_name: '',
-      customer_email: '',
-      total: '',
-      status: 'Pending',
+      customer: "",
+      customer_name: "",
+      customer_email: "",
+      total: "",
+      status: "Pending",
+      numero_comprobante: ""
     });
   };
 
-  const handleSubmitInvoice = async (e) => {
+  const handleSubmitInvoice = (e) => {
     e.preventDefault();
-    try {
-      const baseTotal = parseFloat(newInvoice.total);
-      if (isNaN(baseTotal)) {
-        toast.error("El monto debe ser un número válido.");
-        return;
-      }
-      const tax = config.impuesto || 0;
-      const impuesto_aplicado = baseTotal * tax;
-      const finalTotal = baseTotal - impuesto_aplicado;
-      const invoiceData = {
-        monto_base: baseTotal,
-        impuesto_aplicado: impuesto_aplicado,
-        total_final: finalTotal,
-        status: newInvoice.status,
-      };
-      if (newInvoice.customer) {
-        invoiceData.customer_id = newInvoice.customer;
-      } else {
-        invoiceData.customer_name = newInvoice.customer_name;
-        invoiceData.customer_email = newInvoice.customer_email;
-      }
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(invoiceData),
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const data = await response.json();
-      setInvoices(prev => [...prev, data]);
-      toast.success('Factura creada exitosamente.');
-      handleCloseModal();
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      toast.error('Error al crear la factura.');
+    const baseTotal = parseFloat(newInvoice.total);
+    if (isNaN(baseTotal)) {
+      toast.error("El monto debe ser un número válido.");
+      return;
     }
+    const tax = config.impuesto || 0;
+    const impuesto_aplicado = baseTotal * tax;
+    const finalTotal = baseTotal - impuesto_aplicado;
+    const invoiceData = {
+      monto_base: baseTotal,
+      impuesto_aplicado: impuesto_aplicado,
+      total_final: finalTotal,
+      status: newInvoice.status,
+      numero_comprobante: newInvoice.numero_comprobante
+    };
+    if (newInvoice.customer) {
+      invoiceData.customer_id = newInvoice.customer;
+    } else {
+      invoiceData.customer_name = newInvoice.customer_name;
+      invoiceData.customer_email = newInvoice.customer_email;
+    }
+    fetch("/api/invoices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(invoiceData)
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        setInvoices([...invoices, data]);
+        toast.success("Factura creada exitosamente.");
+        handleCloseModal();
+      })
+      .catch(err => {
+        console.error("Error al crear factura:", err);
+        toast.error("Error al crear la factura.");
+      });
   };
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await fetch(`/api/invoices/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      await response.json();
-      setInvoices(prev => prev.filter(invoice => invoice.id !== id));
-      toast.success('Factura eliminada correctamente.');
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-      toast.error('Error al eliminar la factura.');
-    }
-  };
-
+  // Funciones para editar factura
   const handleOpenEditModal = (invoice) => {
     setEditInvoice({
       id: invoice.id,
       monto_base: invoice.monto_base,
-      status: invoice.status,
+      status: invoice.status
     });
     setShowEditModal(true);
   };
@@ -214,289 +260,352 @@ const Facturas = () => {
     setEditInvoice({ ...editInvoice, [e.target.name]: e.target.value });
   };
 
-  const handleSubmitEdit = async (e) => {
+  const handleSubmitEdit = (e) => {
     e.preventDefault();
-    try {
-      const baseTotal = parseFloat(editInvoice.monto_base);
-      if (isNaN(baseTotal)) {
-        toast.error("El monto debe ser un número válido.");
-        return;
-      }
-      const tax = config.impuesto || 0;
-      const impuesto_aplicado = baseTotal * tax;
-      const finalTotal = baseTotal - impuesto_aplicado;
-      const response = await fetch(`/api/invoices/${editInvoice.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          monto_base: baseTotal,
-          impuesto_aplicado: impuesto_aplicado,
-          total_final: finalTotal,
-          status: editInvoice.status,
-        }),
-      });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-      const updated = await response.json();
-      setInvoices(prev => prev.map(inv => inv.id === updated.id ? updated : inv));
-      toast.success('Factura actualizada correctamente.');
-      handleCloseEditModal();
-    } catch (error) {
-      console.error('Error updating invoice:', error);
-      toast.error('Error al actualizar la factura.');
+    const baseTotal = parseFloat(editInvoice.monto_base);
+    if (isNaN(baseTotal)) {
+      toast.error("El monto debe ser un número válido.");
+      return;
     }
+    const tax = config.impuesto || 0;
+    const impuesto_aplicado = baseTotal * tax;
+    const finalTotal = baseTotal - impuesto_aplicado;
+    fetch(`/api/invoices/${editInvoice.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        monto_base: baseTotal,
+        impuesto_aplicado: impuesto_aplicado,
+        total_final: finalTotal,
+        status: editInvoice.status
+      })
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(updated => {
+        setInvoices(invoices.map(inv => inv.id === updated.id ? updated : inv));
+        toast.success("Factura actualizada correctamente.");
+        handleCloseEditModal();
+      })
+      .catch(err => {
+        console.error("Error al actualizar factura:", err);
+        toast.error("Error al actualizar la factura.");
+      });
   };
 
-  const columns = [
-    {
-      name: 'Cliente',
-      selector: row => row.customer ? row.customer.name : '',
-      sortable: true,
-    },
-    {
-      name: 'Email',
-      selector: row => row.customer ? row.customer.email : '',
-      sortable: true,
-    },
-    {
-      name: 'Monto Base',
-      selector: row => row.monto_base,
-      sortable: true,
-      format: row => `$${row.monto_base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    },
-    {
-      name: 'Impuesto (%)',
-      cell: row => `${(config.impuesto * 100).toFixed(0)}%`,
-      sortable: false,
-    },
-    {
-      name: 'Total Final',
-      cell: row => `$${row.total_final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      sortable: false,
-    },
-    {
-      name: 'Fecha',
-      selector: row => row.invoice_date,
-      sortable: true,
-      cell: row => row.invoice_date ? new Date(row.invoice_date).toLocaleDateString() : ''
-    },
-    {
-      name: 'Estado',
-      selector: row => row.status,
-      sortable: true,
-      cell: row => row.status === 'Paid' 
-                ? <span style={{ color: 'green' }}><FaCheck className="me-1" /> {row.status}</span>
-                : <span style={{ color: 'orange' }}><FaClock className="me-1" /> {row.status}</span>
-    },
-    {
-      name: 'Acciones',
-      cell: row => (
-        <>
-          <button className="btn btn-warning btn-sm me-1" onClick={() => handleOpenEditModal(row)}>
-            <FaEdit />
-          </button>
-          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(row.id)}>
-            <FaTrash />
-          </button>
-        </>
-      ),
-      ignoreRowClick: true,
-      allowOverflow: true,
-      button: true,
-    },
-  ];
+  // Función para eliminar factura individual
+  const handleDelete = (id) => {
+    fetch(`/api/invoices/${id}`, {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(() => {
+        setInvoices(invoices.filter(invoice => invoice.id !== id));
+        toast.success("Factura eliminada correctamente.");
+      })
+      .catch(err => {
+        console.error("Error al eliminar factura:", err);
+        toast.error("Error al eliminar la factura.");
+      });
+  };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', fontSize: '0.8rem' }} className="mt-4">
+    <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
-      <h1 className="mb-3">Facturas</h1>
-      
-      {/* Botones de exportación */}
-      <div className="mb-2 d-flex gap-2">
-        <button className="btn btn-success btn-sm" onClick={() => {/* exportar CSV */}}>
-          <FaFileCsv className="me-1" /> Exportar CSV
-        </button>
-        <button className="btn btn-info btn-sm" onClick={() => {/* exportar XLSX */}}>
-          <FaFileExcel className="me-1" /> Exportar XLSX
-        </button>
-        <button className="btn btn-danger btn-sm" onClick={() => {/* exportar PDF */}}>
-          <FaFilePdf className="me-1" /> Exportar PDF
-        </button>
-      </div>
-      
-      {/* Filtro global */}
-      <div className="mb-2">
-        <input
-          type="text"
-          className="form-control form-control-sm"
-          placeholder="Buscar factura..."
-          onChange={(e) => {
-            const value = e.target.value.toLowerCase() || '';
-            const filtered = invoices.filter(invoice => {
-              const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : '';
-              const email = invoice.customer ? invoice.customer.email.toLowerCase() : '';
-              const monto = invoice.monto_base.toString();
-              const status = invoice.status.toLowerCase();
-              return (
-                cliente.includes(value) ||
-                email.includes(value) ||
-                monto.includes(value) ||
-                status.includes(value)
-              );
-            });
-            setInvoices(filtered);
-            if (!value) fetchInvoices();
-          }}
-          style={{ fontSize: '0.8rem' }}
-        />
-      </div>
-      
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)}>
-          Crear Factura
-        </button>
-      </div>
-      
-      {(loadingInvoices || loadingCustomers || loadingConfig) && <div>Cargando datos...</div>}
-      
-      <DataTable
-        columns={columns}
-        data={invoices}
-        customStyles={{
-          rows: { style: { fontSize: '0.8rem', padding: '4px' } },
-          headCells: { style: { fontSize: '0.8rem', padding: '4px' } },
-          cells: { style: { fontSize: '0.8rem', padding: '4px' } },
-        }}
-        pagination
-        paginationPerPage={5}
-        paginationComponentOptions={{ rowsPerPageText: 'Filas por página:' }}
-        defaultSortField="invoice_date"
-        highlightOnHover
-        dense
-      />
-      
-      {/* Modal para editar factura */}
-      {showEditModal && editInvoice && (
-        <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
-          <div className="modal-dialog modal-sm">
-            <div className="modal-content">
-              <form onSubmit={handleSubmitEdit}>
-                <div className="modal-header py-2">
-                  <h5 className="modal-title">Editar Factura</h5>
-                  <button type="button" className="btn-close" onClick={handleCloseEditModal}></button>
-                </div>
-                <div className="modal-body py-2">
-                  <div className="mb-2">
-                    <label className="form-label">Monto Base</label>
-                    <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      name="monto_base"
-                      value={editInvoice.monto_base}
-                      onChange={handleEditInputChange}
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Estado</label>
-                    <select
-                      className="form-select form-select-sm"
-                      name="status"
-                      value={editInvoice.status}
-                      onChange={handleEditInputChange}
-                      required
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer py-2">
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleCloseEditModal}>
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    Guardar cambios
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+      <div className="w-100" style={{ maxWidth: "1200px" }}>
+        <h2 className="text-center">Lista de Facturas</h2>
+
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <InputGroup className="w-50">
+            <Form.Control
+              placeholder="Buscar factura..."
+              aria-label="Buscar factura"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="rounded-pill"
+            />
+          </InputGroup>
+
+          <Button
+            variant="primary"
+            onClick={() => setShowModal(true)}
+            className="rounded-pill"
+            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+          >
+            Crear Factura
+          </Button>
         </div>
-      )}
-      
-      {/* Modal para crear factura */}
-      {showModal && (
-        <div className="modal fade show" style={{ display: 'block' }} role="dialog" aria-modal="true">
-          <div className="modal-dialog modal-sm">
-            <div className="modal-content">
-              <form onSubmit={handleSubmitInvoice}>
-                <div className="modal-header py-2">
-                  <h5 className="modal-title">Crear Factura</h5>
-                  <button type="button" className="btn-close" onClick={handleCloseModal}></button>
-                </div>
-                <div className="modal-body py-2">
-                  <div className="mb-2">
-                    <label className="form-label">Cliente</label>
-                    <select
-                      className="form-select form-select-sm"
-                      name="customer"
-                      value={newInvoice.customer}
-                      onChange={handleCustomerSelect}
-                      required
-                    >
-                      <option value="">Selecciona un cliente</option>
-                      {customers.map(customer => (
-                        <option key={customer.id} value={customer.id}>
-                          {customer.name} ({customer.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Monto Base</label>
-                    <input
-                      type="number"
-                      className="form-control form-control-sm"
-                      name="total"
-                      value={newInvoice.total}
-                      onChange={handleInputChange}
-                      step="0.01"
-                      required
+
+        <div className="table-responsive">
+          <Table
+            bordered
+            hover
+            className="mt-4"
+            style={{
+              borderRadius: "10px",
+              overflow: "hidden",
+              backgroundColor: "#E8F8FF",
+              textAlign: "center",
+            }}
+          >
+            <thead style={{ backgroundColor: "#0775e3" }}>
+              <tr>
+                <th>
+                  <Form.Check
+                    type="checkbox"
+                    checked={selectedInvoices.length === currentItems.length && currentItems.length > 0}
+                    onChange={handleSelectAll}
+                    className="rounded-circle"
+                  />
+                </th>
+                <th>Cliente</th>
+                <th>Email</th>
+                <th>Monto Base</th>
+                <th>Impuesto Aplicado</th>
+                <th>Total Final</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedInvoices.includes(invoice.id)}
+                      onChange={() => handleSelectInvoice(invoice.id)}
+                      className="rounded-circle"
                     />
-                    <small className="text-muted">
-                      El impuesto se aplicará automáticamente (configuración global: {(config.impuesto * 100).toFixed(0)}%)
-                    </small>
-                  </div>
-                  <div className="mb-2">
-                    <label className="form-label">Estado</label>
-                    <select
-                      className="form-select form-select-sm"
-                      name="status"
-                      value={newInvoice.status}
-                      onChange={handleInputChange}
+                  </td>
+                  <td>{invoice.customer ? invoice.customer.name : invoice.customer_name}</td>
+                  <td>{invoice.customer ? invoice.customer.email : invoice.customer_email}</td>
+                  <td>
+                    ${invoice.monto_base.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td>
+                    ${invoice.impuesto_aplicado.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td>
+                    ${invoice.total_final.toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td>{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : ""}</td>
+                  <td>
+                    {invoice.status === "Paid" ? (
+                      <span style={{ color: "green" }}>
+                        <FaCheck className="me-1" /> {invoice.status}
+                      </span>
+                    ) : (
+                      <span style={{ color: "orange" }}>
+                        <FaClock className="me-1" /> {invoice.status}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      onClick={() => handleOpenEditModal(invoice)}
+                      className="me-2 rounded-pill"
+                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
                     >
-                      <option value="Pending">Pending</option>
-                      <option value="Paid">Paid</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="modal-footer py-2">
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleCloseModal}>
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    Guardar Factura
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+                      Editar 
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDelete(invoice.id)}
+                      className="rounded-pill"
+                      style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
+                    >
+                      Eliminar 
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
         </div>
-      )}
+
+        {/* Botón para eliminar facturas seleccionadas */}
+        <div className="mb-3">
+          <Button
+            variant="danger"
+            disabled={selectedInvoices.length === 0}
+            onClick={handleDeleteAllInvoices}
+            className="rounded-pill"
+            style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
+          >
+            Eliminar Seleccionadas
+          </Button>
+        </div>
+        <Pagination className="mb-3 justify-content-center">
+          {[...Array(totalPages)].map((_, index) => (
+            <Pagination.Item
+              key={index + 1}
+              active={currentPage === index + 1}
+              onClick={() => handlePageChange(index + 1)}
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              {index + 1}
+            </Pagination.Item>
+          ))}
+        </Pagination>
+
+        {/* Modal para editar factura */}
+        <Modal show={showEditModal} onHide={handleCloseEditModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Editar Factura</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form onSubmit={handleSubmitEdit}>
+              <Form.Group controlId="formMontoBase">
+                <Form.Label>Monto Base</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Monto Base"
+                  name="monto_base"
+                  value={editInvoice ? editInvoice.monto_base : ""}
+                  onChange={handleEditInputChange}
+                  step="0.01"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formEstado" className="mt-2">
+                <Form.Label>Estado</Form.Label>
+                <Form.Select
+                  name="status"
+                  value={editInvoice ? editInvoice.status : ""}
+                  onChange={handleEditInputChange}
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Paid">Paid</option>
+                </Form.Select>
+              </Form.Group>
+              <div className="mt-3 d-flex justify-content-end">
+                <Button variant="secondary" onClick={handleCloseEditModal} className="me-2 rounded-pill">
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+                  Guardar cambios
+                </Button>
+              </div>
+            </Form>
+          </Modal.Body>
+        </Modal>
+
+        {/* Modal para crear factura */}
+        <Modal show={showModal} onHide={handleCloseModal}>
+          <Modal.Header closeButton>
+            <Modal.Title>Crear Factura</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form onSubmit={handleSubmitInvoice}>
+              <Form.Group controlId="formCliente">
+                <Form.Label>Cliente</Form.Label>
+                <Form.Select
+                  name="customer"
+                  value={newInvoice.customer}
+                  onChange={handleCustomerSelect}
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                >
+                  <option value="">Selecciona un cliente</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={customer.id}>
+                      {customer.name} ({customer.email})
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+              <Form.Group controlId="formMontoBase" className="mt-2">
+                <Form.Label>Monto Base</Form.Label>
+                <Form.Control
+                  type="number"
+                  placeholder="Monto Base"
+                  name="total"
+                  value={newInvoice.total}
+                  onChange={(e) =>
+                    setNewInvoice({ ...newInvoice, total: e.target.value })
+                  }
+                  step="0.01"
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+                <small className="text-muted">
+                  El impuesto se aplicará automáticamente (configuración global: {(config.impuesto * 100).toFixed(0)}%)
+                </small>
+              </Form.Group>
+              <Form.Group controlId="formNumeroComprobante" className="mt-2">
+                <Form.Label>Número de Comprobante</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Número de comprobante"
+                  name="numero_comprobante"
+                  value={newInvoice.numero_comprobante}
+                  onChange={(e) =>
+                    setNewInvoice({ ...newInvoice, numero_comprobante: e.target.value })
+                  }
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                />
+              </Form.Group>
+              <Form.Group controlId="formEstado" className="mt-2">
+                <Form.Label>Estado</Form.Label>
+                <Form.Select
+                  name="status"
+                  value={newInvoice.status}
+                  onChange={(e) =>
+                    setNewInvoice({ ...newInvoice, status: e.target.value })
+                  }
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="Paid">Paid</option>
+                </Form.Select>
+              </Form.Group>
+              <div className="mt-3 d-flex justify-content-end">
+                <Button variant="secondary" onClick={handleCloseModal} className="me-2 rounded-pill">
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+                  Guardar Factura
+                </Button>
+              </div>
+            </Form>
+          </Modal.Body>
+        </Modal>
+      </div>
     </div>
   );
 };
