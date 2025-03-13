@@ -117,9 +117,6 @@ const Register = () => {
                         onChange={e => setConfirmPassword(e.target.value)}
                     />
                 </div>
-                <div className='mb-3'>
-              <input type="checkbox" id="rememberMe" /> <label htmlFor="rememberMe">Remember Me</label>
-            </div>
                 <button className="btn btn-primary w-100">
                     Register
                 </button>

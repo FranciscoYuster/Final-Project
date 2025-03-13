@@ -489,10 +489,20 @@ def forgot_password():
     reset_url = f"http://localhost:5173/reset-password/{reset_token}"
 
     # Crear el mensaje de correo
-    msg = Message("Password Reset Request",sender="myprojectsexample1@gmail.com", recipients=[email])
-    msg.body = f"To reset your password, click on the following link: {reset_url}"
-    msg.html = f'<p>To reset your password, click <a href="{reset_url}">here</a>.</p>'
-    print(f"📩 Enviando correo a: {email}")
+    msg = Message(
+    "Solicitud de Restablecimiento de Contraseña",
+    sender="myprojectsexample1@gmail.com",
+    recipients=[email]
+    )
+    msg.body = f"Para restablecer su contraseña, haga clic en el siguiente enlace: {reset_url}"
+    msg.html = f'''
+    <p>Estimado usuario,</p>
+    <p>Ha solicitado restablecer su contraseña. Para continuar con el proceso, haga clic en el siguiente enlace:</p>
+    <p><a href="{reset_url}">Restablecer Contraseña</a></p>
+    <p>Si no solicitó este cambio, por favor ignore este correo.</p>
+    <p>Atentamente,</p>
+    <p>El equipo de soporte LogiGo</p>
+    '''
     try:
         # Enviar el correo
         mail.send(msg)

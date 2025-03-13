@@ -76,11 +76,7 @@ const Login = () => {
                   onChange={e => setPassword(e.target.value)}
                 />
               </div>
-              <div className="d-flex justify-content-between">
-                <div>
-                  <input type="checkbox" id="rememberMe" />{' '}
-                  <label htmlFor="rememberMe">Remember Me</label>
-                </div>
+              <div className="d-flex justify-content-center">
                 <a href="#" className="text-decoration-none mb-3" onClick={() => navigate('/forgot')}>Forgot Password?</a>
               </div>
               <button className="btn btn-primary mb-3 w-100" type="submit">
@@ -113,7 +109,7 @@ const Login = () => {
                 }} />
             </form>
 
-            <p className="text-center mb-3">
+            <p className="text-center mt-3">
               Don't have an account?{' '}
               <a href="#" className="text-decoration-none" onClick={() => navigate('/register')}>
                 Register

@@ -259,17 +259,18 @@ const InventoryManagement = () => {
   const exportPDF = () => { /* lógica de exportación */ };
 
   return (
+    
     <div style={{ maxWidth: '1000px', margin: '0 auto', fontSize: '0.9rem' }} className="mt-4">
       <ToastContainer />
-      <h1 className="mb-3">Gestión de Inventario</h1>
+      <h1 className="mb-3 text-white">Gestión de Inventario</h1>
 
       <KPISection totalProducts={totalProducts} totalStock={totalStock} lowStockCount={lowStockCount} />
 
-      <div className="mb-3" style={{ height: '300px' }}>
+      <div className="mb-3" style={{ height: '300px', background: 'white', borderRadius: '5px' }}>
         <Bar data={chartData} options={chartOptions} />
       </div>
 
-      <Filters 
+      <Filters
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         minPrice={minPrice}
@@ -280,16 +281,20 @@ const InventoryManagement = () => {
 
       <ExportButtons exportCSV={exportCSV} exportXLSX={exportXLSX} exportPDF={exportPDF} />
 
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-          <FaPlus className="me-1" /> Agregar Producto
+
+
+      <div className="d-flex justify-content-end align-items-center mb-2">
+        <button className="btn btn-primary rounded-pill"             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+ onClick={() => setShowAddModal(true)}>
+          <FaPlus className="me-1" /> Crear nuevo producto
         </button>
       </div>
 
       {loadingProducts ? (
         <div>Cargando productos...</div>
       ) : (
-        <DataTable
+        <div className='mt-4' style={{ borderRadius: '10px', overflow: 'hidden', backgroundColor: '#E8F8FF', textAlign: 'center' }}>
+        <DataTable 
           columns={columns}
           data={filteredProducts}
           customStyles={{
@@ -304,6 +309,7 @@ const InventoryManagement = () => {
           highlightOnHover
           dense
         />
+        </div>
       )}
 
       {showAddModal && (
@@ -313,7 +319,7 @@ const InventoryManagement = () => {
           onChange={e => setNewProduct({ ...newProduct, [e.target.name]: e.target.value })}
           onSubmit={handleAddProduct}
           onClose={() => setShowAddModal(false)}
-          title="Agregar Producto"
+          title="Nuevo Producto"
           locations={locations}
         />
       )}

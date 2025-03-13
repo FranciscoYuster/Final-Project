@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast, ToastContainer } from "react-toastify";
+import { FaPlus } from 'react-icons/fa';
 import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
@@ -259,7 +260,7 @@ const Productos = () => {
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
-        <h2 className="text-center">Lista de Productos</h2>
+        <h1 className="mb-3 text-white">Lista de Productos</h1>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
@@ -278,7 +279,7 @@ const Productos = () => {
             className="rounded-pill"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-            Crear Nuevo Producto
+            <FaPlus className="me-1" /> Crear Nuevo Producto
           </Button>
         </div>
 

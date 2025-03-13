@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Button, FormControl, InputGroup, Table, Form, Modal } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
+import { FaPlus } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Clientes = () => {
@@ -24,6 +26,8 @@ const Clientes = () => {
     email: '',
     phone: '',
   });
+
+  const [selectedCustomers, setSelectedCustomers] = useState([]);
 
   const token = sessionStorage.getItem('access_token');
 
@@ -64,6 +68,47 @@ const Clientes = () => {
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Función para manejar la selección de un cliente
+  const handleSelectCustomer = (id) => {
+    setSelectedCustomers(prev =>
+      prev.includes(id) ? prev.filter(customerId => customerId !== id) : [...prev, id]
+    );
+  };
+
+  // Función para manejar la selección de todos los clientes
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedCustomers(customers.map(customer => customer.id));
+    } else {
+      setSelectedCustomers([]);
+    }
+  };
+
+  // Función para eliminar los clientes seleccionados
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(
+        selectedCustomers.map(async (id) => {
+          const response = await fetch(`/api/customers/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+          }
+          await response.json();
+        })
+      );
+      setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
+      setSelectedCustomers([]);
+      toast.success('Clientes eliminados correctamente.');
+    } catch (err) {
+      console.error('Error deleting customers:', err);
+      setError('No se pudieron eliminar los clientes.');
+      toast.error('No se pudieron eliminar los clientes.');
+    }
+  };
 
   // Mostrar modal de confirmación para eliminar un cliente
   const confirmDelete = (id) => {
@@ -215,231 +260,169 @@ const Clientes = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
-      <h1>Clientes</h1>
-      {error && <div className="alert alert-danger">{error}</div>}
-      
-      <div className="d-flex justify-content-between align-items-center my-3">
-        <div className="w-50">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Buscar clientes..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
+      <div className="w-100" style={{ maxWidth: "1200px" }}>
+        <h1 className="mb-3 text-white">Clientes</h1>
+        {error && <div className="alert alert-danger">{error}</div>}
+
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <InputGroup className="w-50">
+            <FormControl
+              type="text"
+              className="rounded-pill"
+              placeholder="Buscar clientes"
+              aria-label='Buscar clientes'
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </InputGroup>
+          <Button variant='primary' className="rounded-pill" onClick={handleOpenModal}>
+            <FaPlus className="me-1" /> Crear Nuevo Cliente
+          </Button>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenModal}>
-          Crear Cliente
-        </button>
-      </div>
-      
-      {isLoading ? (
-        <div>Cargando clientes...</div>
-      ) : (
-        <table className="table table-bordered">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredCustomers.map(customer => (
-              <tr key={customer.id}>
-                <td>{customer.name}</td>
-                <td>{customer.email}</td>
-                <td>{customer.phone}</td>
-                <td>
-                  <button 
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleOpenEditModal(customer)}
-                  >
-                    Editar
-                  </button>
-                  <button 
-                    className="btn btn-danger btn-sm" 
-                    onClick={() => confirmDelete(customer.id)}
-                  >
-                    Eliminar
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filteredCustomers.length === 0 && (
+
+
+
+        {isLoading ? (
+          <div>Cargando clientes...</div>
+        ) : (
+          <Table bordered hover className="mt-4" style={{
+            borderRadius: "10px",
+            overflow: "hidden",
+            backgroundColor: "#E8F8FF",
+            textAlign: "center",
+          }}>
+            <thead>
               <tr>
-                <td colSpan="4" className="text-center">
-                  No se encontraron clientes
-                </td>
+                <th>
+                  <Form.Check
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={selectedCustomers.length === customers.length && customers.length > 0}
+                  />
+                </th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {filteredCustomers.map(customer => (
+                <tr key={customer.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedCustomers.includes(customer.id)}
+                      onChange={() => handleSelectCustomer(customer.id)}
+                    />
+                  </td>
+                  <td>{customer.name}</td>
+                  <td>{customer.email}</td>
+                  <td>{customer.phone}</td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      className="me-2 rounded-pill"
+                      onClick={() => handleOpenEditModal(customer)}
+                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="rounded-pill"
+                      onClick={() => confirmDelete(customer.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {filteredCustomers.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center">
+                    No se encontraron resultados
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        )}
+              <Button
+          variant="danger"
+          className="mb-3 rounded-pill justify-content-start"
+          onClick={handleDeleteSelected}
+          disabled={selectedCustomers.length === 0}
+        >
+          Eliminar Seleccionados
+        </Button>
+      </div>
 
-      <nav>
-        <ul className="pagination justify-content-center">
-          <li className="page-item active">
-            <button className="page-link">1</button>
-          </li>
-        </ul>
-      </nav>
-
-      {/* Modal para crear un nuevo cliente */}
-      {showModal && (
-        <div className="modal show fade" style={{ display: 'block' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <form onSubmit={handleSubmitCustomer}>
-                <div className="modal-header">
-                  <h5 className="modal-title">Crear Cliente</h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={handleCloseModal}
-                  />
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Nombre</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      name="name" 
-                      value={newCustomer.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input 
-                      type="email" 
-                      className="form-control" 
-                      name="email" 
-                      value={newCustomer.email}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Teléfono</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      name="phone" 
-                      value={newCustomer.phone}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={handleCloseModal}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Guardar Cliente
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal para editar un cliente */}
-      {showEditModal && (
-        <div className="modal show fade" style={{ display: 'block' }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <form onSubmit={handleSubmitEditCustomer}>
-                <div className="modal-header">
-                  <h5 className="modal-title">Editar Cliente</h5>
-                  <button 
-                    type="button" 
-                    className="btn-close" 
-                    onClick={handleCloseEditModal}
-                  />
-                </div>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Nombre</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      name="name" 
-                      value={editCustomer.name}
-                      onChange={handleEditInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input 
-                      type="email" 
-                      className="form-control" 
-                      name="email" 
-                      value={editCustomer.email}
-                      onChange={handleEditInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Teléfono</label>
-                    <input 
-                      type="text" 
-                      className="form-control" 
-                      name="phone" 
-                      value={editCustomer.phone}
-                      onChange={handleEditInputChange}
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={handleCloseEditModal}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Actualizar Cliente
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmación de eliminación */}
-      {showDeleteModal && (
-        <div className="modal show fade" style={{ display: 'block' }} aria-modal="true" role="dialog">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmar Eliminación</h5>
-                <button type="button" className="btn-close" onClick={handleCancelDelete}></button>
-              </div>
-              <div className="modal-body">
-                <p>¿Estás seguro de que deseas eliminar este cliente?</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleCancelDelete}>Cancelar</button>
-                <button type="button" className="btn btn-danger" onClick={handleConfirmDelete}>Eliminar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Eliminar confirmación */}
+      <Modal show={showDeleteModal} onHide={handleCancelDelete}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Cliente</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar este cliente?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDelete}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Modal Crear Cliente */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Crear Nuevo Cliente</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmitCustomer}>
+            <Form.Group controlId="customerName">
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+              className="rounded-pill"
+                type="text"
+                placeholder="Ingrese el nombre"
+                name="name"
+                value={newCustomer.name}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group controlId="customerEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+              className="rounded-pill"
+                type="email"
+                placeholder="Ingrese el email"
+                name="email"
+                value={newCustomer.email}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            <Form.Group controlId="customerPhone">
+              <Form.Label>Teléfono</Form.Label>
+              <Form.Control
+              className="rounded-pill"
+                type="text"
+                placeholder="Ingrese el teléfono"
+                name="phone"
+                value={newCustomer.phone}
+                onChange={handleInputChange}
+              />
+            </Form.Group>
+            {error && <div className="alert alert-danger mt-3">{error}</div>}
+            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
+              Crear Cliente
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
