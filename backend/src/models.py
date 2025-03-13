@@ -413,7 +413,7 @@ class Movement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # Ejemplo: 'sale', 'purchase', 'ingreso'
+    type = db.Column(db.String(50), nullable=False)  # Ejemplo: 'venta', 'compra', 'ingreso'
     quantity = db.Column(db.Integer, nullable=False)
     date = db.Column(db.DateTime, server_default=db.func.now())
     
