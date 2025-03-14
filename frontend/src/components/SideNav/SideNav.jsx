@@ -2,11 +2,30 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
-import { 
-  FaTachometerAlt, FaBox, FaFileInvoiceDollar, FaUsers, FaBoxOpen,
-  FaShoppingCart, FaCartPlus, FaUser, FaTruck, FaChartLine, FaSignOutAlt,
-  FaAngleDown, FaAngleUp
+import {
+  FaFileInvoiceDollar,
+  FaUserTie,
+  FaCashRegister,
+  FaUser,
+  FaUncharted,
+  FaTachometerAlt,
+  FaBox,
+  FaBoxOpen,
+  FaShoppingCart,
+  FaSignOutAlt,
+  FaAngleDown,
+  FaAngleUp,
 } from "react-icons/fa";
+import {
+  FaTruckPlane,
+  FaTruckFast,
+  FaMapLocation,
+  FaDiagramProject,
+  FaHandHoldingDollar,
+  FaBoxArchive,
+  FaChartBar,
+  FaGears,
+} from "react-icons/fa6";
 import "./SideNav.css";
 
 const sideNavVariants = {
@@ -60,87 +79,148 @@ const SideNav = () => {
         <ul>
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/profile">
-              <FaTachometerAlt className="me-2" /> Dashboard
+            <div className="d-flex align-items-center">
+              <FaTachometerAlt className="me-2"/> Dashboard
+            </div>
             </Link>
           </motion.li>
 
           {/* Submenú de Gestión */}
-          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowGestion(!showGestion)} style={{cursor: 'pointer'}}>
-            <div className="d-flex align-items-center">
-              <FaBox className="me-2" /> Gestión {showGestion ? <FaAngleUp /> : <FaAngleDown />}
+          <motion.li
+            variants={linkVariants}
+            whileHover="hover"
+            onClick={() => setShowGestion(!showGestion)}
+            style={{ cursor: "pointer" }}
+          >
+
+            <div className="d-flex align-items-center ">
+              <FaBox className="me-2" /> Gestión{" "}
+              {showGestion ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showGestion && (
             <ul className="sub-menu">
               <li>
-                <Link to="/inventory">Inventario</Link>
+                <Link to="/inventory">
+                  <FaDiagramProject className="me-2" /> Inventario
+                </Link>
               </li>
               <li>
-                <Link to="/facturas">Facturas</Link>
+                <Link to="/facturas">
+                  <FaFileInvoiceDollar className="me-2"/>
+                  Facturas
+                </Link>
               </li>
               <li>
-                <Link to="/movements">Movimientos</Link>
+                <Link to="/movements">
+                  <FaChartBar />
+                  Movimientos
+                </Link>
               </li>
               <li>
-                <Link to="/ubications">Ubicaciones</Link>
+                <Link to="/ubications">
+                <FaMapLocation className="me-2"/> 
+                Ubicaciones
+                </Link>
               </li>
             </ul>
           )}
 
           {/* Submenú de Clientes y Proveedores */}
-          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowClientesProveedores(!showClientesProveedores)} style={{cursor: 'pointer'}}>
+          <motion.li
+            variants={linkVariants}
+            whileHover="hover"
+            onClick={() => setShowClientesProveedores(!showClientesProveedores)}
+            style={{ cursor: "pointer" }}
+          >
             <div className="d-flex align-items-center">
-              <FaUsers className="me-2" /> Proveedores {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
+            <FaTruckFast className="me-2"/>Proveedores
+              {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showClientesProveedores && (
             <ul className="sub-menu">
               <li>
-                <Link to="/clientes">Clientes</Link>
+                <Link to="/clientes">
+                  <FaUserTie className="me-2" />
+                  Clientes
+                </Link>
               </li>
               <li>
-                <Link to="/proveed">Proveedores</Link>
+                <Link to="/proveed">
+              <FaTruckPlane className="me-2" />
+                  Proveedores
+                </Link>
               </li>
             </ul>
           )}
 
           {/* Submenú de Operaciones */}
-          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowOperaciones(!showOperaciones)} style={{cursor: 'pointer'}}>
+          <motion.li
+            variants={linkVariants}
+            whileHover="hover"
+            onClick={() => setShowOperaciones(!showOperaciones)}
+            style={{ cursor: "pointer" }}
+          >
             <div className="d-flex align-items-center">
-              <FaShoppingCart className="me-2" /> Operaciones {showOperaciones ? <FaAngleUp /> : <FaAngleDown />}
+              <FaShoppingCart className="me-2" /> Operaciones{" "}
+              {showOperaciones ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showOperaciones && (
             <ul className="sub-menu">
               <li>
-                <Link to="/productos">Productos</Link>
+                <Link to="/productos">
+                  <FaBoxArchive className="me-2"/>
+                  Productos
+                </Link>
               </li>
               <li>
-                <Link to="/ventas">Ventas</Link>
+                <Link to="/ventas">
+                  <FaCashRegister className="me-2" />
+                  Ventas
+                </Link>
               </li>
               <li>
-                <Link to="/compras">Compras</Link>
+                <Link to="/compras">
+                  <FaHandHoldingDollar className="me-2"/>
+                  Compras
+                </Link>
               </li>
             </ul>
           )}
 
           {/* Submenú de Administración */}
-          <motion.li variants={linkVariants} whileHover="hover" onClick={() => setShowAdmin(!showAdmin)} style={{cursor: 'pointer'}}>
+          <motion.li
+            variants={linkVariants}
+            whileHover="hover"
+            onClick={() => setShowAdmin(!showAdmin)}
+            style={{ cursor: "pointer" }}
+          >
             <div className="d-flex align-items-center">
-              <FaBoxOpen className="me-2" /> Administración {showAdmin ? <FaAngleUp /> : <FaAngleDown />}
+              <FaBoxOpen className="me-2" /> Administración{" "}
+              {showAdmin ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showAdmin && (
             <ul className="sub-menu">
-              
               <li>
-                <Link to="/usuarios">Usuarios</Link>
+                <Link to="/usuarios">
+                  <FaUser className="me-2"/>
+                  Usuarios
+                </Link>
               </li>
               <li>
-                <Link to="/reports">Reportes Dinámicos</Link>
+                <Link to="/reports">
+                  <FaUncharted className="me-2"/>
+                  Reportes Dinámicos
+                </Link>
               </li>
               <li>
-                <Link to="/configurations">Confifiguración</Link>
+                <Link to="/configurations">
+                  <FaGears className="me-2" />
+                  Configuración
+                </Link>
               </li>
             </ul>
           )}

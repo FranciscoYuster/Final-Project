@@ -35,10 +35,11 @@
 .side-nav a {
   color: white;
   text-decoration: none;
-  display: block;
+  display: flex;
   padding: 8px 12px;
   border-radius: 30px;
   transition: background 0.3s;
+  
 }
 
 .side-nav a:hover {
