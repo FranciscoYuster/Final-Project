@@ -8,7 +8,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 205px;
+  width: 230px;
   height: 100vh;
   background: linear-gradient(to bottom, #39a2e7, #186fda);
   color: white;
@@ -26,6 +26,7 @@
   list-style: none;
   padding: 0;
   margin: 0;
+  font-size: 16px;
 }
 
 .side-nav li {
@@ -35,8 +36,7 @@
 .side-nav a {
   color: white;
   text-decoration: none;
-  display: flex;
-  padding: 8px 12px;
+  display: block;
   border-radius: 30px;
   transition: background 0.3s;
   
@@ -44,6 +44,7 @@
 
 .side-nav a:hover {
   background: rgba(255, 255, 255, 0.2);
+  padding-left: 5px;
 }
 
 .side-nav button {

@@ -100,24 +100,24 @@ const SideNav = () => {
           </motion.li>
           {showGestion && (
             <ul className="sub-menu">
-              <li>
+              <li className="mx-3">
                 <Link to="/inventory">
                   <FaDiagramProject className="me-2" /> Inventario
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/facturas">
                   <FaFileInvoiceDollar className="me-2"/>
                   Facturas
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/movements">
-                  <FaChartBar />
+                  <FaChartBar className="me-2"/>
                   Movimientos
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/ubications">
                 <FaMapLocation className="me-2"/> 
                 Ubicaciones
@@ -133,20 +133,20 @@ const SideNav = () => {
             onClick={() => setShowClientesProveedores(!showClientesProveedores)}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex align-items-center">
-            <FaTruckFast className="me-2"/>Proveedores
+            <div className="d-flex align-items-center pt-2">
+            <FaTruckFast className="me-2 "/>Proveedores
               {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showClientesProveedores && (
             <ul className="sub-menu">
-              <li>
-                <Link to="/clientes">
+              <li className="mx-3">
+              <Link to="/clientes">
                   <FaUserTie className="me-2" />
                   Clientes
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/proveed">
               <FaTruckPlane className="me-2" />
                   Proveedores
@@ -162,26 +162,26 @@ const SideNav = () => {
             onClick={() => setShowOperaciones(!showOperaciones)}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center pt-2">
               <FaShoppingCart className="me-2" /> Operaciones{" "}
               {showOperaciones ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showOperaciones && (
             <ul className="sub-menu">
-              <li>
-                <Link to="/productos">
+              <li className="mx-3">
+              <Link to="/productos">
                   <FaBoxArchive className="me-2"/>
                   Productos
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/ventas">
                   <FaCashRegister className="me-2" />
                   Ventas
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/compras">
                   <FaHandHoldingDollar className="me-2"/>
                   Compras
@@ -197,26 +197,26 @@ const SideNav = () => {
             onClick={() => setShowAdmin(!showAdmin)}
             style={{ cursor: "pointer" }}
           >
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center pt-2">
               <FaBoxOpen className="me-2" /> Administración{" "}
               {showAdmin ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showAdmin && (
             <ul className="sub-menu">
-              <li>
-                <Link to="/usuarios">
+              <li className="mx-3">
+              <Link to="/usuarios">
                   <FaUser className="me-2"/>
                   Usuarios
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/reports">
                   <FaUncharted className="me-2"/>
-                  Reportes Dinámicos
+                  Reportes
                 </Link>
               </li>
-              <li>
+              <li className="mx-3">
                 <Link to="/configurations">
                   <FaGears className="me-2" />
                   Configuración
@@ -227,7 +227,7 @@ const SideNav = () => {
 
           <motion.li>
             <motion.button
-              className="btn btn-outline-danger btn-sm"
+              className="btn btn-outline-danger btn-sm mt-3"
               whileHover={{ scale: 1.1 }}
               onClick={handleLogout}
             >

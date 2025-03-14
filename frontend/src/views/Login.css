@@ -62,3 +62,24 @@ body {
   .login-box .btn:hover {
     background: #186fda;
   }
+
+  .password-requirements {
+    list-style: none;
+    padding: 0;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.password-requirements li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.text-success {
+    color: green;
+}
+
+.text-danger {
+    color: red;
+}
