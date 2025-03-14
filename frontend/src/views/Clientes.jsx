@@ -255,7 +255,7 @@ const Clientes = () => {
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
-        <h1 className="mb-3">Clientes</h1>
+        <h1 className="mb-3" style={{ color: "white" }}>Clientes</h1>
         {error && <div className="alert alert-danger">{error}</div>}
 
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -382,11 +382,7 @@ const Clientes = () => {
         <Modal.Body>
           <Form
             onSubmit={handleSubmitCustomer}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSubmitCustomer(e);
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSubmitCustomer(e); }}
           >
             <Form.Group controlId="customerName">
               <Form.Label>Nombre</Form.Label>
@@ -442,11 +438,7 @@ const Clientes = () => {
         <Modal.Body>
           <Form
             onSubmit={handleSubmitEditCustomer}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSubmitEditCustomer(e);
-              }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSubmitEditCustomer(e); }}
           >
             <Form.Group controlId="editCustomerName">
               <Form.Label>Nombre</Form.Label>
@@ -477,13 +469,14 @@ const Clientes = () => {
               <Form.Control
                 className="rounded-pill"
                 type="tel"
-                placeholder="Ej: +56912345678 o 912345678"
+                placeholder="Ej: 912345678"
                 name="phone"
                 value={editCustomer.phone}
                 onChange={handleEditInputChange}
                 required
-                pattern="^(\\+?56)?0?9\\d{8}$"
-                title="El teléfono debe ser un número móvil chileno. Ej: +56912345678 o 912345678"
+                maxLength="9"
+                pattern="^9\\d{8}$"
+                title="El teléfono debe ser un número móvil chileno de 9 dígitos. Ej: 912345678"
               />
             </Form.Group>
             <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
