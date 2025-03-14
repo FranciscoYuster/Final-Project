@@ -380,7 +380,14 @@ const Clientes = () => {
           <Modal.Title>Crear Nuevo Cliente</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleSubmitCustomer}>
+          <Form
+            onSubmit={handleSubmitCustomer}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmitCustomer(e);
+              }
+            }}
+          >
             <Form.Group controlId="customerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
@@ -409,11 +416,14 @@ const Clientes = () => {
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
                 className="rounded-pill"
-                type="text"
-                placeholder="Ingrese el teléfono"
+                type="tel"
+                placeholder="Ej: +56912345678 o 912345678"
                 name="phone"
                 value={newCustomer.phone}
                 onChange={handleInputChange}
+                required
+                pattern="^(\\+?56)?0?9\\d{8}$"
+                title="El teléfono debe ser un número móvil chileno. Ej: +56912345678 o 912345678"
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
@@ -430,7 +440,14 @@ const Clientes = () => {
           <Modal.Title>Editar Cliente</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form onSubmit={handleSubmitEditCustomer}>
+          <Form
+            onSubmit={handleSubmitEditCustomer}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSubmitEditCustomer(e);
+              }
+            }}
+          >
             <Form.Group controlId="editCustomerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
@@ -459,11 +476,14 @@ const Clientes = () => {
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
                 className="rounded-pill"
-                type="text"
-                placeholder="Ingrese el teléfono"
+                type="tel"
+                placeholder="Ej: +56912345678 o 912345678"
                 name="phone"
                 value={editCustomer.phone}
                 onChange={handleEditInputChange}
+                required
+                pattern="^(\\+?56)?0?9\\d{8}$"
+                title="El teléfono debe ser un número móvil chileno. Ej: +56912345678 o 912345678"
               />
             </Form.Group>
             <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
