@@ -269,11 +269,10 @@ class Invoice(db.Model):
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     purchase_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), nullable=True, unique=True)
-
-    numero_comprobante = db.Column(db.String(50), nullable=False, unique=True) # Numero comprobante al ser ingresado en compras
-    monto_base = db.Column(db.Float, nullable=False)           # Monto ingresado por el usuario
-    impuesto_aplicado = db.Column(db.Float, nullable=False)      # Monto del impuesto aplicado
-    total_final = db.Column(db.Float, nullable=False)            # Total final (monto_base - impuesto_aplicado)
+    numero_comprobante = db.Column(db.String(50), nullable=False, unique=True)
+    monto_base = db.Column(db.Float, nullable=False)
+    impuesto_aplicado = db.Column(db.Float, nullable=False)
+    total_final = db.Column(db.Float, nullable=False)
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
     status = db.Column(db.String, nullable=False, default="Pending")
     
@@ -296,6 +295,26 @@ class Invoice(db.Model):
     def save(self):
         db.session.add(self)
         db.session.commit()
+
+    
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+    
+    def refresh(self):
+        db.session.refresh(self)
+    
+    @classmethod
+    def find_by_id(cls, purchase_id):
+        return cls.query.get(purchase_id)
+    
+    @classmethod
+    def get_all(cls):
+        return cls.query.all()
+
 
 
 # Tabla de compras

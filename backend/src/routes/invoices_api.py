@@ -1,10 +1,10 @@
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.models import User, Invoice, Customer  # Asegúrate de importar Customer
 from flask import Blueprint, request, jsonify
-from src.models import db
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from src.models import db, Invoice, Configuration, User, Customer
 
 invoices_api = Blueprint("invoices_api", __name__)
 
+# Obtener todas las facturas del usuario autenticado
 @invoices_api.route('/invoices', methods=['GET'])
 @jwt_required()
 def get_invoices():
@@ -12,26 +12,28 @@ def get_invoices():
     invoices = Invoice.query.filter_by(user_id=user_id).all()
     return jsonify([invoice.serialize() for invoice in invoices]), 200
 
+# Obtener una factura por ID
 @invoices_api.route('/invoices/<int:id>', methods=['GET'])
 @jwt_required()
 def get_invoice(id):
-    invoice = Invoice.query.get(id)
+    user_id = get_jwt_identity()
+    invoice = Invoice.query.filter_by(id=id, user_id=user_id).first()
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
     return jsonify(invoice.serialize()), 200
 
+# Crear una factura
 @invoices_api.route('/invoices', methods=['POST'])
 @jwt_required()
 def create_invoice():
     data = request.get_json()
     
-    # Se requiere el campo monto_base y numero_comprobante
+    # Campos requeridos
     if "monto_base" not in data:
         return jsonify({"error": "monto_base is required"}), 400
     if "numero_comprobante" not in data:
         return jsonify({"error": "numero_comprobante is required"}), 400
 
-    # Obtener el usuario autenticado
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user:
@@ -57,25 +59,22 @@ def create_invoice():
             try:
                 customer.save()
             except Exception as e:
+                db.session.rollback()
                 return jsonify({"error": "Error saving customer", "details": str(e)}), 500
         customer_id = customer.id
 
-    # Convertir monto_base a float
     try:
         monto_base = float(data["monto_base"])
     except ValueError:
         return jsonify({"error": "monto_base must be a valid number"}), 400
 
-    # Obtener la configuración global para este usuario
-    from src.models import Configuration  # Asegúrate de que esté importado
-    config = Configuration.query.filter_by(user_id=user.id).first()
-    tax = config.impuesto if config else 0.0
+    # Obtener la configuración global para calcular el impuesto
+    config_obj = Configuration.query.filter_by(user_id=user.id).first()
+    tax = config_obj.impuesto if config_obj else 0.0
 
-    # Calcular el impuesto aplicado y el total final
     impuesto_aplicado = monto_base * tax
-    total_final = monto_base - impuesto_aplicado
+    total_final = monto_base + impuesto_aplicado
 
-    # Crear la factura
     invoice = Invoice(
         user_id=user.id,
         inventory_id=user.inventory.id,
@@ -90,29 +89,67 @@ def create_invoice():
     try:
         invoice.save()
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": "Error saving invoice", "details": str(e)}), 500
 
     return jsonify(invoice.serialize()), 200
 
+# Actualizar una factura (actualiza monto_base y status, recalculando impuestos)
 @invoices_api.route('/invoices/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_invoice(id):
-    invoice = Invoice.query.get(id)
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    invoice = Invoice.query.filter_by(id=id, user_id=user.id).first()
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
 
     data = request.get_json()
-    # Para actualizar, si deseas actualizar los datos del cliente, deberás manejarlo aparte.
-    invoice.total = data.get("total", invoice.total)
-    invoice.status = data.get("status", invoice.status)
-    db.session.commit()
+
+    # Actualizar monto_base si se recibe
+    if "monto_base" in data:
+        try:
+            invoice.monto_base = float(data["monto_base"])
+        except ValueError:
+            return jsonify({"error": "monto_base must be a valid number"}), 400
+
+    # Actualizar el estado si se envía
+    if "status" in data:
+        invoice.status = data["status"]
+
+    # Obtener la configuración global para calcular el impuesto
+    config_obj = Configuration.query.filter_by(user_id=user.id).first()
+    tax = config_obj.impuesto if config_obj else 0.0
+
+    # Recalcular impuesto_aplicado y total_final
+    invoice.impuesto_aplicado = invoice.monto_base * tax
+    invoice.total_final = invoice.monto_base + invoice.impuesto_aplicado
+
+    try:
+        invoice.update()
+    except Exception as e:
+        db.session.rollback()
+        print("Error al actualizar factura:", e)
+        return jsonify({"error": "Error updating invoice", "details": str(e)}), 500
+
     return jsonify(invoice.serialize()), 200
 
+# Eliminar una factura
 @invoices_api.route('/invoices/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_invoice(id):
-    invoice = Invoice.query.get(id)
+    user_id = get_jwt_identity()
+    invoice = Invoice.query.filter_by(id=id, user_id=user_id).first()
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
 
-    db.session.delete(invoice)
-    db.session.commit()
+    try:
+        invoice.delete()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Error deleting invoice", "details": str(e)}), 500
+
     return jsonify({"message": "Invoice deleted"}), 200

@@ -13,9 +13,9 @@ const Compras = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedPurchases, setSelectedPurchases] = useState([]);
-  cosnt[editPurchase, setEditPurchase] = useState(null)
-  cosnt[deletePurchase, setDeletePurchase] = useState(null)
-  cosnt[deletePurchase, setDeletePurchase] = useState(null)
+  const [editPurchase, setEditPurchase] = useState(null)
+  const [deletePurchase, setDeletePurchase] = useState(null)
+  const [deleteAllPurchase, setDeleteAllPurchase] = useState(null)
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
   const [locations, setLocations] = useState([]);

@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaSave, FaPlus } from 'react-icons/fa';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Button, FormControl, InputGroup, Table, Form, Modal } from 'react-bootstrap';
 import { toast, ToastContainer } from 'react-toastify';
+import { FaPlus } from 'react-icons/fa';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Proveedores = () => {
   const [providers, setProviders] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false); // Modal para crear proveedor
+  const [showEditModal, setShowEditModal] = useState(false); // Modal para editar proveedor
   const [error, setError] = useState(null);
-  // Estado para controlar si se está editando o agregando
-  const [editingProviderId, setEditingProviderId] = useState(null);
-  const [isNew, setIsNew] = useState(false);
-  // Estado para controlar si se muestra el modal
-  const [showModal, setShowModal] = useState(false);
-  // Formulario para crear/editar proveedor
-  const [providerForm, setProviderForm] = useState({
+  const [isLoading, setIsLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState(null);
+
+  const [newProvider, setNewProvider] = useState({
     name: '',
     contact: '',
     phone: '',
-    email: ''
+    email: '',
   });
 
-  // Obtiene el token del sessionStorage
+  const [editProvider, setEditProvider] = useState({
+    id: null,
+    name: '',
+    contact: '',
+    phone: '',
+    email: '',
+  });
+
+  const [selectedProviders, setSelectedProviders] = useState([]);
+
   const token = sessionStorage.getItem('access_token');
 
-  // Función para cargar proveedores
+  // Función para obtener proveedores
   const fetchProviders = async () => {
     setIsLoading(true);
     try {
@@ -32,11 +41,11 @@ const Proveedores = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         }
       });
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        throw new Error(`Error HTTP: ${response.status}`);
       }
       const data = await response.json();
       setProviders(data);
@@ -53,259 +62,439 @@ const Proveedores = () => {
     fetchProviders();
   }, []);
 
-  // Manejo de cambios en el formulario
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const filteredProviders = providers.filter(provider =>
+    provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    provider.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Selección de proveedores
+  const handleSelectProvider = (id) => {
+    setSelectedProviders(prev =>
+      prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedProviders(providers.map(provider => provider.id));
+    } else {
+      setSelectedProviders([]);
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    try {
+      await Promise.all(
+        selectedProviders.map(async (id) => {
+          const response = await fetch(`/api/providers/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+          }
+          await response.json();
+        })
+      );
+      setProviders(providers.filter(provider => !selectedProviders.includes(provider.id)));
+      setSelectedProviders([]);
+      toast.success('Proveedores eliminados correctamente.');
+    } catch (err) {
+      console.error('Error deleting providers:', err);
+      setError('No se pudieron eliminar los proveedores.');
+      toast.error('No se pudieron eliminar los proveedores.');
+    }
+  };
+
+  // Modal para eliminar proveedor
+  const confirmDelete = (id) => {
+    setProviderToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const response = await fetch(`/api/providers/${providerToDelete}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      await response.json();
+      setProviders(providers.filter(provider => provider.id !== providerToDelete));
+      toast.success('Proveedor eliminado correctamente.');
+    } catch (err) {
+      console.error('Error deleting provider:', err);
+      setError('No se pudo eliminar el proveedor.');
+      toast.error('No se pudo eliminar el proveedor.');
+    } finally {
+      setShowDeleteModal(false);
+      setProviderToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setProviderToDelete(null);
+  };
+
+  // Modal para crear proveedor
+  const handleOpenModal = () => {
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setNewProvider({ name: '', contact: '', phone: '', email: '' });
+    setError(null);
+  };
+
   const handleInputChange = (e) => {
-    setProviderForm({
-      ...providerForm,
-      [e.target.name]: e.target.value
+    setNewProvider({
+      ...newProvider,
+      [e.target.name]: e.target.value,
     });
     setError(null);
   };
 
-  // Abrir el modal para agregar un nuevo proveedor
-  const handleAddNew = () => {
-    setEditingProviderId(null);
-    setProviderForm({
-      name: '',
-      contact: '',
-      phone: '',
-      email: ''
-    });
-    setIsNew(true);
-    setShowModal(true);
+  // Validación para duplicados (por nombre o email)
+  const isDuplicateProvider = () => {
+    return providers.some(provider =>
+      provider.name.toLowerCase() === newProvider.name.toLowerCase() ||
+      provider.email.toLowerCase() === newProvider.email.toLowerCase()
+    );
   };
 
-  // Abrir el modal para editar un proveedor
-  const handleEdit = (provider) => {
-    setEditingProviderId(provider.id);
-    setProviderForm({
+  const handleSubmitProvider = async (e) => {
+    e.preventDefault();
+    if (isDuplicateProvider()) {
+      setError('El nombre o email ya están en uso.');
+      toast.error('El nombre o email ya están en uso.');
+      return;
+    }
+    try {
+      const response = await fetch('/api/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(newProvider),
+      });
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      const data = await response.json();
+      setProviders([...providers, data]);
+      handleCloseModal();
+      toast.success('Proveedor creado exitosamente.');
+    } catch (err) {
+      console.error('Error creating provider:', err);
+      setError('No se pudo crear el proveedor.');
+      toast.error('No se pudo crear el proveedor.');
+    }
+  };
+
+  // Modal para editar proveedor
+  const handleOpenEditModal = (provider) => {
+    setEditProvider({
+      id: provider.id,
       name: provider.name,
       contact: provider.contact,
       phone: provider.phone,
-      email: provider.email
+      email: provider.email,
     });
-    setIsNew(false);
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
-  // Guardar proveedor (creación o actualización)
-  const handleSaveProvider = async () => {
-    if (!providerForm.name) {
-      toast.error('El nombre es requerido.');
-      return;
-    }
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditProvider({ id: null, name: '', contact: '', phone: '', email: '' });
+    setError(null);
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditProvider({
+      ...editProvider,
+      [e.target.name]: e.target.value,
+    });
+    setError(null);
+  };
+
+  const handleSubmitEditProvider = async (e) => {
+    e.preventDefault();
     try {
-      let response;
-      if (isNew) {
-        response = await fetch('/api/providers', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(providerForm)
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
-        }
-        const newProvider = await response.json();
-        setProviders([...providers, newProvider]);
-        toast.success('Proveedor creado exitosamente.');
-      } else {
-        response = await fetch(`/api/providers/${editingProviderId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(providerForm)
-        });
-        if (!response.ok) {
-          throw new Error(`HTTP error: ${response.status}`);
-        }
-        const updatedProvider = await response.json();
-        setProviders(
-          providers.map((prov) =>
-            prov.id === updatedProvider.id ? updatedProvider : prov
-          )
-        );
-        toast.success('Proveedor actualizado exitosamente.');
-      }
-      // Reiniciar formulario y cerrar modal
-      setProviderForm({ name: '', contact: '', phone: '', email: '' });
-      setEditingProviderId(null);
-      setIsNew(false);
-      setShowModal(false);
-    } catch (err) {
-      console.error('Error saving provider:', err);
-      toast.error('No se pudo guardar el proveedor.');
-    }
-  };
-
-  // Cancelar y cerrar el modal
-  const handleCancelModal = () => {
-    setShowModal(false);
-    setEditingProviderId(null);
-    setIsNew(false);
-    setProviderForm({ name: '', contact: '', phone: '', email: '' });
-  };
-
-  // Eliminar proveedor con confirmación
-  const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este proveedor?')) {
-      return;
-    }
-    try {
-      const response = await fetch(`/api/providers/${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/providers/${editProvider.id}`, {
+        method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editProvider.name,
+          contact: editProvider.contact,
+          phone: editProvider.phone,
+          email: editProvider.email,
+        }),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+        throw new Error(`Error HTTP: ${response.status}`);
       }
-      setProviders(providers.filter((prov) => prov.id !== id));
-      toast.success('Proveedor eliminado correctamente.');
+      const data = await response.json();
+      const updatedProviders = providers.map(provider =>
+        provider.id === data.id ? data : provider
+      );
+      setProviders(updatedProviders);
+      handleCloseEditModal();
+      toast.success('Proveedor actualizado exitosamente.');
     } catch (err) {
-      console.error('Error deleting provider:', err);
-      toast.error('No se pudo eliminar el proveedor.');
+      console.error('Error updating provider:', err);
+      setError('No se pudo actualizar el proveedor.');
+      toast.error('No se pudo actualizar el proveedor.');
     }
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
-      <h1>Proveedores</h1>
-      {error && <div className="alert alert-danger">{error}</div>}
-      {isLoading ? (
-        <div>Cargando proveedores...</div>
-      ) : (
-        <table className="table table-bordered">
-          <thead className="table-dark">
-            <tr>
-              <th>#</th>
-              <th>Nombre / Razón Social</th>
-              <th>Contacto</th>
-              <th>Teléfono</th>
-              <th>Email</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody>
-            {providers.map((provider, index) => (
-              <tr key={provider.id}>
-                <td>{index + 1}</td>
-                <td>{provider.name}</td>
-                <td>{provider.contact}</td>
-                <td>{provider.phone}</td>
-                <td>{provider.email}</td>
-                <td>
-                  <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEdit(provider)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(provider.id)}
-                  >
-                    <FaTrash />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      <button className="btn btn-primary" onClick={handleAddNew}>
-        <FaPlus /> Agregar nuevo proveedor
-      </button>
+      <div className="w-100" style={{ maxWidth: "1200px" }}>
+        <h1 className="mb-3 text-white">Proveedores</h1>
+        {error && <div className="alert alert-danger">{error}</div>}
 
-      {/* Modal para agregar/editar proveedor */}
-      {showModal && (
-        <div
-          className="modal fade show"
-          style={{ display: 'block' }}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {isNew ? 'Agregar Proveedor' : 'Editar Proveedor'}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleCancelModal}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-2">
-                  <label className="form-label">Nombre / Razón Social</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="name"
-                    value={providerForm.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Contacto</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="contact"
-                    value={providerForm.contact}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Teléfono</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="phone"
-                    value={providerForm.phone}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    name="email"
-                    value={providerForm.email}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCancelModal}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveProvider}
-                >
-                  {isNew ? 'Guardar' : 'Actualizar'}
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <InputGroup className="w-50">
+            <FormControl
+              type="text"
+              className="rounded-pill"
+              placeholder="Buscar proveedores"
+              aria-label="Buscar proveedores"
+              value={searchTerm}
+              onChange={handleSearch}
+            />
+          </InputGroup>
+          <Button variant="primary" className="rounded-pill" onClick={handleOpenModal}>
+            <FaPlus className="me-1" /> Crear Nuevo Proveedor
+          </Button>
         </div>
-      )}
+
+        {isLoading ? (
+          <div>Cargando proveedores...</div>
+        ) : (
+          <Table bordered hover className="mt-4" style={{
+            borderRadius: "10px",
+            overflow: "hidden",
+            backgroundColor: "#E8F8FF",
+            textAlign: "center",
+          }}>
+            <thead>
+              <tr>
+                <th>
+                  <Form.Check
+                    type="checkbox"
+                    onChange={handleSelectAll}
+                    checked={selectedProviders.length === providers.length && providers.length > 0}
+                  />
+                </th>
+                <th>Nombre</th>
+                <th>Contacto</th>
+                <th>Teléfono</th>
+                <th>Email</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProviders.map(provider => (
+                <tr key={provider.id}>
+                  <td>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedProviders.includes(provider.id)}
+                      onChange={() => handleSelectProvider(provider.id)}
+                    />
+                  </td>
+                  <td>{provider.name}</td>
+                  <td>{provider.contact}</td>
+                  <td>{provider.phone}</td>
+                  <td>{provider.email}</td>
+                  <td>
+                    <Button
+                      variant="warning"
+                      className="me-2 rounded-pill"
+                      onClick={() => handleOpenEditModal(provider)}
+                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="rounded-pill"
+                      onClick={() => confirmDelete(provider.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {filteredProviders.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="text-center">
+                    No se encontraron resultados
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        )}
+        <Button
+          variant="danger"
+          className="mb-3 rounded-pill"
+          onClick={handleDeleteSelected}
+          disabled={selectedProviders.length === 0}
+        >
+          Eliminar Seleccionados
+        </Button>
+      </div>
+
+      {/* Modal para eliminar confirmación */}
+      <Modal show={showDeleteModal} onHide={handleCancelDelete}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Proveedor</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar este proveedor?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDelete}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para crear proveedor */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Crear Nuevo Proveedor</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmitProvider}>
+            <Form.Group controlId="providerName">
+              <Form.Label>Nombre / Razón Social</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el nombre"
+                name="name"
+                value={newProvider.name}
+                onChange={handleInputChange}
+                className="rounded-pill"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="providerContact">
+              <Form.Label>Contacto</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el contacto"
+                name="contact"
+                value={newProvider.contact}
+                onChange={handleInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            <Form.Group controlId="providerPhone">
+              <Form.Label>Teléfono</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el teléfono"
+                name="phone"
+                value={newProvider.phone}
+                onChange={handleInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            <Form.Group controlId="providerEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Ingrese el email"
+                name="email"
+                value={newProvider.email}
+                onChange={handleInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            {error && <div className="alert alert-danger mt-3">{error}</div>}
+            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
+              Crear Proveedor
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal para editar proveedor */}
+      <Modal show={showEditModal} onHide={handleCloseEditModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Editar Proveedor</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmitEditProvider}>
+            <Form.Group controlId="editProviderName">
+              <Form.Label>Nombre / Razón Social</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el nombre"
+                name="name"
+                value={editProvider.name}
+                onChange={handleEditInputChange}
+                className="rounded-pill"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="editProviderContact">
+              <Form.Label>Contacto</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el contacto"
+                name="contact"
+                value={editProvider.contact}
+                onChange={handleEditInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            <Form.Group controlId="editProviderPhone">
+              <Form.Label>Teléfono</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ingrese el teléfono"
+                name="phone"
+                value={editProvider.phone}
+                onChange={handleEditInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            <Form.Group controlId="editProviderEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Ingrese el email"
+                name="email"
+                value={editProvider.email}
+                onChange={handleEditInputChange}
+                className="rounded-pill"
+              />
+            </Form.Group>
+            {error && <div className="alert alert-danger mt-3">{error}</div>}
+            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
+              Actualizar Proveedor
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

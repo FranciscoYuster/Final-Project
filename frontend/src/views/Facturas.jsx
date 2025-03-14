@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
+import { Button, Modal, Table, Form, InputGroup, FormControl, Pagination } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { FaCheck, FaClock } from "react-icons/fa";
 
 const Facturas = () => {
-  // Estados de facturas, clientes y configuración
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [config, setConfig] = useState({
@@ -15,23 +14,16 @@ const Facturas = () => {
     moneda: "",
     formato_facturacion: ""
   });
-
-  // Estados de loading
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
-
-  // Estados para búsqueda y paginación
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Estados para modales (crear y editar)
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
-
-  // Estado para nueva factura (incluye el campo "numero_comprobante")
+  // Para crear factura usamos "total" en el formulario que se convertirá a monto_base
   const [newInvoice, setNewInvoice] = useState({
     customer: "",
     customer_name: "",
@@ -40,13 +32,9 @@ const Facturas = () => {
     status: "Pending",
     numero_comprobante: ""
   });
-
-  // Estado para selección múltiple de facturas
   const [selectedInvoices, setSelectedInvoices] = useState([]);
-
   const token = sessionStorage.getItem("access_token");
 
-  // Función para cargar configuración
   const fetchConfig = () => {
     setLoadingConfig(true);
     fetch("/api/configuraciones", {
@@ -69,7 +57,6 @@ const Facturas = () => {
       .finally(() => setLoadingConfig(false));
   };
 
-  // Función para cargar facturas
   const fetchInvoices = () => {
     setLoadingInvoices(true);
     fetch("/api/invoices", {
@@ -91,7 +78,6 @@ const Facturas = () => {
       .finally(() => setLoadingInvoices(false));
   };
 
-  // Función para cargar clientes
   const fetchCustomers = () => {
     setLoadingCustomers(true);
     fetch("/api/customers", {
@@ -119,7 +105,6 @@ const Facturas = () => {
     fetchCustomers();
   }, []);
 
-  // Filtrado y paginación
   const filteredInvoices = invoices.filter(invoice => {
     const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : (invoice.customer_name || "").toLowerCase();
     const email = invoice.customer ? invoice.customer.email.toLowerCase() : (invoice.customer_email || "").toLowerCase();
@@ -132,7 +117,6 @@ const Facturas = () => {
   const currentItems = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Función para manejar selección de cliente en creación
   const handleCustomerSelect = (e) => {
     const customerId = e.target.value;
     const selectedCustomer = customers.find(c => c.id === parseInt(customerId));
@@ -144,7 +128,6 @@ const Facturas = () => {
     });
   };
 
-  // Funciones para selección múltiple de facturas
   const handleSelectInvoice = (id) => {
     if (selectedInvoices.includes(id)) {
       setSelectedInvoices(selectedInvoices.filter(invoiceId => invoiceId !== id));
@@ -182,7 +165,6 @@ const Facturas = () => {
       });
   };
 
-  // Funciones para crear factura
   const handleCloseModal = () => {
     setShowModal(false);
     setNewInvoice({
@@ -204,7 +186,7 @@ const Facturas = () => {
     }
     const tax = config.impuesto || 0;
     const impuesto_aplicado = baseTotal * tax;
-    const finalTotal = baseTotal - impuesto_aplicado;
+    const finalTotal = baseTotal + impuesto_aplicado;
     const invoiceData = {
       monto_base: baseTotal,
       impuesto_aplicado: impuesto_aplicado,
@@ -241,8 +223,8 @@ const Facturas = () => {
       });
   };
 
-  // Funciones para editar factura
   const handleOpenEditModal = (invoice) => {
+    // Se carga monto_base y status para la edición
     setEditInvoice({
       id: invoice.id,
       monto_base: invoice.monto_base,
@@ -257,7 +239,8 @@ const Facturas = () => {
   };
 
   const handleEditInputChange = (e) => {
-    setEditInvoice({ ...editInvoice, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditInvoice({ ...editInvoice, [name]: value });
   };
 
   const handleSubmitEdit = (e) => {
@@ -269,7 +252,7 @@ const Facturas = () => {
     }
     const tax = config.impuesto || 0;
     const impuesto_aplicado = baseTotal * tax;
-    const finalTotal = baseTotal - impuesto_aplicado;
+    const finalTotal = baseTotal + impuesto_aplicado;
     fetch(`/api/invoices/${editInvoice.id}`, {
       method: "PUT",
       headers: {
@@ -298,7 +281,6 @@ const Facturas = () => {
       });
   };
 
-  // Función para eliminar factura individual
   const handleDelete = (id) => {
     fetch(`/api/invoices/${id}`, {
       method: "DELETE",
@@ -326,7 +308,7 @@ const Facturas = () => {
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
-            <Form.Control
+            <FormControl
               placeholder="Buscar factura..."
               aria-label="Buscar factura"
               value={searchQuery}
@@ -394,22 +376,13 @@ const Facturas = () => {
                   <td>{invoice.customer ? invoice.customer.name : invoice.customer_name}</td>
                   <td>{invoice.customer ? invoice.customer.email : invoice.customer_email}</td>
                   <td>
-                    ${invoice.monto_base.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ${invoice.monto_base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td>
-                    ${invoice.impuesto_aplicado.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ${invoice.impuesto_aplicado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td>
-                    ${invoice.total_final.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    ${invoice.total_final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td>{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : ""}</td>
                   <td>
@@ -430,7 +403,7 @@ const Facturas = () => {
                       className="me-2 rounded-pill"
                       style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
                     >
-                      Editar 
+                      Editar
                     </Button>
                     <Button
                       variant="danger"
@@ -438,7 +411,7 @@ const Facturas = () => {
                       className="rounded-pill"
                       style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
                     >
-                      Eliminar 
+                      Eliminar
                     </Button>
                   </td>
                 </tr>
@@ -447,7 +420,6 @@ const Facturas = () => {
           </Table>
         </div>
 
-        {/* Botón para eliminar facturas seleccionadas */}
         <div className="mb-3">
           <Button
             variant="danger"
@@ -472,54 +444,54 @@ const Facturas = () => {
           ))}
         </Pagination>
 
-        {/* Modal para editar factura */}
         <Modal show={showEditModal} onHide={handleCloseEditModal}>
           <Modal.Header closeButton>
             <Modal.Title>Editar Factura</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <Form onSubmit={handleSubmitEdit}>
-              <Form.Group controlId="formMontoBase">
-                <Form.Label>Monto Base</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="Monto Base"
-                  name="monto_base"
-                  value={editInvoice ? editInvoice.monto_base : ""}
-                  onChange={handleEditInputChange}
-                  step="0.01"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formEstado" className="mt-2">
-                <Form.Label>Estado</Form.Label>
-                <Form.Select
-                  name="status"
-                  value={editInvoice ? editInvoice.status : ""}
-                  onChange={handleEditInputChange}
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
-                </Form.Select>
-              </Form.Group>
-              <div className="mt-3 d-flex justify-content-end">
-                <Button variant="secondary" onClick={handleCloseEditModal} className="me-2 rounded-pill">
-                  Cancelar
-                </Button>
-                <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
-                  Guardar cambios
-                </Button>
-              </div>
-            </Form>
+            {editInvoice && (
+              <Form onSubmit={handleSubmitEdit}>
+                <Form.Group controlId="formMontoBase">
+                  <Form.Label>Monto Base</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="Monto Base"
+                    name="monto_base"
+                    value={editInvoice.monto_base}
+                    onChange={handleEditInputChange}
+                    step="0.01"
+                    required
+                    className="rounded-pill"
+                    style={{ borderColor: "#074de3" }}
+                  />
+                </Form.Group>
+                <Form.Group controlId="formEstado" className="mt-2">
+                  <Form.Label>Estado</Form.Label>
+                  <Form.Select
+                    name="status"
+                    value={editInvoice.status || ""}
+                    onChange={handleEditInputChange}
+                    required
+                    className="rounded-pill"
+                    style={{ borderColor: "#074de3" }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                  </Form.Select>
+                </Form.Group>
+                <div className="mt-3 d-flex justify-content-end">
+                  <Button variant="secondary" onClick={handleCloseEditModal} className="me-2 rounded-pill">
+                    Cancelar
+                  </Button>
+                  <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+                    Guardar cambios
+                  </Button>
+                </div>
+              </Form>
+            )}
           </Modal.Body>
         </Modal>
 
-        {/* Modal para crear factura */}
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
             <Modal.Title>Crear Factura</Modal.Title>

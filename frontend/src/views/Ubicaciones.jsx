@@ -354,6 +354,41 @@ const Ubicaciones = () => {
           ))}
         </Pagination>
       </div>
+
+      {/* Modal para crear o editar ubicaciones */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{editingUbicacion ? "Editar Ubicación" : "Crear Nueva Ubicación"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={editingUbicacion ? handleEditUbicacion : handleAddUbicacion}>
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                value={newUbicacion.nombre}
+                onChange={(e) =>
+                  setNewUbicacion({ ...newUbicacion, nombre: e.target.value })
+                }
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Descripción</Form.Label>
+              <Form.Control
+                as="textarea"
+                value={newUbicacion.descripcion}
+                onChange={(e) =>
+                  setNewUbicacion({ ...newUbicacion, descripcion: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit">
+              {editingUbicacion ? "Guardar Cambios" : "Crear Ubicación"}
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

@@ -7,7 +7,6 @@ import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -18,7 +17,7 @@ const Productos = () => {
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
   const itemsPerPage = 10;
 
-  // Usamos nombres consistentes en el estado del producto
+  // Estado sin el campo ubicación
   const [newProduct, setNewProduct] = useState({
     nombre: "",
     descripcion: "",
@@ -27,7 +26,6 @@ const Productos = () => {
     codigo: "",
     categoria: "",
     inventory_id: "",
-    ubicacion_id: "",
   });
 
   const token = sessionStorage.getItem("access_token");
@@ -42,10 +40,9 @@ const Productos = () => {
     currentPage * itemsPerPage
   );
 
-  // Cargar productos y ubicaciones al montar el componente
+  // Cargar productos al montar el componente
   useEffect(() => {
     fetchProducts();
-    fetchLocations();
   }, []);
 
   const fetchProducts = () => {
@@ -68,29 +65,6 @@ const Productos = () => {
       .catch((err) => {
         console.error("Error al obtener productos:", err);
         toast.error("Error al cargar productos.");
-      });
-  };
-
-  const fetchLocations = () => {
-    fetch("/api/ubicaciones", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setLocations(data);
-      })
-      .catch((err) => {
-        console.error("Error al obtener ubicaciones:", err);
-        toast.error("Error al cargar ubicaciones.");
       });
   };
 
@@ -125,7 +99,6 @@ const Productos = () => {
         codigo: "",
         categoria: "",
         inventory_id: "",
-        ubicacion_id: "",
       });
     }
     setShowModal(true);
@@ -147,10 +120,6 @@ const Productos = () => {
       toast.error("Stock o precio no son números válidos.");
       return;
     }
-    if (!nuevoProducto.ubicacion_id) {
-      toast.error("Debe seleccionar una ubicación.");
-      return;
-    }
     fetch("/api/products", {
       method: "POST",
       headers: {
@@ -164,7 +133,6 @@ const Productos = () => {
         codigo: nuevoProducto.codigo,
         categoria: nuevoProducto.categoria,
         inventory_id: nuevoProducto.inventory_id,
-        ubicacion_id: nuevoProducto.ubicacion_id,
       }),
     })
       .then((response) => {
@@ -255,13 +223,11 @@ const Productos = () => {
       });
   };
 
-  // Cierre del componente
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Lista de Productos</h1>
-
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
             <Form.Control
@@ -272,7 +238,6 @@ const Productos = () => {
               className="rounded-pill"
             />
           </InputGroup>
-
           <Button
             variant="primary"
             onClick={() => handleShowModal()}
@@ -282,7 +247,6 @@ const Productos = () => {
             <FaPlus className="me-1" /> Crear Nuevo Producto
           </Button>
         </div>
-
         <div className="table-responsive">
           <Table
             bordered
@@ -301,13 +265,7 @@ const Productos = () => {
                   <Form.Check
                     type="checkbox"
                     checked={selectedProducts.length === currentItems.length}
-                    onChange={() => {
-                      if (selectedProducts.length === currentItems.length) {
-                        setSelectedProducts([]);
-                      } else {
-                        setSelectedProducts(currentItems.map((producto) => producto.id));
-                      }
-                    }}
+                    onChange={handleSelectAll}
                     className="rounded-circle"
                   />
                 </th>
@@ -316,7 +274,7 @@ const Productos = () => {
                 <th>Stock</th>
                 <th>Precio</th>
                 <th>Categoría</th>
-                <th>Ubicación</th>
+                {/* Se eliminó la columna de Ubicación */}
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -336,7 +294,7 @@ const Productos = () => {
                   <td>{producto.stock}</td>
                   <td>{producto.precio}</td>
                   <td>{producto.categoria}</td>
-                  <td>{producto.ubicacion ? producto.ubicacion.nombre : "Sin asignar"}</td>
+                  {/* Se eliminó la celda de Ubicación */}
                   <td>
                     <Button
                       variant="warning"
@@ -360,7 +318,6 @@ const Productos = () => {
             </tbody>
           </Table>
         </div>
-
         <Button
           variant="danger"
           disabled={selectedProducts.length === 0}
@@ -370,7 +327,6 @@ const Productos = () => {
         >
           Eliminar Seleccionados
         </Button>
-
         <Pagination className="mb-3 justify-content-center">
           {[...Array(totalPages)].map((_, index) => (
             <Pagination.Item
@@ -383,7 +339,6 @@ const Productos = () => {
             </Pagination.Item>
           ))}
         </Pagination>
-
         {/* Modal para Confirmar Eliminación */}
         <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
           <Modal.Header closeButton>
@@ -401,7 +356,6 @@ const Productos = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
         {/* Modal para Confirmar Eliminación de Todos */}
         <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
           <Modal.Header closeButton>
@@ -419,7 +373,6 @@ const Productos = () => {
             </Button>
           </Modal.Footer>
         </Modal>
-
         {/* Modal para Crear/Editar Producto */}
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
@@ -434,18 +387,16 @@ const Productos = () => {
                 const codigo = e.target.codigo.value;
                 const precio = Number(e.target.precio.value);
                 const categoria = e.target.categoria.value;
-                const ubicacion_id = e.target.ubicacion.value;
-                
+                // Se elimina el campo de ubicación en la sumisión
                 if (isNaN(stock) || isNaN(precio)) {
                   console.error("Error: stock o precio no son números válidos");
                   toast.error("Stock o precio no son números válidos.");
                   return;
                 }
-                
                 if (editingProduct) {
-                  handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria, ubicacion_id });
+                  handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria });
                 } else {
-                  handleCreateProduct({ nombre, codigo, stock, precio, categoria, ubicacion_id });
+                  handleCreateProduct({ nombre, codigo, stock, precio, categoria });
                 }
                 handleCloseModal();
               }}
@@ -511,21 +462,7 @@ const Productos = () => {
                   style={{ borderColor: "#074de3" }}
                 />
               </Form.Group>
-              <Form.Group controlId="formUbicacion" className="mb-2">
-                <Form.Label>Ubicación</Form.Label>
-                <Form.Select 
-                  name="ubicacion" 
-                  defaultValue={editingProduct && editingProduct.ubicacion ? editingProduct.ubicacion.id : ""}
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                  required
-                >
-                  <option value="">Seleccione una ubicación</option>
-                  {locations.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.nombre}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
+              {/* Se eliminó el grupo de Ubicación */}
               <Button 
                 variant="primary" 
                 type="submit" 
@@ -537,9 +474,8 @@ const Productos = () => {
             </Form>
           </Modal.Body>
         </Modal>
+      </div>
     </div>
-    </div>
-
   );
 };
 

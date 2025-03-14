@@ -4,6 +4,20 @@ from src.models import db, Configuration, User
 
 configurations_api = Blueprint("configurations_api", __name__)
 
+def normalize_impuesto(impuesto_value):
+    """
+    Convierte el valor ingresado a formato decimal.
+    Si es mayor que 1, se asume que se ingresó en porcentaje.
+    Ejemplo: 19 se convierte a 0.19.
+    """
+    try:
+        imp = float(impuesto_value)
+        if imp > 1:
+            imp = imp / 100
+        return imp
+    except (ValueError, TypeError):
+        return 0.0
+
 # Obtener la configuración del usuario autenticado
 @configurations_api.route('/configuraciones', methods=['GET'])
 @jwt_required()
@@ -12,7 +26,6 @@ def get_configuration():
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
-    # Opcional: Verificar rol del usuario (por ejemplo, admin)
     configuration = Configuration.query.filter_by(user_id=user.id).first()
     if not configuration:
         return jsonify({"error": "Configuración no encontrada"}), 404
@@ -27,16 +40,12 @@ def create_configuration():
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
 
-    # Opcional: Validar rol del usuario (por ejemplo, solo admin puede crear configuración)
     data = request.get_json()
-    # Se definen valores por defecto si no se reciben
-    impuesto = data.get("impuesto", 0.20)
+    impuesto = normalize_impuesto(data.get("impuesto", 0.20))
     moneda = data.get("moneda", "USD")
     formato_facturacion = data.get("formato_facturacion", "Factura Electrónica")
 
-    # Verificar que no exista ya una configuración para este usuario
-    existing_config = Configuration.query.filter_by(user_id=user.id).first()
-    if existing_config:
+    if Configuration.query.filter_by(user_id=user.id).first():
         return jsonify({"error": "La configuración ya existe"}), 400
 
     configuration = Configuration(
@@ -48,6 +57,7 @@ def create_configuration():
     try:
         configuration.save()
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": "Error al crear configuración", "details": str(e)}), 500
 
     return jsonify(configuration.serialize()), 201
@@ -65,10 +75,9 @@ def update_configuration(id):
     if not configuration:
         return jsonify({"error": "Configuración no encontrada"}), 404
 
-    # Opcional: Verificar rol (por ejemplo, solo admin)
     data = request.get_json()
     if "impuesto" in data:
-        configuration.impuesto = data["impuesto"]
+        configuration.impuesto = normalize_impuesto(data["impuesto"])
     if "moneda" in data:
         configuration.moneda = data["moneda"]
     if "formato_facturacion" in data:
@@ -77,11 +86,12 @@ def update_configuration(id):
     try:
         configuration.update()
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": "Error al actualizar la configuración", "details": str(e)}), 500
 
     return jsonify(configuration.serialize()), 200
 
-# (Opcional) Eliminar la configuración del usuario
+# Eliminar la configuración del usuario
 @configurations_api.route('/configuraciones/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_configuration(id):
@@ -97,6 +107,7 @@ def delete_configuration(id):
     try:
         configuration.delete()
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": "Error al eliminar la configuración", "details": str(e)}), 500
 
     return jsonify({"message": "Configuración eliminada correctamente"}), 200

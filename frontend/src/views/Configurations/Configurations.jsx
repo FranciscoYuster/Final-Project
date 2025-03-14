@@ -24,7 +24,6 @@ const Configurations = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      // Si la configuración no existe, se asume 404 y se establecen valores por defecto.
       if (response.status === 404) {
         setConfig({
           id: '',
@@ -53,10 +52,16 @@ const Configurations = () => {
   // Manejo de cambios en el formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setConfig((prev) => ({ ...prev, [name]: value }));
+    if (name === "impuesto") {
+      // Convertir el valor ingresado (por ejemplo, 19) a decimal y redondear a 2 decimales
+      const numericValue = parseFloat(value) / 100;
+      setConfig((prev) => ({ ...prev, [name]: parseFloat(numericValue.toFixed(2)) }));
+    } else {
+      setConfig((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  // Enviar la configuración: si existe config.id se actualiza (PUT), si no se crea (POST)
+  // Enviar la configuración: actualizar (PUT) o crear (POST)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -95,49 +100,61 @@ const Configurations = () => {
   return (
     <div className="container mt-4">
       <ToastContainer />
-      <h1>Configuraciones Globales</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-3">
-          <label htmlFor="impuesto" className="form-label">Impuesto (%)</label>
-          <input
-            type="number"
-            step="0.01"
-            className="form-control"
-            id="impuesto"
-            name="impuesto"
-            value={config.impuesto}
-            onChange={handleChange}
-            required
-          />
+      <div className="card shadow-sm" style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div className="card-header bg-primary text-white">
+          <h3 className="mb-0">Configuraciones Globales</h3>
         </div>
-        <div className="mb-3">
-          <label htmlFor="moneda" className="form-label">Moneda</label>
-          <input
-            type="text"
-            className="form-control"
-            id="moneda"
-            name="moneda"
-            value={config.moneda}
-            onChange={handleChange}
-            required
-          />
+        <div className="card-body" style={{ backgroundColor: "#f8f9fa" }}>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label htmlFor="impuesto" className="form-label">Impuesto (%)</label>
+              <div className="input-group">
+                <input
+                  type="number"
+                  step="1"  // Incrementa de 1 en 1
+                  className="form-control rounded-pill"
+                  id="impuesto"
+                  name="impuesto"
+                  // Se muestra el valor multiplicado por 100, de modo que 0.19 se visualice como 19
+                  value={config.impuesto ? (config.impuesto * 100).toString() : ''}
+                  onChange={handleChange}
+                  required
+                />
+                <span className="input-group-text">%</span>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label htmlFor="moneda" className="form-label">Moneda</label>
+              <input
+                type="text"
+                className="form-control rounded-pill"
+                id="moneda"
+                name="moneda"
+                value={config.moneda}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="formato_facturacion" className="form-label">Formato de Facturación</label>
+              <input
+                type="text"
+                className="form-control rounded-pill"
+                id="formato_facturacion"
+                name="formato_facturacion"
+                value={config.formato_facturacion}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="d-grid">
+              <button type="submit" className="btn btn-success rounded-pill">
+                Guardar Configuraciones
+              </button>
+            </div>
+          </form>
         </div>
-        <div className="mb-3">
-          <label htmlFor="formato_facturacion" className="form-label">Formato de Facturación</label>
-          <input
-            type="text"
-            className="form-control"
-            id="formato_facturacion"
-            name="formato_facturacion"
-            value={config.formato_facturacion}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary">
-          Guardar Configuraciones
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

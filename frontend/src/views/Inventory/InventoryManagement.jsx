@@ -56,6 +56,9 @@ const InventoryManagement = () => {
       setLoadingProducts(false);
     }
   };
+const handleEditInputChange = (e) => {
+  setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
+};
 
   const fetchLocations = async () => {
     setLoadingLocations(true);
