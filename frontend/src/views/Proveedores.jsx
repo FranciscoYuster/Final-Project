@@ -32,6 +32,7 @@ const Proveedores = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [providerToDelete, setProviderToDelete] = useState(null);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
 
   const token = sessionStorage.getItem("access_token");
   const itemsPerPage = 10;
@@ -98,30 +99,7 @@ const Proveedores = () => {
     }
   };
 
-  // Eliminar proveedores seleccionados
-  const handleDeleteSelected = async () => {
-    try {
-      await Promise.all(
-        selectedProviders.map(async (id) => {
-          const response = await fetch(`/api/providers/${id}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${token}` },
-          });
-          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-          await response.json();
-        })
-      );
-      setProviders(providers.filter(provider => !selectedProviders.includes(provider.id)));
-      setSelectedProviders([]);
-      toast.success("Proveedores eliminados correctamente.");
-    } catch (err) {
-      console.error("Error deleting providers:", err);
-      setError("No se pudieron eliminar los proveedores.");
-      toast.error("No se pudieron eliminar los proveedores.");
-    }
-  };
-
-  // Eliminación individual con confirmación
+  // Eliminación individual
   const confirmDelete = (id) => {
     setProviderToDelete(id);
     setShowDeleteModal(true);
@@ -150,6 +128,39 @@ const Proveedores = () => {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setProviderToDelete(null);
+  };
+
+  // Eliminación de proveedores seleccionados (modal de confirmación)
+  const openDeleteSelectedModal = () => {
+    setShowDeleteSelectedModal(true);
+  };
+
+  const handleConfirmDeleteSelected = async () => {
+    try {
+      await Promise.all(
+        selectedProviders.map(async (id) => {
+          const response = await fetch(`/api/providers/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+          await response.json();
+        })
+      );
+      setProviders(providers.filter(provider => !selectedProviders.includes(provider.id)));
+      setSelectedProviders([]);
+      toast.success("Proveedores eliminados correctamente.");
+    } catch (err) {
+      console.error("Error deleting providers:", err);
+      setError("No se pudieron eliminar los proveedores.");
+      toast.error("No se pudieron eliminar los proveedores.");
+    } finally {
+      setShowDeleteSelectedModal(false);
+    }
+  };
+
+  const handleCancelDeleteSelected = () => {
+    setShowDeleteSelectedModal(false);
   };
 
   // Modal de creación
@@ -211,7 +222,7 @@ const Proveedores = () => {
     setEditProvider({
       id: provider.id,
       name: provider.name,
-      addres: provider.addres, // Asegúrate de usar "addres" para que coincida con el modelo
+      addres: provider.addres, // Se usa "addres" para alinear con el modelo
       phone: provider.phone,
       email: provider.email,
     });
@@ -355,7 +366,7 @@ const Proveedores = () => {
         <Button
           variant="danger"
           className="mb-3 rounded-pill"
-          onClick={handleDeleteSelected}
+          onClick={() => setShowDeleteSelectedModal(true)}
           disabled={selectedProviders.length === 0}
         >
           Eliminar Seleccionados
@@ -384,6 +395,18 @@ const Proveedores = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCancelDelete}>Cancelar</Button>
           <Button variant="danger" onClick={handleConfirmDelete}>Eliminar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para confirmar eliminación de seleccionados */}
+      <Modal show={showDeleteSelectedModal} onHide={handleCancelDeleteSelected}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Proveedores Seleccionados</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar los proveedores seleccionados?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDeleteSelected}>Cancelar</Button>
+          <Button variant="danger" onClick={handleConfirmDeleteSelected}>Eliminar</Button>
         </Modal.Footer>
       </Modal>
 
@@ -495,6 +518,7 @@ const Proveedores = () => {
                 name="phone"
                 value={editProvider.phone}
                 onChange={(e) => {
+                  // Se eliminan caracteres no numéricos y se limita a 9 dígitos
                   const cleaned = e.target.value.replace(/\D/g, "").slice(0, 9);
                   handleEditInputChange({ target: { name: "phone", value: cleaned } });
                 }}

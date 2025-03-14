@@ -12,6 +12,7 @@ const Clientes = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -70,7 +71,10 @@ const Clientes = () => {
   );
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-  const currentItems = filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentItems = filteredCustomers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -212,7 +216,7 @@ const Clientes = () => {
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
-    setEditCustomer({ id: null, name: "", email: "", phone: "" });
+    setEditCustomer({ id: "", name: "", email: "", phone: "" });
     setError(null);
   };
 
@@ -249,6 +253,39 @@ const Clientes = () => {
       setError("No se pudo actualizar el cliente.");
       toast.error("No se pudo actualizar el cliente.");
     }
+  };
+
+  // Modal de confirmación para eliminación de clientes seleccionados
+  const openDeleteSelectedModal = () => {
+    setShowDeleteSelectedModal(true);
+  };
+
+  const handleConfirmDeleteSelected = async () => {
+    try {
+      await Promise.all(
+        selectedCustomers.map(async (id) => {
+          const response = await fetch(`/api/customers/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+          await response.json();
+        })
+      );
+      setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
+      setSelectedCustomers([]);
+      toast.success("Clientes eliminados correctamente.");
+    } catch (err) {
+      console.error("Error deleting customers:", err);
+      setError("No se pudieron eliminar los clientes.");
+      toast.error("No se pudieron eliminar los clientes.");
+    } finally {
+      setShowDeleteSelectedModal(false);
+    }
+  };
+
+  const handleCancelDeleteSelected = () => {
+    setShowDeleteSelectedModal(false);
   };
 
   return (
@@ -332,7 +369,9 @@ const Clientes = () => {
               ))}
               {filteredCustomers.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center">No se encontraron resultados</td>
+                  <td colSpan="5" className="text-center">
+                    No se encontraron resultados
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -342,7 +381,7 @@ const Clientes = () => {
         <Button
           variant="danger"
           className="mb-3 rounded-pill"
-          onClick={handleDeleteSelected}
+          onClick={openDeleteSelectedModal}
           disabled={selectedCustomers.length === 0}
         >
           Eliminar Seleccionados
@@ -371,6 +410,18 @@ const Clientes = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCancelDelete}>Cancelar</Button>
           <Button variant="danger" onClick={handleConfirmDelete}>Eliminar</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para confirmar eliminación de clientes seleccionados */}
+      <Modal show={showDeleteSelectedModal} onHide={handleCancelDeleteSelected}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Clientes Seleccionados</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar los clientes seleccionados?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCancelDeleteSelected}>Cancelar</Button>
+          <Button variant="danger" onClick={handleConfirmDeleteSelected}>Eliminar</Button>
         </Modal.Footer>
       </Modal>
 
@@ -413,13 +464,14 @@ const Clientes = () => {
               <Form.Control
                 className="rounded-pill"
                 type="tel"
-                placeholder="Ej: +56912345678 o 912345678"
+                placeholder="Ej: 912345678"
                 name="phone"
                 value={newCustomer.phone}
                 onChange={handleInputChange}
                 required
-                pattern="^(\\+?56)?0?9\\d{8}$"
-                title="El teléfono debe ser un número móvil chileno. Ej: +56912345678 o 912345678"
+                maxLength="9"
+                pattern="^9[0-9]{8}$"
+                title="El teléfono debe ser un número móvil chileno de 9 dígitos. Ej: 912345678"
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
@@ -475,7 +527,7 @@ const Clientes = () => {
                 onChange={handleEditInputChange}
                 required
                 maxLength="9"
-                pattern="^9\\d{8}$"
+                pattern="^9[0-9]{8}$"
                 title="El teléfono debe ser un número móvil chileno de 9 dígitos. Ej: 912345678"
               />
             </Form.Group>
