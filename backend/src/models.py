@@ -386,7 +386,7 @@ class Provider(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
-    contact = db.Column(db.String, default='')
+    addres = db.Column(db.String, default='')
     phone = db.Column(db.String, default='')
     email = db.Column(db.String, default='')
     
@@ -397,7 +397,7 @@ class Provider(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "contact": self.contact,
+            "addres": self.addres,
             "phone": self.phone,
             "email": self.email,
             "inventory_id": self.inventory_id

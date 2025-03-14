@@ -4,7 +4,6 @@ from src.models import db, Invoice, Configuration, User, Customer
 
 invoices_api = Blueprint("invoices_api", __name__)
 
-# Obtener todas las facturas del usuario autenticado
 @invoices_api.route('/invoices', methods=['GET'])
 @jwt_required()
 def get_invoices():
@@ -12,7 +11,6 @@ def get_invoices():
     invoices = Invoice.query.filter_by(user_id=user_id).all()
     return jsonify([invoice.serialize() for invoice in invoices]), 200
 
-# Obtener una factura por ID
 @invoices_api.route('/invoices/<int:id>', methods=['GET'])
 @jwt_required()
 def get_invoice(id):
@@ -22,13 +20,11 @@ def get_invoice(id):
         return jsonify({"error": "Invoice not found"}), 404
     return jsonify(invoice.serialize()), 200
 
-# Crear una factura
 @invoices_api.route('/invoices', methods=['POST'])
 @jwt_required()
 def create_invoice():
     data = request.get_json()
     
-    # Campos requeridos
     if "monto_base" not in data:
         return jsonify({"error": "monto_base is required"}), 400
     if "numero_comprobante" not in data:
@@ -41,7 +37,6 @@ def create_invoice():
     if not user.inventory:
         return jsonify({"error": "No inventory found for the user"}), 400
 
-    # Determinar el cliente a asociar
     if "customer_id" in data:
         customer_id = data["customer_id"]
     else:
@@ -68,7 +63,6 @@ def create_invoice():
     except ValueError:
         return jsonify({"error": "monto_base must be a valid number"}), 400
 
-    # Obtener la configuración global para calcular el impuesto
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
     tax = config_obj.impuesto if config_obj else 0.0
 
@@ -94,7 +88,6 @@ def create_invoice():
 
     return jsonify(invoice.serialize()), 200
 
-# Actualizar una factura (actualiza monto_base y status, recalculando impuestos)
 @invoices_api.route('/invoices/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_invoice(id):
@@ -109,22 +102,18 @@ def update_invoice(id):
 
     data = request.get_json()
 
-    # Actualizar monto_base si se recibe
     if "monto_base" in data:
         try:
             invoice.monto_base = float(data["monto_base"])
         except ValueError:
             return jsonify({"error": "monto_base must be a valid number"}), 400
 
-    # Actualizar el estado si se envía
     if "status" in data:
         invoice.status = data["status"]
 
-    # Obtener la configuración global para calcular el impuesto
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
     tax = config_obj.impuesto if config_obj else 0.0
 
-    # Recalcular impuesto_aplicado y total_final
     invoice.impuesto_aplicado = invoice.monto_base * tax
     invoice.total_final = invoice.monto_base + invoice.impuesto_aplicado
 
@@ -137,7 +126,6 @@ def update_invoice(id):
 
     return jsonify(invoice.serialize()), 200
 
-# Eliminar una factura
 @invoices_api.route('/invoices/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_invoice(id):

@@ -32,13 +32,13 @@ def create_provider():
 
     provider = Provider(
         name=data['name'],
-        contact=data.get('contact', ''),
+        addres=data.get('addres', ''),
         phone=data.get('phone', ''),
         email=data.get('email', ''),
         inventory_id=user.inventory.id  # Asigna el inventory_id del usuario
     )
     provider.save()
-    return jsonify(provider.serialize()), 201
+    return jsonify(provider.serialize()), 200
 
 @providers_api.route('/providers/<int:id>', methods=['PUT'])
 def update_provider(id):
@@ -47,7 +47,7 @@ def update_provider(id):
         return jsonify({"error": "Provider not found"}), 404
     data = request.get_json()
     provider.name = data.get('name', provider.name)
-    provider.contact = data.get('contact', provider.contact)
+    provider.addres = data.get('addres', provider.addres)
     provider.phone = data.get('phone', provider.phone)
     provider.email = data.get('email', provider.email)
     provider.update()
