@@ -516,7 +516,7 @@ class Configuration(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    impuesto = db.Column(db.Float, nullable=False, default=0.0)  # Ej. 0.15 para 15%
+    impuesto = db.Column(db.Float, nullable=False, default=0.19)  # Ej. 0.15 para 15%
     moneda = db.Column(db.String(10), nullable=False, default='USD')
     formato_facturacion = db.Column(db.String(50), nullable=False, default='Factura Electrónica')
     
