@@ -12,6 +12,16 @@ const Proveedores = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Función para evitar que se ingresen letras en el input de teléfono
+  const handlePhoneKeyPress = (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    // Permitir sólo dígitos (0-9)
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+    }
+  };
+
+
   // Usamos la propiedad "addres" para alinear con el modelo de la DB
   const [newProvider, setNewProvider] = useState({
     name: "",
@@ -443,15 +453,16 @@ const Proveedores = () => {
                 className="rounded-pill"
               />
             </Form.Group>
-            <Form.Group controlId="providerPhone" className="mt-2">
+            <Form.Group controlId="editProviderPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
+                className="rounded-pill"
                 type="tel"
                 placeholder="Ej: 912345678"
                 name="phone"
-                value={newProvider.phone}
-                onChange={handleInputChange}
-                className="rounded-pill"
+                value={editProvider.phone}
+                onChange={handleEditInputChange}
+                onKeyPress={handlePhoneKeyPress}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"
@@ -513,16 +524,13 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
+                className="rounded-pill"
                 type="tel"
                 placeholder="Ej: 912345678"
                 name="phone"
                 value={editProvider.phone}
-                onChange={(e) => {
-                  // Se eliminan caracteres no numéricos y se limita a 9 dígitos
-                  const cleaned = e.target.value.replace(/\D/g, "").slice(0, 9);
-                  handleEditInputChange({ target: { name: "phone", value: cleaned } });
-                }}
-                className="rounded-pill"
+                onChange={handleEditInputChange}
+                onKeyPress={handlePhoneKeyPress}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"

@@ -135,7 +135,7 @@ const Usuarios = () => {
   return (
     <div className="container mt-4">
       <ToastContainer />
-      <h1 className="mb-4">Usuarios</h1>
+      <h1 className="mb-3 text-white">Usuarios</h1>
 
       {loading ? (
         <div>Cargando usuarios...</div>

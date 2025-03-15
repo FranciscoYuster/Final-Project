@@ -304,7 +304,7 @@ const Facturas = () => {
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
-        <h2 className="text-center">Lista de Facturas</h2>
+        <h1 className="mb-3 text-white">Lista de Facturas</h1>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">

@@ -168,6 +168,15 @@ const Clientes = () => {
     setError(null);
   };
 
+  // Función para evitar que se ingresen letras en el input de teléfono
+  const handlePhoneKeyPress = (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    // Permitir sólo dígitos (0-9)
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+    }
+  };
+
   const isDuplicateCustomer = () => {
     return customers.some(customer =>
       customer.name.toLowerCase() === newCustomer.name.toLowerCase() ||
@@ -468,6 +477,7 @@ const Clientes = () => {
                 name="phone"
                 value={newCustomer.phone}
                 onChange={handleInputChange}
+                onKeyPress={handlePhoneKeyPress}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"
@@ -525,6 +535,7 @@ const Clientes = () => {
                 name="phone"
                 value={editCustomer.phone}
                 onChange={handleEditInputChange}
+                onKeyPress={handlePhoneKeyPress}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"
