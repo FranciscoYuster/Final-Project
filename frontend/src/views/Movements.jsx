@@ -480,7 +480,7 @@ const Movements = () => {
                 />
               </div>
               <div className="mb-3">
-                <label className="form-label">Cantidad:</label>
+                <label className="form-label">Cantidad</label>
                 <input
                 style={{ borderColor: "#074de3" }}
                   type="number"

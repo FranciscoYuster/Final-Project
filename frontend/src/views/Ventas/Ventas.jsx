@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Ventas.css';
+import { Button, Form } from 'react-bootstrap';
 
 const Ventas = () => {
   const [products, setProducts] = useState([]);
@@ -15,9 +16,17 @@ const Ventas = () => {
 
   // Cargar productos
   useEffect(() => {
-    fetch('/products')
+    fetch('/api/products', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // Incluir el token en la petición
+      }
+    })
       .then((res) => res.json())
-      .then((data) => setProducts(data))
+      .then((data) => {
+        setProducts(data)})
+
       .catch((err) => console.error('Error al obtener productos', err));
   }, []);
 
@@ -38,11 +47,13 @@ const Ventas = () => {
   // Calcular total de la venta
   useEffect(() => {
     const newTotal = saleItems.reduce((acc, item) => {
+      if (!item.productId) return acc; // Evita cálculos si no hay producto seleccionado
       const product = products.find((p) => p.id === parseInt(item.productId));
-      return product ? acc + product.price * item.quantity : acc;
+      return product ? acc + product.precio * item.quantity : acc;
     }, 0);
     setTotal(newTotal);
   }, [saleItems, products]);
+  
 
   // Manejo de cambios en los items de venta
   const handleSaleItemChange = (index, field, value) => {
@@ -128,10 +139,11 @@ const Ventas = () => {
       <form onSubmit={handleSubmit} className="ventas-form">
         <section className="ventas-section">
           <h2>Seleccionar Cliente</h2>
-          <select 
+          <Form.Select 
+          className="rounded-pill"
             value={selectedCustomerId} 
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="ventas-select"
+            style={{ borderColor: "#074de3" }}
             required
           >
             <option value="">Seleccione un cliente</option>
@@ -140,26 +152,28 @@ const Ventas = () => {
                 {customer.name} - {customer.email}
               </option>
             ))}
-          </select>
+          </Form.Select>
         </section>
 
         <section className="ventas-section">
-          <h2>Productos</h2>
+          <h2>Seleccionar Productos</h2>
           {saleItems.map((item, index) => (
-            <div key={index} className="ventas-item">
-              <select
+            <div key={index} className="d-flex justify-content-between align-items-center mb-3">
+              <Form.Select
                 value={item.productId}
                 onChange={(e) => handleSaleItemChange(index, 'productId', e.target.value)}
-                className="ventas-select"
+                className="rounded-pill me-3"
+                style={{ borderColor: "#074de3" }}
                 required
               >
                 <option value="">Seleccione un producto</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name} (${product.price})
+                    {product.nombre} (${product.precio})
                   </option>
                 ))}
-              </select>
+              </Form.Select>
+              
               <input
                 type="number"
                 min="1"
@@ -167,25 +181,28 @@ const Ventas = () => {
                 onChange={(e) =>
                   handleSaleItemChange(index, 'quantity', parseInt(e.target.value))
                 }
-                className="ventas-input"
+                className="form-control rounded-pill me-3"
+                style={{ borderColor: "#074de3" }}
                 required
               />
               {saleItems.length > 1 && (
-                <button type="button" onClick={() => removeSaleItem(index)} className="ventas-delete-button">
+                <Button variant="dangger" style={{ backgroundColor: "#e30e07", borderColor: "#e30e07", color:"white" }} onClick={() => removeSaleItem(index)} className="rounded-pill" >
                   Eliminar
-                </button>
+                </Button>
               )}
             </div>
           ))}
-          <button type="button" onClick={addSaleItem} className="ventas-add-button">
+          <Button type="submit" variant="primary" className="mt-3 rounded-pill" onClick={addSaleItem} style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+          >
             Agregar producto
-          </button>
+          </Button>
         </section>
 
-        <h3 className="ventas-total">Total: ${total.toFixed(2)}</h3>
-        <button type="submit" className="ventas-button" disabled={loading}>
+        <h3 className="ventas-total text-white">
+  Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(total)}
+</h3>        <Button type="submit" variant="primary" className="mt-3 rounded-pill" disabled={loading} style={{ backgroundColor: "#074de3", borderColor: "#074de3", color:"white" }}>
           {loading ? 'Procesando...' : 'Generar Venta'}
-        </button>
+        </Button>
       </form>
       {message && <p className="ventas-message">{message}</p>}
     </div>
