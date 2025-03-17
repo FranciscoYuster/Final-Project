@@ -191,6 +191,10 @@ class Product(db.Model):
     categoria = db.Column(db.String(50), nullable=False)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
+
+    # Relación con Ubicacion
+    ubicacion = db.relationship("Ubicacion", backref="products", foreign_keys=[ubicacion_id])
 
     def serialize(self):
         return {
@@ -200,7 +204,9 @@ class Product(db.Model):
             "stock": self.stock,
             "precio": self.precio,
             "categoria": self.categoria,
+            "ubicacion": self.ubicacion.serialize() if self.ubicacion else None,
         }
+
 
     def save(self):
         db.session.add(self)
@@ -270,12 +276,12 @@ class Invoice(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     purchase_id = db.Column(db.Integer, db.ForeignKey('purchases.id'), nullable=True, unique=True)
     numero_comprobante = db.Column(db.String(50), nullable=False, unique=True)
+    numero_nota = db.Column(db.String(50), nullable=True, unique=True)
     monto_base = db.Column(db.Float, nullable=False)
     impuesto_aplicado = db.Column(db.Float, nullable=False)
     total_final = db.Column(db.Float, nullable=False)
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
     status = db.Column(db.String, nullable=False, default="Pending")
-    # Campo para definir si es Factura o Boleta; por defecto es "Factura"
     tipo = db.Column(db.String(20), nullable=False, default="Factura")
     
     # Relación con Customer (se asume que Customer tiene un método serialize)
@@ -288,6 +294,7 @@ class Invoice(db.Model):
             "inventory_id": self.inventory_id,
             "customer": self.customer.serialize() if self.customer else None,
             "numero_comprobante": self.numero_comprobante,
+            "numero_nota": self.numero_nota,
             "monto_base": self.monto_base,
             "impuesto_aplicado": self.impuesto_aplicado,
             "total_final": self.total_final,
@@ -295,6 +302,7 @@ class Invoice(db.Model):
             "status": self.status,
             "tipo": self.tipo
         }
+
             
     def save(self):
         db.session.add(self)

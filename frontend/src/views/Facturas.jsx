@@ -458,8 +458,9 @@ const Facturas = () => {
                         </span>
                       ) : invoice.status === "Anular" ? (
                         <span style={{ color: "red" }}>
-                          <FaBan className="me-1" /> Anulada
-                        </span>
+                        <FaBan className="me-1" /> Anulada {invoice.numero_nota ? `(N°: ${invoice.numero_nota})` : ""}
+                      </span>
+                  
                       ) : (
                         <span style={{ color: "orange" }}>
                           <FaClock className="me-1" /> {invoice.status}

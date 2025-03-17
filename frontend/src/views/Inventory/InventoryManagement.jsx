@@ -30,8 +30,8 @@ const InventoryManagement = () => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', stock: '', ubicacion_id: '' });
@@ -62,6 +62,10 @@ const InventoryManagement = () => {
     } finally {
       setLoadingProducts(false);
     }
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
   };
 
   // Cargar ubicaciones
@@ -196,22 +200,6 @@ const InventoryManagement = () => {
     }
   };
 
-  // Función para eliminar producto
-  const handleDeleteProduct = async id => {
-    try {
-      const response = await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      await response.json();
-      setProducts(prev => prev.filter(p => p.id !== id));
-      toast.success('Producto eliminado.');
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      toast.error('Error al eliminar el producto.');
-    }
-  };
 
   // Función para obtener movimientos de un producto
   const fetchMovements = async productId => {
@@ -288,9 +276,7 @@ const InventoryManagement = () => {
           <button className="btn btn-info btn-sm me-1" onClick={() => fetchMovements(row.id)}>
             <FaEye />
           </button>
-          <button className="btn btn-danger btn-sm me-2" onClick={() => handleDeleteProduct(row.id)}>
-            <FaTrash />
-          </button>
+       
         </>
       ),
       ignoreRowClick: true,

@@ -12,7 +12,7 @@ const SessionTimer = ({ tokenExpirationTime }) => {
       setTimeLeft(newTimeLeft);
 
       // Si quedan 10 minutos o menos y aún no se ha notificado, se muestra una alerta.
-      if (newTimeLeft <= 10 * 60 * 1000 && newTimeLeft > 9 * 60 * 1000) {
+      if (newTimeLeft <= 10 * 60 * 1000 && newTimeLeft > 9.8 * 60 * 1000) {
         toast.info('Tu sesión expirará en menos de 10 minutos. Por favor, guarda tu trabajo o refresca la sesión.');
       }
 

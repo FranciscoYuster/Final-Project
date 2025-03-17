@@ -125,12 +125,31 @@ const Clientes = () => {
   };
 
   const handleConfirmDelete = async () => {
+    // Buscar el cliente que se desea eliminar
+    const customer = customers.find(cust => cust.id === customerToDelete);
+
+    // Verificar si el cliente tiene facturas asociadas y mostrar toast.error si es el caso
+    if (customer && customer.invoices && customer.invoices.length > 0) {
+      toast.error("Cliente tiene facturas creadas a través de Toastify");
+      setShowDeleteModal(false);
+      setCustomerToDelete(null);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/customers/${customerToDelete}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 409) {
+          const errorData = await response.json();
+          toast.error(errorData.error || "No se pudo eliminar el cliente.");
+        } else {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+        return;
+      }
       await response.json();
       setCustomers(customers.filter(customer => customer.id !== customerToDelete));
       toast.success("Cliente eliminado correctamente.");
@@ -171,7 +190,6 @@ const Clientes = () => {
   // Función para evitar que se ingresen letras en el input de teléfono
   const handlePhoneKeyPress = (e) => {
     const charCode = e.which ? e.which : e.keyCode;
-    // Permitir sólo dígitos (0-9)
     if (charCode < 48 || charCode > 57) {
       e.preventDefault();
     }
@@ -447,7 +465,7 @@ const Clientes = () => {
             <Form.Group controlId="customerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="text"
                 placeholder="Nombre del cliente"
@@ -460,7 +478,7 @@ const Clientes = () => {
             <Form.Group controlId="customerEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="email"
                 placeholder="Email del cliente"
@@ -473,7 +491,7 @@ const Clientes = () => {
             <Form.Group controlId="customerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="tel"
                 placeholder="Número de teléfono del cliente"
@@ -508,7 +526,7 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="text"
                 placeholder="Nombre del cliente"
@@ -521,7 +539,7 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="email"
                 placeholder="Email del cliente"
@@ -534,7 +552,7 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="tel"
                 placeholder="Teléfono del cliente"

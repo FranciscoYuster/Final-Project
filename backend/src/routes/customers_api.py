@@ -65,8 +65,14 @@ def delete_customer(id):
         return jsonify({"error": "Customer not found"}), 404
     if str(customer.user_id) != str(user_id):
         return jsonify({"error": "Unauthorized"}), 403
+    
+    # Verificar si el cliente tiene facturas asociadas
+    if hasattr(customer, 'invoices') and customer.invoices:
+        return jsonify({"error": "El cliente tiene facturas asociadas y no puede ser eliminado."}), 409
+
     try:
         customer.delete()
     except Exception as e:
         return jsonify({"error": "Error deleting customer", "details": str(e)}), 500
     return jsonify({"message": "Customer deleted"}), 200
+

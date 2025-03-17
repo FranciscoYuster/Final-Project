@@ -32,14 +32,14 @@ def create_product():
     if not user or not user.inventory:
         return jsonify({"error": "User or inventory not found"}), 404
 
-    # Usar el inventory_id del usuario en lugar de depender de los datos entrantes
     product = Product(
         nombre=data.get("nombre"),
         precio=data.get("precio"),
         codigo=data.get("codigo"),
         stock=data.get("stock"),
         categoria=data.get("categoria"),
-        inventory_id=user.inventory.id,  # Se usa el inventario del usuario
+        inventory_id=user.inventory.id,  # Asigna el inventario del usuario
+        ubicacion_id=data.get("ubicacion_id"),  # Asigna la ubicación recibida
         user_id=user_id
     )
     try:
@@ -64,7 +64,8 @@ def update_product(id):
         product.precio = data["precio"]
     if data.get("stock"):
         product.stock = data["stock"]
-
+    if data.get("ubicacion_id"):
+        product.ubicacion_id = data["ubicacion_id"]
     try:
         product.save()
     except Exception as e:
