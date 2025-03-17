@@ -488,7 +488,7 @@ const Clientes = () => {
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
-            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
               Crear
             </Button>
           </Form>
@@ -508,9 +508,10 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="text"
-                placeholder="Ingrese el nombre"
+                placeholder="Nombre del cliente"
                 name="name"
                 value={editCustomer.name}
                 onChange={handleEditInputChange}
@@ -520,9 +521,10 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="email"
-                placeholder="Ingrese el email"
+                placeholder="Email del cliente"
                 name="email"
                 value={editCustomer.email}
                 onChange={handleEditInputChange}
@@ -532,9 +534,10 @@ const Clientes = () => {
             <Form.Group controlId="editCustomerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="tel"
-                placeholder="Ej: 912345678"
+                placeholder="Teléfono del cliente"
                 name="phone"
                 value={editCustomer.phone}
                 onChange={handleEditInputChange}
@@ -545,7 +548,7 @@ const Clientes = () => {
                 title="El teléfono debe ser un número móvil chileno de 9 dígitos. Ej: 912345678"
               />
             </Form.Group>
-            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill">
               Guardar cambios
             </Button>
           </Form>

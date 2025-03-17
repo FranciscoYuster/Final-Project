@@ -3,7 +3,7 @@ import { Button, Modal, Table, Form, InputGroup, FormControl, Pagination } from 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaCheck, FaClock, FaBan } from "react-icons/fa";
+import { FaCheck, FaClock, FaBan, FaPlus } from "react-icons/fa";
 
 const Facturas = () => {
   const [invoices, setInvoices] = useState([]);
@@ -392,12 +392,12 @@ const Facturas = () => {
             className="rounded-pill"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-            Crear Factura
+            <FaPlus className="me-1" />Crear Factura
           </Button>
         </div>
         <div className="d-flex justify-content-end mb-2">
           {hiddenInvoices.length > 0 && (
-            <Button variant="outline-info" onClick={() => setShowHidden(!showHidden)}>
+            <Button className="rounded-pill" style={{ backgroundColor: "gray", borderColor: "gray", color: "white"}} onClick={() => setShowHidden(!showHidden)}>
               {showHidden ? "Ocultar Facturas Ocultas" : "Mostrar Facturas Ocultas"}
             </Button>
           )}
@@ -479,17 +479,19 @@ const Facturas = () => {
                             Mostrar
                           </Button>
                         ) : (
+                          
                           <Button
                             variant="info"
                             onClick={() => handleOcultarInvoice(invoice.id)}
-                            className="rounded-pill"
-                            style={{ backgroundColor: "#6c757d", borderColor: "#6c757d" }}
+                            className="rounded-pill text-white"
+                            style={{ backgroundColor: "gray", borderColor: "gray" }}
                           >
                             Ocultar
                           </Button>
                         )
                       ) : (
                         <>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
                           <Button
                             variant="warning"
                             onClick={() => handleOpenEditModal(invoice)}
@@ -502,18 +504,19 @@ const Facturas = () => {
                             variant="secondary"
                             onClick={() => handleOpenAnularModal(invoice)}
                             className="me-2 rounded-pill"
-                            style={{ backgroundColor: "#17a2b8", borderColor: "#17a2b8" }}
+                            style={{ backgroundColor: "orange", borderColor: "orange" }}
                           >
                             Anular
                           </Button>
                           <Button
                             variant="info"
                             onClick={() => handleOcultarInvoice(invoice.id)}
-                            className="rounded-pill"
-                            style={{ backgroundColor: "#6c757d", borderColor: "#6c757d" }}
+                            className="rounded-pill text-white"
+                            style={{ backgroundColor: "gray", borderColor: "gray" }}
                           >
                             Ocultar
                           </Button>
+                          </div>
                         </>
                       )}
                     </td>
@@ -523,17 +526,7 @@ const Facturas = () => {
             </tbody>
           </Table>
         </div>
-        <div className="mb-3">
-          <Button
-            variant="danger"
-            disabled={selectedInvoices.length === 0}
-            onClick={() => setShowDeleteSelectedModal(true)}
-            className="rounded-pill"
-            style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
-          >
-            Ocultar Seleccionadas
-          </Button>
-        </div>
+        
         <Pagination className="mb-3 justify-content-center">
           {[...Array(totalPages)].map((_, index) => (
             <Pagination.Item
@@ -674,12 +667,10 @@ const Facturas = () => {
                   <option value="Anular">Anulada</option>
                 </Form.Select>
               </Form.Group>
-              <div className="mt-3 d-flex justify-content-end">
-                <Button variant="secondary" onClick={handleCloseModal} className="me-2 rounded-pill">
-                  Cancelar
-                </Button>
+              <div className="mt-3 d-flex">
+
                 <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
-                  Guardar Factura
+                  Crear
                 </Button>
               </div>
             </Form>

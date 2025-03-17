@@ -135,7 +135,7 @@ const Ventas = () => {
 
   return (
     <div className="ventas-container">
-      <h1>Generar Venta</h1>
+      <h1 className='text-white'>Generar Venta</h1>
       <form onSubmit={handleSubmit} className="ventas-form">
         <section className="ventas-section">
           <h2>Seleccionar Cliente</h2>

@@ -299,7 +299,6 @@ const Ubicaciones = () => {
                         <>
                           <Button
                             variant="success"
-                            size="sm"
                             className="me-2 rounded-pill"
                             onClick={handleEditUbicacion}
                           >
@@ -307,7 +306,6 @@ const Ubicaciones = () => {
                           </Button>
                           <Button
                             variant="secondary"
-                            size="sm"
                             className="rounded-pill"
                             onClick={() => setEditingUbicacion(null)}
                           >
@@ -318,7 +316,6 @@ const Ubicaciones = () => {
                         <>
                           <Button
                             variant="warning"
-                            size="sm"
                             className="me-2 rounded-pill"
                             onClick={() => handleShowModal(ubicacion)}
                             style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
@@ -327,7 +324,6 @@ const Ubicaciones = () => {
                           </Button>
                           <Button
                             variant="danger"
-                            size="sm"
                             className="rounded-pill"
                             onClick={() => confirmDeleteUbicacion(ubicacion.id)}
                             style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}

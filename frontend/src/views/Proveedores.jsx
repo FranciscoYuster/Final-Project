@@ -299,7 +299,7 @@ const Proveedores = () => {
               onChange={handleSearch}
             />
           </InputGroup>
-          <Button variant="primary" className="rounded-pill" onClick={handleOpenCreateModal}>
+          <Button variant="primary" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }} onClick={handleOpenCreateModal}>
             <FaPlus className="me-1" /> Crear Nuevo Proveedor
           </Button>
         </div>
@@ -423,7 +423,7 @@ const Proveedores = () => {
       {/* Modal para crear proveedor */}
       <Modal show={showCreateModal} onHide={handleCloseCreateModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Crear Nuevo Proveedor</Modal.Title>
+          <Modal.Title>Crear Proveedor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form
@@ -434,11 +434,12 @@ const Proveedores = () => {
               <Form.Label>Nombre / Razón Social</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Ingrese el nombre"
+                placeholder="Nombre del proveedor"
                 name="name"
                 value={newProvider.name}
                 onChange={handleInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
                 required
               />
             </Form.Group>
@@ -446,11 +447,12 @@ const Proveedores = () => {
               <Form.Label>Dirección</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Ingrese la dirección"
+                placeholder="Dirección del proveedor"
                 name="addres"
                 value={newProvider.addres}
                 onChange={handleInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
             <Form.Group controlId="editProviderPhone" className="mt-2">
@@ -458,31 +460,33 @@ const Proveedores = () => {
               <Form.Control
                 className="rounded-pill"
                 type="tel"
-                placeholder="Ej: 912345678"
+                placeholder="Teléfono del proveedor"
                 name="phone"
                 value={editProvider.phone}
-                onChange={handleEditInputChange}
+                onChange={handleInputChange}
                 onKeyPress={handlePhoneKeyPress}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"
                 title="El teléfono debe ser un número móvil chileno de 9 dígitos. Ej: 912345678"
+                style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
             <Form.Group controlId="providerEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
                 type="email"
-                placeholder="Ingrese el email"
+                placeholder="Email del proveedor"
                 name="email"
                 value={newProvider.email}
                 onChange={handleInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
-            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
-              Crear Proveedor
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+              Crear 
             </Button>
           </Form>
         </Modal.Body>
@@ -501,8 +505,9 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderName">
               <Form.Label>Nombre / Razón Social</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 type="text"
-                placeholder="Ingrese el nombre"
+                placeholder="Nombre del proveedor"
                 name="name"
                 value={editProvider.name}
                 onChange={handleEditInputChange}
@@ -513,8 +518,9 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderAddress" className="mt-2">
               <Form.Label>Dirección</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 type="text"
-                placeholder="Ingrese la dirección"
+                placeholder="Dirección del proveedor"
                 name="addres"
                 value={editProvider.addres}
                 onChange={handleEditInputChange}
@@ -525,8 +531,9 @@ const Proveedores = () => {
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
                 type="tel"
-                placeholder="Ej: 912345678"
+                placeholder="Teléfono del proveedor"
                 name="phone"
                 value={editProvider.phone}
                 onChange={handleEditInputChange}
@@ -540,8 +547,9 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 type="email"
-                placeholder="Ingrese el email"
+                placeholder="Email del proveedor"
                 name="email"
                 value={editProvider.email}
                 onChange={handleEditInputChange}
@@ -549,8 +557,8 @@ const Proveedores = () => {
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
-            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
-              Actualizar Proveedor
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill">
+              Guardar cambios
             </Button>
           </Form>
         </Modal.Body>
