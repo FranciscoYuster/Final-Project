@@ -3,6 +3,7 @@ import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootst
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { FaPlus } from 'react-icons/fa';
 
 export const baseUrl = import.meta.env.VITE_BASE_URL;
 
@@ -216,7 +217,7 @@ const Ubicaciones = () => {
             className="rounded-pill"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-            Crear Nueva Ubicación
+            <FaPlus className="me-1" /> Crear Nueva ubicación
           </Button>
         </div>
 
@@ -370,14 +371,17 @@ const Ubicaciones = () => {
       {/* Modal para crear o editar ubicaciones */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>{editingUbicacion ? "Editar Ubicación" : "Crear Nueva Ubicación"}</Modal.Title>
+          <Modal.Title>{editingUbicacion ? "Editar Ubicación" : "Crear Ubicación"}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={editingUbicacion ? handleEditUbicacion : handleAddUbicacion}>
             <Form.Group className="mb-3">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 type="text"
+                className="rounded-pill"
+                placeholder='Nombre de la ubicación'
                 value={newUbicacion.nombre}
                 onChange={(e) =>
                   setNewUbicacion({ ...newUbicacion, nombre: e.target.value })
@@ -388,15 +392,17 @@ const Ubicaciones = () => {
             <Form.Group className="mb-3">
               <Form.Label>Descripción</Form.Label>
               <Form.Control
-                as="textarea"
+              style={{ borderColor: "#074de3" }}
+                className="rounded-pill"
+                placeholder='Descripción de la ubicación'
                 value={newUbicacion.descripcion}
                 onChange={(e) =>
                   setNewUbicacion({ ...newUbicacion, descripcion: e.target.value })
                 }
               />
             </Form.Group>
-            <Button variant="primary" type="submit">
-              {editingUbicacion ? "Guardar Cambios" : "Crear Ubicación"}
+            <Button type="submit" className="mt-3 rounded-pill" variant='primary' style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+              {editingUbicacion ? "Guardar" : "Crear"}
             </Button>
           </Form>
         </Modal.Body>
@@ -428,7 +434,7 @@ const Ubicaciones = () => {
       {/* Modal de confirmación para eliminación de ubicaciones seleccionadas */}
       <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Eliminar Ubicaciones Seleccionadas</Modal.Title>
+          <Modal.Title>Eliminar Seleccionados</Modal.Title>
         </Modal.Header>
         <Modal.Body>¿Estás seguro de eliminar las ubicaciones seleccionadas?</Modal.Body>
         <Modal.Footer>

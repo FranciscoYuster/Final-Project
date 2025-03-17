@@ -315,7 +315,7 @@ const Clientes = () => {
               onChange={handleSearch}
             />
           </InputGroup>
-          <Button variant="primary" className="rounded-pill" onClick={handleOpenCreateModal}>
+          <Button variant="primary" className="rounded-pill" onClick={handleOpenCreateModal} style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
             <FaPlus className="me-1" /> Crear Nuevo Cliente
           </Button>
         </div>
@@ -447,9 +447,10 @@ const Clientes = () => {
             <Form.Group controlId="customerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="text"
-                placeholder="Ingrese el nombre"
+                placeholder="Nombre del cliente"
                 name="name"
                 value={newCustomer.name}
                 onChange={handleInputChange}
@@ -459,9 +460,10 @@ const Clientes = () => {
             <Form.Group controlId="customerEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="email"
-                placeholder="Ingrese el email"
+                placeholder="Email del cliente"
                 name="email"
                 value={newCustomer.email}
                 onChange={handleInputChange}
@@ -471,9 +473,10 @@ const Clientes = () => {
             <Form.Group controlId="customerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
+              style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
                 type="tel"
-                placeholder="Ej: 912345678"
+                placeholder="Número de teléfono del cliente"
                 name="phone"
                 value={newCustomer.phone}
                 onChange={handleInputChange}
@@ -485,8 +488,8 @@ const Clientes = () => {
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
-            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill">
-              Crear Cliente
+            <Button variant="primary" type="submit" className="w-100 mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+              Crear
             </Button>
           </Form>
         </Modal.Body>

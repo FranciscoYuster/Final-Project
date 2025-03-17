@@ -14,7 +14,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { FaFileCsv, FaFileExcel, FaFilePdf, FaTrash } from "react-icons/fa";
+import { FaTrash, FaPlus } from "react-icons/fa";
 
 const Movements = () => {
   // Estados para movimientos y productos
@@ -293,7 +293,7 @@ const Movements = () => {
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Historial de Movimientos</h1>
         {/* Filtro global */}
-        <div className="mb-3">
+        <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
             <FormControl
               placeholder="Buscar movimiento..."
@@ -306,18 +306,20 @@ const Movements = () => {
               className="rounded-pill"
             />
           </InputGroup>
-        </div>
 
-        {/* Botones de acciones y exportación */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
           <Button 
             variant="primary" 
             onClick={() => setShowModal(true)} 
             className="rounded-pill" 
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-            Agregar Movimiento
+           <FaPlus className="me-1" />  Agregar Nuevo movimiento
           </Button>
+        </div>
+
+        {/* Botones de acciones y exportación */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
+
           <div className="d-flex gap-2">
             <Button variant="secondary" size="sm" className="rounded-pill" onClick={handleExportCSV}>
               Exportar CSV
@@ -438,9 +440,10 @@ const Movements = () => {
           <Modal.Header closeButton>
             <Modal.Title>Nuevo Movimiento</Modal.Title>
           </Modal.Header>
-          <form onSubmit={handleAddMovement}>
+
             <Modal.Body>
-              <div className="mb-2">
+            <form onSubmit={handleAddMovement}>
+              <div className="mb-3">
                 <label className="form-label">Producto:</label>
                 {loadingProducts ? (
                   <p>Cargando productos...</p>
@@ -449,7 +452,9 @@ const Movements = () => {
                     name="product_id"
                     value={newMovement.product_id}
                     onChange={handleInputChange}
-                    className="form-control"
+                    className="form-control rounded-pill"
+                    placeholder="Selecciona un producto"
+                    style={{ borderColor: "#074de3" }}
                     required
                   >
                     <option value="">Selecciona un producto</option>
@@ -461,39 +466,39 @@ const Movements = () => {
                   </select>
                 )}
               </div>
-              <div className="mb-2">
-                <label className="form-label">Tipo (sale/purchase):</label>
+              <div className="mb-3">
+                <label className="form-label">Tipo (Sale o Purchase):</label>
                 <input
+                style={{ borderColor: "#074de3" }}
                   type="text"
                   name="type"
                   value={newMovement.type}
                   onChange={handleInputChange}
-                  className="form-control"
-                  placeholder="sale o purchase"
+                  className="form-control rounded-pill"
+                  placeholder="Selecciona Sale o Purchase"
                   required
                 />
               </div>
-              <div className="mb-2">
+              <div className="mb-3">
                 <label className="form-label">Cantidad:</label>
                 <input
+                style={{ borderColor: "#074de3" }}
                   type="number"
                   name="quantity"
                   value={newMovement.quantity}
                   onChange={handleInputChange}
-                  className="form-control"
+                  className="form-control rounded-pill"
+                  placeholder="Cantidad del movimiento"
                   required
                 />
               </div>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary">
+
+
+              <Button type="submit" variant="primary" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
                 Guardar
               </Button>
-            </Modal.Footer>
           </form>
+          </Modal.Body>
         </Modal>
       )}
 
@@ -524,7 +529,7 @@ const Movements = () => {
       {/* Modal de confirmación para eliminación de movimientos seleccionados */}
       <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Eliminar Movimientos Seleccionados</Modal.Title>
+          <Modal.Title>Eliminar Seleccionados</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           ¿Estás seguro de eliminar los movimientos seleccionados?
