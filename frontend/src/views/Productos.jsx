@@ -223,6 +223,12 @@ const Productos = () => {
       });
   };
 
+  // Función para abrir el modal de confirmación de eliminación individual
+  const confirmDeleteProduct = (id) => {
+    setProductToDelete(id);
+    setShowDeleteConfirmation(true);
+  };
+
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
@@ -274,7 +280,6 @@ const Productos = () => {
                 <th>Stock</th>
                 <th>Precio</th>
                 <th>Categoría</th>
-                {/* Se eliminó la columna de Ubicación */}
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -294,7 +299,6 @@ const Productos = () => {
                   <td>{producto.stock}</td>
                   <td>{producto.precio}</td>
                   <td>{producto.categoria}</td>
-                  {/* Se eliminó la celda de Ubicación */}
                   <td>
                     <Button
                       variant="warning"
@@ -306,7 +310,7 @@ const Productos = () => {
                     </Button>
                     <Button
                       variant="danger"
-                      onClick={() => handleDeleteProduct(producto.id)}
+                      onClick={() => confirmDeleteProduct(producto.id)}
                       className="rounded-pill"
                       style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
                     >
@@ -321,7 +325,7 @@ const Productos = () => {
         <Button
           variant="danger"
           disabled={selectedProducts.length === 0}
-          onClick={handleDeleteAllProducts}
+          onClick={() => setShowDeleteAllConfirmation(true)}
           className="mb-3 rounded-pill"
           style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
         >
@@ -339,142 +343,149 @@ const Productos = () => {
             </Pagination.Item>
           ))}
         </Pagination>
-        {/* Modal para Confirmar Eliminación */}
-        <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmar Eliminación</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            ¿Estás seguro de que deseas eliminar este producto?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={() => handleDeleteProduct(productToDelete)}>
-              Eliminar
-            </Button>
-          </Modal.Footer>
-        </Modal>
-        {/* Modal para Confirmar Eliminación de Todos */}
-        <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmar Eliminación</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            ¿Estás seguro de que deseas eliminar todos los productos seleccionados?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteAllConfirmation(false)}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={handleDeleteAllProducts}>
-              Eliminar Seleccionados
-            </Button>
-          </Modal.Footer>
-        </Modal>
-        {/* Modal para Crear/Editar Producto */}
-        <Modal show={showModal} onHide={handleCloseModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const nombre = e.target.nombre.value;
-                const stock = Number(e.target.stock.value);
-                const codigo = e.target.codigo.value;
-                const precio = Number(e.target.precio.value);
-                const categoria = e.target.categoria.value;
-                // Se elimina el campo de ubicación en la sumisión
-                if (isNaN(stock) || isNaN(precio)) {
-                  console.error("Error: stock o precio no son números válidos");
-                  toast.error("Stock o precio no son números válidos.");
-                  return;
-                }
-                if (editingProduct) {
-                  handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria });
-                } else {
-                  handleCreateProduct({ nombre, codigo, stock, precio, categoria });
-                }
-                handleCloseModal();
-              }}
-            >
-              <Form.Group controlId="formCodigo">
-                <Form.Label>Código</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Código del producto"
-                  defaultValue={editingProduct ? editingProduct.codigo : ""}
-                  name="codigo"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formNombre">
-                <Form.Label>Nombre</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Nombre del producto"
-                  defaultValue={editingProduct ? editingProduct.nombre : ""}
-                  name="nombre"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formStock">
-                <Form.Label>Stock</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="Stock del producto"
-                  defaultValue={editingProduct ? editingProduct.stock : ""}
-                  name="stock"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formPrecio">
-                <Form.Label>Precio</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="Precio del producto"
-                  defaultValue={editingProduct ? editingProduct.precio : ""}
-                  name="precio"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                  step="0.01"
-                />
-              </Form.Group>
-              <Form.Group controlId="formCategoria">
-                <Form.Label>Categoría</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Categoría del producto"
-                  defaultValue={editingProduct ? editingProduct.categoria : ""}
-                  name="categoria"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              {/* Se eliminó el grupo de Ubicación */}
-              <Button 
-                variant="primary" 
-                type="submit" 
-                className="mt-3 rounded-pill"
-                style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-              >
-                {editingProduct ? "Actualizar" : "Crear"}
-              </Button>
-            </Form>
-          </Modal.Body>
-        </Modal>
       </div>
+      {/* Modal para Confirmar Eliminación Individual */}
+      <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar Eliminación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de que deseas eliminar este producto?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => {
+            handleDeleteProduct(productToDelete);
+            setShowDeleteConfirmation(false);
+            setProductToDelete(null);
+          }}>
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* Modal para Confirmar Eliminación de Todos */}
+      <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar Eliminación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de que deseas eliminar todos los productos seleccionados?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteAllConfirmation(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => {
+            handleDeleteAllProducts();
+            setShowDeleteAllConfirmation(false);
+          }}>
+            Eliminar Seleccionados
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* Modal para Crear/Editar Producto */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const nombre = e.target.nombre.value;
+              const stock = Number(e.target.stock.value);
+              const codigo = e.target.codigo.value;
+              const precio = Number(e.target.precio.value);
+              const categoria = e.target.categoria.value;
+              // Se elimina el campo de ubicación en la sumisión
+              if (isNaN(stock) || isNaN(precio)) {
+                console.error("Error: stock o precio no son números válidos");
+                toast.error("Stock o precio no son números válidos.");
+                return;
+              }
+              if (editingProduct) {
+                handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria });
+              } else {
+                handleCreateProduct({ nombre, codigo, stock, precio, categoria });
+              }
+              handleCloseModal();
+            }}
+          >
+            <Form.Group controlId="formCodigo">
+              <Form.Label>Código</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Código del producto"
+                defaultValue={editingProduct ? editingProduct.codigo : ""}
+                name="codigo"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formNombre">
+              <Form.Label>Nombre</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Nombre del producto"
+                defaultValue={editingProduct ? editingProduct.nombre : ""}
+                name="nombre"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formStock">
+              <Form.Label>Stock</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Stock del producto"
+                defaultValue={editingProduct ? editingProduct.stock : ""}
+                name="stock"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formPrecio">
+              <Form.Label>Precio</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Precio del producto"
+                defaultValue={editingProduct ? editingProduct.precio : ""}
+                name="precio"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+                step="0.01"
+              />
+            </Form.Group>
+            <Form.Group controlId="formCategoria">
+              <Form.Label>Categoría</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Categoría del producto"
+                defaultValue={editingProduct ? editingProduct.categoria : ""}
+                name="categoria"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            {/* Se eliminó el grupo de Ubicación */}
+            <Button 
+              variant="primary" 
+              type="submit" 
+              className="mt-3 rounded-pill"
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              {editingProduct ? "Actualizar" : "Crear"}
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

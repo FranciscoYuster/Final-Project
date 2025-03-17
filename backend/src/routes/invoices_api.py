@@ -4,6 +4,7 @@ from src.models import db, Invoice, Configuration, User, Customer
 
 invoices_api = Blueprint("invoices_api", __name__)
 
+# Endpoint para obtener todas las facturas del usuario autenticado
 @invoices_api.route('/invoices', methods=['GET'])
 @jwt_required()
 def get_invoices():
@@ -11,6 +12,7 @@ def get_invoices():
     invoices = Invoice.query.filter_by(user_id=user_id).all()
     return jsonify([invoice.serialize() for invoice in invoices]), 200
 
+# Endpoint para obtener una factura específica
 @invoices_api.route('/invoices/<int:id>', methods=['GET'])
 @jwt_required()
 def get_invoice(id):
@@ -20,16 +22,18 @@ def get_invoice(id):
         return jsonify({"error": "Invoice not found"}), 404
     return jsonify(invoice.serialize()), 200
 
+# Endpoint para crear una factura
 @invoices_api.route('/invoices', methods=['POST'])
 @jwt_required()
 def create_invoice():
     data = request.get_json()
     
+    # Validaciones básicas
     if "monto_base" not in data:
         return jsonify({"error": "monto_base is required"}), 400
     if "numero_comprobante" not in data:
         return jsonify({"error": "numero_comprobante is required"}), 400
-
+    
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     if not user:
@@ -37,6 +41,7 @@ def create_invoice():
     if not user.inventory:
         return jsonify({"error": "No inventory found for the user"}), 400
 
+    # Manejo de datos del cliente
     if "customer_id" in data:
         customer_id = data["customer_id"]
     else:
@@ -63,8 +68,9 @@ def create_invoice():
     except ValueError:
         return jsonify({"error": "monto_base must be a valid number"}), 400
 
+    # Se obtiene el impuesto desde la configuración del usuario; si no hay, se usa 0.19
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
-    tax = config_obj.impuesto if config_obj else 0.0
+    tax = config_obj.impuesto if config_obj else 0.19
 
     impuesto_aplicado = monto_base * tax
     total_final = monto_base + impuesto_aplicado
@@ -77,7 +83,8 @@ def create_invoice():
         impuesto_aplicado=impuesto_aplicado,
         total_final=total_final,
         status=data.get("status", "Pending"),
-        numero_comprobante=data["numero_comprobante"]
+        numero_comprobante=data["numero_comprobante"],
+        tipo=data.get("tipo", "Factura")
     )
 
     try:
@@ -88,6 +95,7 @@ def create_invoice():
 
     return jsonify(invoice.serialize()), 200
 
+# Endpoint para actualizar una factura (incluye opción de anulación)
 @invoices_api.route('/invoices/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_invoice(id):
@@ -108,12 +116,19 @@ def update_invoice(id):
         except ValueError:
             return jsonify({"error": "monto_base must be a valid number"}), 400
 
+    # Actualiza el estado, el tipo y otros campos relevantes
     if "status" in data:
         invoice.status = data["status"]
+    if "tipo" in data:
+        invoice.tipo = data["tipo"]
 
+    # Si se envía el número de nota (para anulación, por ejemplo), se actualiza en la factura
+    if "numero_nota" in data:
+        invoice.numero_nota = data["numero_nota"]
+
+    # Se recalcula el impuesto y total final usando el impuesto de la configuración o 0.19 por defecto
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
-    tax = config_obj.impuesto if config_obj else 0.0
-
+    tax = config_obj.impuesto if config_obj else 0.19
     invoice.impuesto_aplicado = invoice.monto_base * tax
     invoice.total_final = invoice.monto_base + invoice.impuesto_aplicado
 
@@ -121,23 +136,6 @@ def update_invoice(id):
         invoice.update()
     except Exception as e:
         db.session.rollback()
-        print("Error al actualizar factura:", e)
         return jsonify({"error": "Error updating invoice", "details": str(e)}), 500
 
     return jsonify(invoice.serialize()), 200
-
-@invoices_api.route('/invoices/<int:id>', methods=['DELETE'])
-@jwt_required()
-def delete_invoice(id):
-    user_id = get_jwt_identity()
-    invoice = Invoice.query.filter_by(id=id, user_id=user_id).first()
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
-
-    try:
-        invoice.delete()
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": "Error deleting invoice", "details": str(e)}), 500
-
-    return jsonify({"message": "Invoice deleted"}), 200

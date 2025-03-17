@@ -260,7 +260,7 @@ class Sale(db.Model):
     def get_all(cls):
         return cls.query.all()
 
-# Modificada: Tabla de facturas (Invoice)
+# Tabla de facturas (Invoice)
 class Invoice(db.Model):
     __tablename__ = 'invoices'
     
@@ -275,7 +275,10 @@ class Invoice(db.Model):
     total_final = db.Column(db.Float, nullable=False)
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
     status = db.Column(db.String, nullable=False, default="Pending")
+    # Campo para definir si es Factura o Boleta; por defecto es "Factura"
+    tipo = db.Column(db.String(20), nullable=False, default="Factura")
     
+    # Relación con Customer (se asume que Customer tiene un método serialize)
     customer = db.relationship("Customer", backref="invoices")
     
     def serialize(self):
@@ -289,13 +292,13 @@ class Invoice(db.Model):
             "impuesto_aplicado": self.impuesto_aplicado,
             "total_final": self.total_final,
             "invoice_date": self.invoice_date.isoformat() if self.invoice_date else None,
-            "status": self.status
+            "status": self.status,
+            "tipo": self.tipo
         }
-        
+            
     def save(self):
         db.session.add(self)
         db.session.commit()
-
     
     def update(self):
         db.session.commit()
@@ -308,13 +311,12 @@ class Invoice(db.Model):
         db.session.refresh(self)
     
     @classmethod
-    def find_by_id(cls, purchase_id):
-        return cls.query.get(purchase_id)
+    def find_by_id(cls, invoice_id):
+        return cls.query.get(invoice_id)
     
     @classmethod
     def get_all(cls):
         return cls.query.all()
-
 
 
 # Tabla de compras
@@ -516,8 +518,9 @@ class Configuration(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
-    impuesto = db.Column(db.Float, nullable=False, default=0.19)  # Ej. 0.15 para 15%
-    moneda = db.Column(db.String(10), nullable=False, default='USD')
+    # El impuesto siempre se establece en 0.19 (19%) por defecto
+    impuesto = db.Column(db.Float, nullable=False, default=0.19)
+    moneda = db.Column(db.String(10), nullable=False, default='CLP')
     formato_facturacion = db.Column(db.String(50), nullable=False, default='Factura Electrónica')
     
     def serialize(self):

@@ -33,11 +33,16 @@ def verificar_token():
     if not user:
         return jsonify({"error": "User not found"}), 404
 
+    # Crear el token de acceso (se asume que la duración es de 1 hora)
     access_token = create_access_token(identity=str(user.id))
+    expires_in = 3600 * 1000  # 1 hora en milisegundos
+
     return jsonify({
         "access_token": access_token,
-        "user": user.serialize()
+        "user": user.serialize(),
+        "expires_in": expires_in
     }), 200
+
 
 
 @api.route('/register', methods=['POST'])

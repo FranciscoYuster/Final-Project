@@ -1,0 +1,21 @@
+@Ventas:
+-Productos: no despliega mis productos creados.
+-Tabla: Formato botones.
+
+@Compras:
+-MODAL:
+-Campo proveedor: debe mostrar el listado de proveedores creados.
+-Campo inventario: que debería ir?
+-Canpo producto debe mostrar un listado.
+-Pendiente conexión con el back
+
+Observaciones:
+@Inventario: 
+-Campo precio, modificar formato moneda.
+-Campo ubicación, solo indica valor“Sin asignar ”.
+-Campo descripción, debería decir Descripción producto para no confundir con el de ubicación 
+-Editar: el formulario no muestras los valores nombre, descripción y precio al editar
+-Eliminar: Falta modal de eliminación “Estás seguro….”
+
+@CATEGORIAS DEBE DE SER UN LISTADO QUE SE CREA EN PAGE INVENTARIO
+

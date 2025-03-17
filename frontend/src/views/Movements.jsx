@@ -37,6 +37,11 @@ const Movements = () => {
   const itemsPerPage = 10;
   const [selectedMovements, setSelectedMovements] = useState([]);
 
+  // Estados para confirmación de eliminación individual y masiva
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [movementToDelete, setMovementToDelete] = useState(null);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+
   const token = sessionStorage.getItem("access_token");
 
   /* ======== Funciones de Carga ======== */
@@ -145,7 +150,7 @@ const Movements = () => {
     }
   };
 
-  /* ======== Eliminación ======== */
+  /* ======== Eliminación Individual ======== */
 
   const handleDeleteMovement = async (id) => {
     try {
@@ -162,23 +167,15 @@ const Movements = () => {
     }
   };
 
-  const handleSelectMovement = (id) => {
-    if (selectedMovements.includes(id)) {
-      setSelectedMovements(selectedMovements.filter((mid) => mid !== id));
-    } else {
-      setSelectedMovements([...selectedMovements, id]);
-    }
+  // Función para abrir el modal de confirmación de eliminación individual
+  const confirmDeleteMovement = (id) => {
+    setMovementToDelete(id);
+    setShowDeleteModal(true);
   };
 
-  const handleSelectAll = () => {
-    if (selectedMovements.length === currentItems.length) {
-      setSelectedMovements([]);
-    } else {
-      setSelectedMovements(currentItems.map((mov) => mov.id));
-    }
-  };
+  /* ======== Eliminación Masiva ======== */
 
-  const handleDeleteAllMovements = () => {
+  const handleDeleteAllMovements = async () => {
     const deleteRequests = selectedMovements.map((id) =>
       fetch(`/api/movements/${id}`, {
         method: "DELETE",
@@ -198,6 +195,29 @@ const Movements = () => {
         console.error("Error eliminando movimientos:", error);
         toast.error("Error al eliminar movimientos.");
       });
+  };
+
+  /* ======== Selección de Movimientos ======== */
+
+  const handleSelectMovement = (id) => {
+    if (selectedMovements.includes(id)) {
+      setSelectedMovements(selectedMovements.filter((mid) => mid !== id));
+    } else {
+      setSelectedMovements([...selectedMovements, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedMovements.length === currentItems.length) {
+      setSelectedMovements([]);
+    } else {
+      setSelectedMovements(currentItems.map((mov) => mov.id));
+    }
+  };
+
+  // Para abrir el modal de confirmación de eliminación masiva
+  const openDeleteSelectedModal = () => {
+    setShowDeleteSelectedModal(true);
   };
 
   /* ======== Exportación ======== */
@@ -267,15 +287,13 @@ const Movements = () => {
     doc.save("movements.pdf");
   };
 
-  /* ======== Renderizado ======== */
-
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Historial de Movimientos</h1>
-{/* Filtro global */}
-<div className="mb-3">
+        {/* Filtro global */}
+        <div className="mb-3">
           <InputGroup className="w-50">
             <FormControl
               placeholder="Buscar movimiento..."
@@ -289,7 +307,8 @@ const Movements = () => {
             />
           </InputGroup>
         </div>
-        {/* Botones de acciones y exportación por encima de la tabla */}
+
+        {/* Botones de acciones y exportación */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <Button 
             variant="primary" 
@@ -311,8 +330,6 @@ const Movements = () => {
             </Button>
           </div>
         </div>
-
-        
 
         {/* Tabla de movimientos */}
         <div className="table-responsive">
@@ -373,7 +390,7 @@ const Movements = () => {
                       <Button
                         variant="danger"
                         size="sm"
-                        onClick={() => handleDeleteMovement(mov.id)}
+                        onClick={() => confirmDeleteMovement(mov.id)}
                         className="rounded-pill"
                         style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
                       >
@@ -387,12 +404,12 @@ const Movements = () => {
           </Table>
         </div>
 
-        {/* Botón Eliminar Seleccionadas debajo de la tabla */}
-        <div className="d-flex justify-content-end w-100">
+        {/* Botón para eliminar movimientos seleccionados */}
+        <div className="d-flex justify-content-start w-100">
           <Button
             variant="danger"
             disabled={selectedMovements.length === 0}
-            onClick={handleDeleteAllMovements}
+            onClick={() => setShowDeleteSelectedModal(true)}
             className="mb-3 rounded-pill"
             style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
           >
@@ -413,72 +430,120 @@ const Movements = () => {
             </Pagination.Item>
           ))}
         </Pagination>
-
-        {/* Modal para agregar movimiento */}
-        {showModal && (
-          <Modal show={showModal} onHide={() => setShowModal(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Nuevo Movimiento</Modal.Title>
-            </Modal.Header>
-            <form onSubmit={handleAddMovement}>
-              <Modal.Body>
-                <div className="mb-2">
-                  <label className="form-label">Producto:</label>
-                  {loadingProducts ? (
-                    <p>Cargando productos...</p>
-                  ) : (
-                    <select
-                      name="product_id"
-                      value={newMovement.product_id}
-                      onChange={handleInputChange}
-                      className="form-control"
-                      required
-                    >
-                      <option value="">Selecciona un producto</option>
-                      {products.map((product) => (
-                        <option key={product.id} value={product.id}>
-                          {product.nombre} ({product.codigo})
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Tipo (sale/purchase):</label>
-                  <input
-                    type="text"
-                    name="type"
-                    value={newMovement.type}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    placeholder="sale o purchase"
-                    required
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">Cantidad:</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={newMovement.quantity}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    required
-                  />
-                </div>
-              </Modal.Body>
-              <Modal.Footer>
-                <Button variant="secondary" onClick={() => setShowModal(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" variant="primary">
-                  Guardar
-                </Button>
-              </Modal.Footer>
-            </form>
-          </Modal>
-        )}
       </div>
+
+      {/* Modal para agregar movimiento */}
+      {showModal && (
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Nuevo Movimiento</Modal.Title>
+          </Modal.Header>
+          <form onSubmit={handleAddMovement}>
+            <Modal.Body>
+              <div className="mb-2">
+                <label className="form-label">Producto:</label>
+                {loadingProducts ? (
+                  <p>Cargando productos...</p>
+                ) : (
+                  <select
+                    name="product_id"
+                    value={newMovement.product_id}
+                    onChange={handleInputChange}
+                    className="form-control"
+                    required
+                  >
+                    <option value="">Selecciona un producto</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.nombre} ({product.codigo})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="mb-2">
+                <label className="form-label">Tipo (sale/purchase):</label>
+                <input
+                  type="text"
+                  name="type"
+                  value={newMovement.type}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  placeholder="sale o purchase"
+                  required
+                />
+              </div>
+              <div className="mb-2">
+                <label className="form-label">Cantidad:</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={newMovement.quantity}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  required
+                />
+              </div>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowModal(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="primary">
+                Guardar
+              </Button>
+            </Modal.Footer>
+          </form>
+        </Modal>
+      )}
+
+      {/* Modal de confirmación para eliminación individual */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Movimiento</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de eliminar este movimiento?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteMovement(movementToDelete);
+              setShowDeleteModal(false);
+            }}
+          >
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal de confirmación para eliminación de movimientos seleccionados */}
+      <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Movimientos Seleccionados</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de eliminar los movimientos seleccionados?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteAllMovements();
+              setShowDeleteSelectedModal(false);
+            }}
+          >
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

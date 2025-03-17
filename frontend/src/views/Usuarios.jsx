@@ -24,7 +24,7 @@ const Usuarios = () => {
           const formattedUsers = response.data.map((user) => ({
             id: user.id,
             email: user.email,
-            password: "",
+            password: user.password,
             firstName: user.first_name,
             lastName: user.last_name,
             role: user.role,
@@ -118,7 +118,7 @@ const Usuarios = () => {
         const formattedUsers = response.data.map((user) => ({
           id: user.id,
           email: user.email,
-          password: "",
+          password: user.p,
           firstName: user.first_name,
           lastName: user.last_name,
           role: user.role,

@@ -4,21 +4,7 @@ from src.models import db, Configuration, User
 
 configurations_api = Blueprint("configurations_api", __name__)
 
-def normalize_impuesto(impuesto_value):
-    """
-    Convierte el valor ingresado a formato decimal.
-    Si es mayor que 1, se asume que se ingresó en porcentaje.
-    Ejemplo: 19 se convierte a 0.19.
-    """
-    try:
-        imp = float(impuesto_value)
-        if imp > 1:
-            imp = imp / 100
-        return imp
-    except (ValueError, TypeError):
-        return 0.0
-
-# Obtener la configuración del usuario autenticado
+# Endpoint para obtener la configuración del usuario autenticado.
 @configurations_api.route('/configuraciones', methods=['GET'])
 @jwt_required()
 def get_configuration():
@@ -28,10 +14,21 @@ def get_configuration():
         return jsonify({"error": "Usuario no encontrado"}), 404
     configuration = Configuration.query.filter_by(user_id=user.id).first()
     if not configuration:
-        return jsonify({"error": "Configuración no encontrada"}), 404
+        # Si no existe, se crea una configuración por defecto con impuesto 0.19 y moneda CLP
+        configuration = Configuration(
+            user_id=user.id,
+            impuesto=0.19,
+            moneda="CLP",
+            formato_facturacion="Factura Electrónica"
+        )
+        try:
+            configuration.save()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": "Error al crear configuración", "details": str(e)}), 500
     return jsonify(configuration.serialize()), 200
 
-# Crear una configuración para el usuario (si aún no existe)
+# Endpoint para crear la configuración (se fuerza siempre impuesto=0.19 y moneda="CLP")
 @configurations_api.route('/configuraciones', methods=['POST'])
 @jwt_required()
 def create_configuration():
@@ -41,8 +38,9 @@ def create_configuration():
         return jsonify({"error": "Usuario no encontrado"}), 404
 
     data = request.get_json()
-    impuesto = normalize_impuesto(data.get("impuesto", 0.20))
-    moneda = data.get("moneda", "USD")
+    # Se ignoran los valores enviados para impuesto y moneda y se asignan siempre 0.19 y "CLP"
+    impuesto = 0.19  
+    moneda = "CLP"
     formato_facturacion = data.get("formato_facturacion", "Factura Electrónica")
 
     if Configuration.query.filter_by(user_id=user.id).first():
@@ -62,7 +60,7 @@ def create_configuration():
 
     return jsonify(configuration.serialize()), 201
 
-# Actualizar la configuración del usuario
+# Endpoint para actualizar la configuración (se fuerza siempre impuesto=0.19 y moneda="CLP")
 @configurations_api.route('/configuraciones/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_configuration(id):
@@ -76,10 +74,9 @@ def update_configuration(id):
         return jsonify({"error": "Configuración no encontrada"}), 404
 
     data = request.get_json()
-    if "impuesto" in data:
-        configuration.impuesto = normalize_impuesto(data["impuesto"])
-    if "moneda" in data:
-        configuration.moneda = data["moneda"]
+    # Se fuerza siempre el impuesto y la moneda a 0.19 y "CLP"
+    configuration.impuesto = 0.19  
+    configuration.moneda = "CLP"
     if "formato_facturacion" in data:
         configuration.formato_facturacion = data["formato_facturacion"]
 
@@ -91,7 +88,7 @@ def update_configuration(id):
 
     return jsonify(configuration.serialize()), 200
 
-# Eliminar la configuración del usuario
+# Endpoint para eliminar la configuración
 @configurations_api.route('/configuraciones/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_configuration(id):

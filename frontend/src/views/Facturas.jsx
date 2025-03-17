@@ -3,38 +3,50 @@ import { Button, Modal, Table, Form, InputGroup, FormControl, Pagination } from 
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaCheck, FaClock } from "react-icons/fa";
+import { FaCheck, FaClock, FaBan } from "react-icons/fa";
 
 const Facturas = () => {
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [config, setConfig] = useState({
-    id: "",
-    impuesto: 0,
-    moneda: "",
-    formato_facturacion: ""
-  });
+  // La configuración se obtiene desde la API; se espera que tenga impuesto 0.19 y moneda "CLP"
+  const [config, setConfig] = useState(null);
+  const [loadingConfig, setLoadingConfig] = useState(false);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [loadingConfig, setLoadingConfig] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
-  // Para crear factura usamos "total" en el formulario que se convertirá a monto_base
+  // Para crear factura se utiliza "total" para calcular el monto_base y se añade "tipo"
   const [newInvoice, setNewInvoice] = useState({
     customer: "",
     customer_name: "",
     customer_email: "",
     total: "",
-    status: "Pending",
+    tipo: "Factura", // Opciones: "Factura" o "Boleta"
+    status: "Pendiente",
     numero_comprobante: ""
   });
   const [selectedInvoices, setSelectedInvoices] = useState([]);
+  // Estados para modales de ocultación y anulación
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+  const [showAnularModal, setShowAnularModal] = useState(false);
+  const [invoiceToAnular, setInvoiceToAnular] = useState(null);
+  const [anularMotive, setAnularMotive] = useState("NOTA DE CRÉDITO ELECTRÓNICA");
+  const [anularOtherMotive, setAnularOtherMotive] = useState("");
+  const [anularNumeroNota, setAnularNumeroNota] = useState("");
+  // Estado para controlar las facturas ocultas (por ID)
+  const [hiddenInvoices, setHiddenInvoices] = useState([]);
+  // Bandera para alternar si se muestran o no las facturas ocultas
+  const [showHidden, setShowHidden] = useState(false);
+
   const token = sessionStorage.getItem("access_token");
 
+  // Cargar configuración del usuario
   const fetchConfig = () => {
     setLoadingConfig(true);
     fetch("/api/configuraciones", {
@@ -44,11 +56,10 @@ const Facturas = () => {
         "Authorization": `Bearer ${token}`
       }
     })
-      .then(response =>
-        response.ok
-          ? response.json()
-          : Promise.resolve({ id: "", impuesto: 0, moneda: "", formato_facturacion: "" })
-      )
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+        return response.json();
+      })
       .then(data => setConfig(data))
       .catch(err => {
         console.error("Error al cargar configuración:", err);
@@ -57,6 +68,7 @@ const Facturas = () => {
       .finally(() => setLoadingConfig(false));
   };
 
+  // Cargar facturas
   const fetchInvoices = () => {
     setLoadingInvoices(true);
     fetch("/api/invoices", {
@@ -67,7 +79,7 @@ const Facturas = () => {
       }
     })
       .then(response => {
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
         return response.json();
       })
       .then(data => setInvoices(data))
@@ -78,6 +90,7 @@ const Facturas = () => {
       .finally(() => setLoadingInvoices(false));
   };
 
+  // Cargar clientes
   const fetchCustomers = () => {
     setLoadingCustomers(true);
     fetch("/api/customers", {
@@ -88,7 +101,7 @@ const Facturas = () => {
       }
     })
       .then(response => {
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
         return response.json();
       })
       .then(data => setCustomers(data))
@@ -105,14 +118,25 @@ const Facturas = () => {
     fetchCustomers();
   }, []);
 
+  if (!config) return <p>Cargando configuración...</p>;
+
+  // Filtrado de facturas, incluyendo el campo "tipo". Además, se omiten las facturas ocultas si showHidden es false.
   const filteredInvoices = invoices.filter(invoice => {
     const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : (invoice.customer_name || "").toLowerCase();
     const email = invoice.customer ? invoice.customer.email.toLowerCase() : (invoice.customer_email || "").toLowerCase();
     const monto = invoice.monto_base ? invoice.monto_base.toString() : "";
     const status = invoice.status ? invoice.status.toLowerCase() : "";
+    const tipo = invoice.tipo ? invoice.tipo.toLowerCase() : "";
     const query = searchQuery.toLowerCase();
-    return cliente.includes(query) || email.includes(query) || monto.includes(query) || status.includes(query);
-  });
+    return (
+      cliente.includes(query) ||
+      email.includes(query) ||
+      monto.includes(query) ||
+      status.includes(query) ||
+      tipo.includes(query)
+    );
+  }).filter(invoice => showHidden || !hiddenInvoices.includes(invoice.id));
+
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
   const currentItems = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
@@ -144,25 +168,18 @@ const Facturas = () => {
     }
   };
 
-  const handleDeleteAllInvoices = () => {
-    const deleteRequests = selectedInvoices.map(id =>
-      fetch(`/api/invoices/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      }).then(response => {
-        if (!response.ok) throw new Error(`Error al eliminar factura con ID: ${id}`);
-      })
-    );
-    Promise.all(deleteRequests)
-      .then(() => {
-        setInvoices(invoices.filter(invoice => !selectedInvoices.includes(invoice.id)));
-        setSelectedInvoices([]);
-        toast.success("Facturas eliminadas exitosamente.");
-      })
-      .catch(error => {
-        console.error("Error eliminando facturas:", error);
-        toast.error("Error al eliminar facturas.");
-      });
+  // Ocultar (marcar como oculta) una factura
+  const handleOcultarInvoice = (id) => {
+    if (!hiddenInvoices.includes(id)) {
+      setHiddenInvoices([...hiddenInvoices, id]);
+      toast.info("Factura ocultada.");
+    }
+  };
+
+  // Mostrar (desocultar) una factura
+  const handleMostrarInvoice = (id) => {
+    setHiddenInvoices(hiddenInvoices.filter(hiddenId => hiddenId !== id));
+    toast.info("Factura mostrada.");
   };
 
   const handleCloseModal = () => {
@@ -172,7 +189,8 @@ const Facturas = () => {
       customer_name: "",
       customer_email: "",
       total: "",
-      status: "Pending",
+      tipo: "Factura",
+      status: "Pendiente",
       numero_comprobante: ""
     });
   };
@@ -184,13 +202,14 @@ const Facturas = () => {
       toast.error("El monto debe ser un número válido.");
       return;
     }
-    const tax = config.impuesto || 0;
+    const tax = config.impuesto; // 0.19
     const impuesto_aplicado = baseTotal * tax;
     const finalTotal = baseTotal + impuesto_aplicado;
     const invoiceData = {
       monto_base: baseTotal,
       impuesto_aplicado: impuesto_aplicado,
       total_final: finalTotal,
+      tipo: newInvoice.tipo, // Enviar el tipo ("Factura" o "Boleta")
       status: newInvoice.status,
       numero_comprobante: newInvoice.numero_comprobante
     };
@@ -224,11 +243,11 @@ const Facturas = () => {
   };
 
   const handleOpenEditModal = (invoice) => {
-    // Se carga monto_base y status para la edición
     setEditInvoice({
       id: invoice.id,
       monto_base: invoice.monto_base,
-      status: invoice.status
+      status: invoice.status,
+      tipo: invoice.tipo || "Factura"
     });
     setShowEditModal(true);
   };
@@ -250,7 +269,7 @@ const Facturas = () => {
       toast.error("El monto debe ser un número válido.");
       return;
     }
-    const tax = config.impuesto || 0;
+    const tax = config.impuesto;
     const impuesto_aplicado = baseTotal * tax;
     const finalTotal = baseTotal + impuesto_aplicado;
     fetch(`/api/invoices/${editInvoice.id}`, {
@@ -263,7 +282,8 @@ const Facturas = () => {
         monto_base: baseTotal,
         impuesto_aplicado: impuesto_aplicado,
         total_final: finalTotal,
-        status: editInvoice.status
+        status: editInvoice.status,
+        tipo: editInvoice.tipo
       })
     })
       .then(response => {
@@ -281,31 +301,78 @@ const Facturas = () => {
       });
   };
 
-  const handleDelete = (id) => {
-    fetch(`/api/invoices/${id}`, {
-      method: "DELETE",
-      headers: { "Authorization": `Bearer ${token}` }
+  // Modal para confirmar ocultar factura (acción en lugar de eliminar)
+  const confirmDeleteInvoice = (id) => {
+    setInvoiceToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  // Confirmar y ejecutar la ocultación individual
+  const handleConfirmDelete = () => {
+    if (invoiceToDelete) {
+      handleOcultarInvoice(invoiceToDelete);
+      setInvoiceToDelete(null);
+      setShowDeleteModal(false);
+    }
+  };
+
+  // Modal para anular factura: incluye mensaje de advertencia y campo para el número de nota
+  const handleOpenAnularModal = (invoice) => {
+    setInvoiceToAnular(invoice);
+    setAnularMotive("NOTA DE CRÉDITO ELECTRÓNICA"); // Valor por defecto
+    setAnularOtherMotive("");
+    setAnularNumeroNota("");
+    setShowAnularModal(true);
+  };
+
+  // Confirmar anulación: se envía el motivo y el número de nota en la petición PUT
+  const handleConfirmAnular = () => {
+    if (!invoiceToAnular) return;
+    const motive = anularMotive === "Otro" ? anularOtherMotive : anularMotive;
+    fetch(`/api/invoices/${invoiceToAnular.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        monto_base: invoiceToAnular.monto_base,
+        impuesto_aplicado: invoiceToAnular.monto_base * config.impuesto,
+        total_final: invoiceToAnular.monto_base + (invoiceToAnular.monto_base * config.impuesto),
+        status: "Anular",
+        tipo: invoiceToAnular.tipo,
+        motivo: motive,
+        numero_nota: anularNumeroNota
+      })
     })
       .then(response => {
         if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
         return response.json();
       })
-      .then(() => {
-        setInvoices(invoices.filter(invoice => invoice.id !== id));
-        toast.success("Factura eliminada correctamente.");
+      .then(updated => {
+        setInvoices(invoices.map(inv => inv.id === updated.id ? updated : inv));
+        toast.success("Factura anulada correctamente.");
+        setShowAnularModal(false);
+        setInvoiceToAnular(null);
       })
       .catch(err => {
-        console.error("Error al eliminar factura:", err);
-        toast.error("Error al eliminar la factura.");
+        console.error("Error al anular factura:", err);
+        toast.error("Error al anular la factura.");
       });
+  };
+
+  // Función para formatear valores a moneda CLP
+  const formatCurrency = (value) => {
+    const amount = parseFloat(value);
+    if (isNaN(amount)) return "";
+    return new Intl.NumberFormat("es-CL", { style: "currency", currency: config.moneda }).format(amount);
   };
 
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
-        <h1 className="mb-3 text-white">Lista de Facturas</h1>
-
+        <h1 className="mb-3 text-white">Boletas y Facturas</h1>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
             <FormControl
@@ -319,7 +386,6 @@ const Facturas = () => {
               className="rounded-pill"
             />
           </InputGroup>
-
           <Button
             variant="primary"
             onClick={() => setShowModal(true)}
@@ -329,19 +395,20 @@ const Facturas = () => {
             Crear Factura
           </Button>
         </div>
-
+        <div className="d-flex justify-content-end mb-2">
+          {hiddenInvoices.length > 0 && (
+            <Button variant="outline-info" onClick={() => setShowHidden(!showHidden)}>
+              {showHidden ? "Ocultar Facturas Ocultas" : "Mostrar Facturas Ocultas"}
+            </Button>
+          )}
+        </div>
         <div className="table-responsive">
-          <Table
-            bordered
-            hover
-            className="mt-4"
-            style={{
+          <Table bordered hover className="mt-4" style={{
               borderRadius: "10px",
               overflow: "hidden",
               backgroundColor: "#E8F8FF",
-              textAlign: "center",
-            }}
-          >
+              textAlign: "center"
+            }}>
             <thead style={{ backgroundColor: "#0775e3" }}>
               <tr>
                 <th>
@@ -354,81 +421,117 @@ const Facturas = () => {
                 </th>
                 <th>Cliente</th>
                 <th>Email</th>
-                <th>Monto Base</th>
+                <th>Monto Bruto</th>
                 <th>Impuesto Aplicado</th>
-                <th>Total Final</th>
+                <th>Total Neto</th>
+                <th>N° de Folio</th>
                 <th>Fecha</th>
                 <th>Estado</th>
+                <th>Tipo</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td>
-                    <Form.Check
-                      type="checkbox"
-                      checked={selectedInvoices.includes(invoice.id)}
-                      onChange={() => handleSelectInvoice(invoice.id)}
-                      className="rounded-circle"
-                    />
-                  </td>
-                  <td>{invoice.customer ? invoice.customer.name : invoice.customer_name}</td>
-                  <td>{invoice.customer ? invoice.customer.email : invoice.customer_email}</td>
-                  <td>
-                    ${invoice.monto_base.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td>
-                    ${invoice.impuesto_aplicado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td>
-                    ${invoice.total_final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td>{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : ""}</td>
-                  <td>
-                    {invoice.status === "Paid" ? (
-                      <span style={{ color: "green" }}>
-                        <FaCheck className="me-1" /> {invoice.status}
-                      </span>
-                    ) : (
-                      <span style={{ color: "orange" }}>
-                        <FaClock className="me-1" /> {invoice.status}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    <Button
-                      variant="warning"
-                      onClick={() => handleOpenEditModal(invoice)}
-                      className="me-2 rounded-pill"
-                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => handleDelete(invoice.id)}
-                      className="rounded-pill"
-                      style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
-                    >
-                      Eliminar
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {currentItems.map((invoice) => {
+                const isHidden = hiddenInvoices.includes(invoice.id);
+                return (
+                  <tr key={invoice.id} style={isHidden ? { opacity: 0.5 } : {}}>
+                    <td>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedInvoices.includes(invoice.id)}
+                        onChange={() => handleSelectInvoice(invoice.id)}
+                        className="rounded-circle"
+                      />
+                    </td>
+                    <td>{invoice.customer ? invoice.customer.name : invoice.customer_name}</td>
+                    <td>{invoice.customer ? invoice.customer.email : invoice.customer_email}</td>
+                    <td>{formatCurrency(invoice.monto_base)}</td>
+                    <td>{formatCurrency(invoice.impuesto_aplicado)}</td>
+                    <td>{formatCurrency(invoice.total_final)}</td>
+                    <td>{invoice.numero_comprobante}</td>
+                    <td>{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : ""}</td>
+                    <td>
+                      {invoice.status === "Pagada" ? (
+                        <span style={{ color: "green" }}>
+                          <FaCheck className="me-1" /> {invoice.status}
+                        </span>
+                      ) : invoice.status === "Anular" ? (
+                        <span style={{ color: "red" }}>
+                          <FaBan className="me-1" /> Anulada
+                        </span>
+                      ) : (
+                        <span style={{ color: "orange" }}>
+                          <FaClock className="me-1" /> {invoice.status}
+                        </span>
+                      )}
+                    </td>
+                    <td>{invoice.tipo || "Sin definir"}</td>
+                    <td>
+                      {invoice.status === "Anular" ? (
+                        isHidden ? (
+                          <Button
+                            variant="success"
+                            onClick={() => handleMostrarInvoice(invoice.id)}
+                            className="rounded-pill"
+                            style={{ backgroundColor: "#28a745", borderColor: "#28a745" }}
+                          >
+                            Mostrar
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="info"
+                            onClick={() => handleOcultarInvoice(invoice.id)}
+                            className="rounded-pill"
+                            style={{ backgroundColor: "#6c757d", borderColor: "#6c757d" }}
+                          >
+                            Ocultar
+                          </Button>
+                        )
+                      ) : (
+                        <>
+                          <Button
+                            variant="warning"
+                            onClick={() => handleOpenEditModal(invoice)}
+                            className="me-2 rounded-pill"
+                            style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleOpenAnularModal(invoice)}
+                            className="me-2 rounded-pill"
+                            style={{ backgroundColor: "#17a2b8", borderColor: "#17a2b8" }}
+                          >
+                            Anular
+                          </Button>
+                          <Button
+                            variant="info"
+                            onClick={() => handleOcultarInvoice(invoice.id)}
+                            className="rounded-pill"
+                            style={{ backgroundColor: "#6c757d", borderColor: "#6c757d" }}
+                          >
+                            Ocultar
+                          </Button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </Table>
         </div>
-
         <div className="mb-3">
           <Button
             variant="danger"
             disabled={selectedInvoices.length === 0}
-            onClick={handleDeleteAllInvoices}
+            onClick={() => setShowDeleteSelectedModal(true)}
             className="rounded-pill"
             style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
           >
-            Eliminar Seleccionadas
+            Ocultar Seleccionadas
           </Button>
         </div>
         <Pagination className="mb-3 justify-content-center">
@@ -444,6 +547,7 @@ const Facturas = () => {
           ))}
         </Pagination>
 
+        {/* Modal para editar factura */}
         <Modal show={showEditModal} onHide={handleCloseEditModal}>
           <Modal.Header closeButton>
             <Modal.Title>Editar Factura</Modal.Title>
@@ -451,21 +555,7 @@ const Facturas = () => {
           <Modal.Body>
             {editInvoice && (
               <Form onSubmit={handleSubmitEdit}>
-                <Form.Group controlId="formMontoBase">
-                  <Form.Label>Monto Base</Form.Label>
-                  <Form.Control
-                    type="number"
-                    placeholder="Monto Base"
-                    name="monto_base"
-                    value={editInvoice.monto_base}
-                    onChange={handleEditInputChange}
-                    step="0.01"
-                    required
-                    className="rounded-pill"
-                    style={{ borderColor: "#074de3" }}
-                  />
-                </Form.Group>
-                <Form.Group controlId="formEstado" className="mt-2">
+                <Form.Group controlId="formEstado">
                   <Form.Label>Estado</Form.Label>
                   <Form.Select
                     name="status"
@@ -475,8 +565,8 @@ const Facturas = () => {
                     className="rounded-pill"
                     style={{ borderColor: "#074de3" }}
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Paid">Paid</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagada">Pagada</option>
                   </Form.Select>
                 </Form.Group>
                 <div className="mt-3 d-flex justify-content-end">
@@ -492,6 +582,7 @@ const Facturas = () => {
           </Modal.Body>
         </Modal>
 
+        {/* Modal para crear factura */}
         <Modal show={showModal} onHide={handleCloseModal}>
           <Modal.Header closeButton>
             <Modal.Title>Crear Factura</Modal.Title>
@@ -517,10 +608,10 @@ const Facturas = () => {
                 </Form.Select>
               </Form.Group>
               <Form.Group controlId="formMontoBase" className="mt-2">
-                <Form.Label>Monto Base</Form.Label>
+                <Form.Label>Monto Bruto</Form.Label>
                 <Form.Control
                   type="number"
-                  placeholder="Monto Base"
+                  placeholder="Monto Bruto"
                   name="total"
                   value={newInvoice.total}
                   onChange={(e) =>
@@ -531,15 +622,15 @@ const Facturas = () => {
                   className="rounded-pill"
                   style={{ borderColor: "#074de3" }}
                 />
-                <small className="text-muted">
+                <small className="mt-1 text-muted d-block">
                   El impuesto se aplicará automáticamente (configuración global: {(config.impuesto * 100).toFixed(0)}%)
                 </small>
               </Form.Group>
               <Form.Group controlId="formNumeroComprobante" className="mt-2">
-                <Form.Label>Número de Comprobante</Form.Label>
+                <Form.Label>N° de Folio</Form.Label>
                 <Form.Control
                   type="text"
-                  placeholder="Número de comprobante"
+                  placeholder="Número de Folio"
                   name="numero_comprobante"
                   value={newInvoice.numero_comprobante}
                   onChange={(e) =>
@@ -549,6 +640,22 @@ const Facturas = () => {
                   className="rounded-pill"
                   style={{ borderColor: "#074de3" }}
                 />
+              </Form.Group>
+              <Form.Group controlId="formTipo" className="mt-2">
+                <Form.Label>Tipo</Form.Label>
+                <Form.Select
+                  name="tipo"
+                  value={newInvoice.tipo}
+                  onChange={(e) =>
+                    setNewInvoice({ ...newInvoice, tipo: e.target.value })
+                  }
+                  required
+                  className="rounded-pill"
+                  style={{ borderColor: "#074de3" }}
+                >
+                  <option value="Factura">Factura</option>
+                  <option value="Boleta">Boleta</option>
+                </Form.Select>
               </Form.Group>
               <Form.Group controlId="formEstado" className="mt-2">
                 <Form.Label>Estado</Form.Label>
@@ -562,8 +669,9 @@ const Facturas = () => {
                   className="rounded-pill"
                   style={{ borderColor: "#074de3" }}
                 >
-                  <option value="Pending">Pending</option>
-                  <option value="Paid">Paid</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Pagada">Pagada</option>
+                  <option value="Anular">Anulada</option>
                 </Form.Select>
               </Form.Group>
               <div className="mt-3 d-flex justify-content-end">
@@ -578,6 +686,96 @@ const Facturas = () => {
           </Modal.Body>
         </Modal>
       </div>
+
+      {/* Modal para confirmar ocultar factura */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Ocultar Factura</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de ocultar esta factura?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>
+            Ocultar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para confirmar ocultar facturas seleccionadas */}
+      <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Ocultar Facturas Seleccionadas</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de ocultar las facturas seleccionadas?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => {
+            setHiddenInvoices([...hiddenInvoices, ...selectedInvoices]);
+            setSelectedInvoices([]);
+            setShowDeleteSelectedModal(false);
+            toast.info("Facturas ocultadas.");
+          }}>
+            Ocultar Seleccionadas
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para anular factura */}
+      <Modal show={showAnularModal} onHide={() => setShowAnularModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Anular Factura</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p className="text-danger fw-bold">¡Atención! Esta acción es irreversible.</p>
+          <Form>
+            <Form.Group controlId="formAnularMotivo">
+              <Form.Label>Motivo de Anulación</Form.Label>
+              <Form.Select
+                value={anularMotive}
+                onChange={(e) => setAnularMotive(e.target.value)}
+              >
+                <option value="NOTA DE CRÉDITO ELECTRÓNICA">NOTA DE CRÉDITO ELECTRÓNICA</option>
+                <option value="NOTA DE DÉBITO ELECTRÓNICA">NOTA DE DÉBITO ELECTRÓNICA</option>
+                <option value="Otro">Otro</option>
+              </Form.Select>
+            </Form.Group>
+            {anularMotive === "Otro" && (
+              <Form.Group controlId="formAnularOtro" className="mt-2">
+                <Form.Label>Especifique otro motivo</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={anularOtherMotive}
+                  onChange={(e) => setAnularOtherMotive(e.target.value)}
+                  placeholder="Especifique el motivo"
+                  required
+                />
+              </Form.Group>
+            )}
+            <Form.Group controlId="formAnularNumeroNota" className="mt-2">
+              <Form.Label>Número de Nota</Form.Label>
+              <Form.Control
+                type="text"
+                value={anularNumeroNota}
+                onChange={(e) => setAnularNumeroNota(e.target.value)}
+                placeholder="Ingrese el número de la nota"
+                required
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAnularModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleConfirmAnular}>
+            Confirmar Anulación
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

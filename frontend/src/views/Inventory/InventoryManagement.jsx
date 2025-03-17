@@ -1,3 +1,4 @@
+// src/views/InventoryManagement.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import DataTable from 'react-data-table-component';
 import { toast, ToastContainer } from 'react-toastify';
@@ -8,6 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
 import { Bar } from 'react-chartjs-2';
+import { Pagination, Row, Col, Card, Button } from 'react-bootstrap';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
 
 import KPISection from './components/KPISections';
@@ -28,6 +30,8 @@ const InventoryManagement = () => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', stock: '', ubicacion_id: '' });
@@ -38,13 +42,16 @@ const InventoryManagement = () => {
   
   const token = sessionStorage.getItem('access_token');
   
-  // Fetch productos y ubicaciones
+  // Cargar productos
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
       const response = await fetch('/api/products', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        }
       });
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
@@ -56,16 +63,17 @@ const InventoryManagement = () => {
       setLoadingProducts(false);
     }
   };
-const handleEditInputChange = (e) => {
-  setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
-};
 
+  // Cargar ubicaciones
   const fetchLocations = async () => {
     setLoadingLocations(true);
     try {
       const response = await fetch('/api/ubicaciones', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        }
       });
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
@@ -83,6 +91,7 @@ const handleEditInputChange = (e) => {
     fetchLocations();
   }, []);
 
+  // Filtrado de productos
   const filteredProducts = useMemo(() => {
     return products.filter(product => {
       const matchesGlobal = (product.nombre?.toLowerCase() || "").includes(globalFilter.toLowerCase()) ||
@@ -97,11 +106,21 @@ const handleEditInputChange = (e) => {
   const isValidStock = stock => !isNaN(parseInt(stock)) && parseInt(stock) >= 0;
   const isValidPrice = price => !isNaN(parseFloat(price)) && parseFloat(price) >= 0;
 
+  // Función para agregar producto
   const handleAddProduct = async e => {
     e.preventDefault();
-    if (!isValidStock(newProduct.stock)) { toast.error('El stock debe ser un número no negativo.'); return; }
-    if (!isValidPrice(newProduct.price)) { toast.error('El precio debe ser un número no negativo.'); return; }
-    if (!newProduct.ubicacion_id) { toast.error('Debe seleccionar una ubicación.'); return; }
+    if (!isValidStock(newProduct.stock)) { 
+      toast.error('El stock debe ser un número no negativo.'); 
+      return; 
+    }
+    if (!isValidPrice(newProduct.price)) { 
+      toast.error('El precio debe ser un número no negativo.'); 
+      return; 
+    }
+    if (!newProduct.ubicacion_id) { 
+      toast.error('Debe seleccionar una ubicación.'); 
+      return; 
+    }
     try {
       const productData = {
         codigo: Math.floor(Math.random() * 1000000).toString(),
@@ -110,13 +129,16 @@ const handleEditInputChange = (e) => {
         precio: parseFloat(newProduct.price),
         stock: parseInt(newProduct.stock),
         categoria: "General",
-        inventory_id: 1,
+        inventory_id: 1, // Ajusta según corresponda
         user_id: sessionStorage.getItem('user_id') || "1",
         ubicacion_id: newProduct.ubicacion_id
       };
       const response = await fetch('/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify(productData)
       });
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -131,11 +153,21 @@ const handleEditInputChange = (e) => {
     }
   };
 
+  // Función para editar producto
   const handleEditProduct = async e => {
     e.preventDefault();
-    if (!isValidStock(editProduct.stock)) { toast.error('El stock debe ser un número no negativo.'); return; }
-    if (!isValidPrice(editProduct.precio || editProduct.price)) { toast.error('El precio debe ser un número no negativo.'); return; }
-    if (!editProduct.ubicacion_id) { toast.error('Debe seleccionar una ubicación.'); return; }
+    if (!isValidStock(editProduct.stock)) { 
+      toast.error('El stock debe ser un número no negativo.'); 
+      return; 
+    }
+    if (!isValidPrice(editProduct.precio || editProduct.price)) { 
+      toast.error('El precio debe ser un número no negativo.'); 
+      return; 
+    }
+    if (!editProduct.ubicacion_id) { 
+      toast.error('Debe seleccionar una ubicación.'); 
+      return; 
+    }
     try {
       const productData = {
         nombre: editProduct.nombre,
@@ -146,7 +178,10 @@ const handleEditInputChange = (e) => {
       };
       const response = await fetch(`/api/products/${editProduct.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify(productData)
       });
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -161,6 +196,7 @@ const handleEditInputChange = (e) => {
     }
   };
 
+  // Función para eliminar producto
   const handleDeleteProduct = async id => {
     try {
       const response = await fetch(`/api/products/${id}`, {
@@ -177,11 +213,15 @@ const handleEditInputChange = (e) => {
     }
   };
 
+  // Función para obtener movimientos de un producto
   const fetchMovements = async productId => {
     try {
       const response = await fetch(`/api/movements?product_id=${productId}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${token}` 
+        }
       });
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
       const data = await response.json();
@@ -198,10 +238,12 @@ const handleEditInputChange = (e) => {
     setEditProduct(null);
   };
 
+  // Cálculo de KPIs
   const totalProducts = products.length;
   const totalStock = products.reduce((acc, p) => acc + p.stock, 0);
   const lowStockCount = products.filter(p => p.stock < LOW_STOCK_THRESHOLD).length;
 
+  // Configuración del gráfico de barras
   const chartData = {
     labels: products.map(p => p.nombre),
     datasets: [
@@ -228,6 +270,7 @@ const handleEditInputChange = (e) => {
     }
   };
 
+  // Configuración para la tabla de productos (columnas)
   const columns = [
     { name: '#', cell: (row, index) => index + 1, width: '40px' },
     { name: 'Nombre', selector: row => row.nombre, sortable: true },
@@ -261,60 +304,145 @@ const handleEditInputChange = (e) => {
   const exportXLSX = () => { /* lógica de exportación */ };
   const exportPDF = () => { /* lógica de exportación */ };
 
+  // Lógica para paginación
+  const itemsPerPageLocal = 5;
+  const totalPagesLocal = Math.ceil(filteredProducts.length / itemsPerPageLocal);
+  const currentItems = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPageLocal,
+    currentPage * itemsPerPageLocal
+  );
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
   return (
-    
-    <div style={{ maxWidth: '1000px', margin: '0 auto', fontSize: '0.9rem' }} className="mt-4">
+    <div className="container-fluid p-4" style={{ fontSize: '0.9rem' }}>
       <ToastContainer />
-      <h1 className="mb-3 text-white">Gestión de Inventario</h1>
+      <h1 className="mb-4 text-white text-center">Dashboard de Inventario</h1>
 
-      <KPISection totalProducts={totalProducts} totalStock={totalStock} lowStockCount={lowStockCount} />
+      {/* Sección de KPIs */}
+      <Row className="mb-4">
+        <Col md={3}>
+          <Card className="text-center shadow-sm">
+            <Card.Body>
+              <Card.Title>Total Productos</Card.Title>
+              <Card.Text>{totalProducts}</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="text-center shadow-sm">
+            <Card.Body>
+              <Card.Title>Stock Total</Card.Title>
+              <Card.Text>{totalStock}</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="text-center shadow-sm">
+            <Card.Body>
+              <Card.Title>Productos con Bajo Stock</Card.Title>
+              <Card.Text>{lowStockCount}</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card className="text-center shadow-sm">
+            <Card.Body>
+              <Card.Title>Filtrado Activo</Card.Title>
+              <Card.Text>{filteredProducts.length} productos</Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-      <div className="mb-3" style={{ height: '300px', background: 'white', borderRadius: '5px' }}>
-        <Bar data={chartData} options={chartOptions} />
-      </div>
+      {/* Gráfico de Stock */}
+      <Row className="mb-4">
+        <Col>
+          <Card className="shadow-sm">
+            <Card.Header>Distribución de Stock</Card.Header>
+            <Card.Body style={{ height: '300px' }}>
+              <Bar data={chartData} options={chartOptions} />
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-      <Filters
-        globalFilter={globalFilter}
-        setGlobalFilter={setGlobalFilter}
-        minPrice={minPrice}
-        setMinPrice={setMinPrice}
-        maxPrice={maxPrice}
-        setMaxPrice={setMaxPrice}
-      />
+      {/* Filtros y Exportación */}
+      <Row className="mb-3">
+        <Col md={6}>
+          <Filters
+            globalFilter={globalFilter}
+            setGlobalFilter={setGlobalFilter}
+            minPrice={minPrice}
+            setMinPrice={setMinPrice}
+            maxPrice={maxPrice}
+            setMaxPrice={setMaxPrice}
+          />
+        </Col>
+        <Col md={6} className="d-flex justify-content-end align-items-center">
+          <ExportButtons exportCSV={exportCSV} exportXLSX={exportXLSX} exportPDF={exportPDF} />
+        </Col>
+      </Row>
 
-      <ExportButtons exportCSV={exportCSV} exportXLSX={exportXLSX} exportPDF={exportPDF} />
-
-
-
-      <div className="d-flex justify-content-end align-items-center mb-2">
-        <button className="btn btn-primary rounded-pill"             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
- onClick={() => setShowAddModal(true)}>
+      {/* Botón para agregar producto */}
+      <div className="d-flex justify-content-end mb-3">
+        <Button
+          variant="primary"
+          className="rounded-pill"
+          style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+          onClick={() => setShowAddModal(true)}
+        >
           <FaPlus className="me-1" /> Crear nuevo producto
-        </button>
+        </Button>
       </div>
 
-      {loadingProducts ? (
-        <div>Cargando productos...</div>
-      ) : (
-        <div className='mt-4' style={{ borderRadius: '10px', overflow: 'hidden', backgroundColor: '#E8F8FF', textAlign: 'center' }}>
-        <DataTable 
-          columns={columns}
-          data={filteredProducts}
-          customStyles={{
-            rows: { style: { fontSize: '0.8rem', padding: '4px' } },
-            headCells: { style: { fontSize: '0.8rem', padding: '4px' } },
-            cells: { style: { fontSize: '0.8rem', padding: '4px' } },
-          }}
-          pagination
-          paginationPerPage={5}
-          paginationComponentOptions={{ rowsPerPageText: 'Filas por página:' }}
-          defaultSortField="nombre"
-          highlightOnHover
-          dense
-        />
-        </div>
-      )}
+      {/* Tabla de Productos */}
+      <Card className="shadow-sm mb-4">
+        <Card.Body className="p-0">
+          {loadingProducts ? (
+            <div className="p-3">Cargando productos...</div>
+          ) : (
+            <DataTable 
+              columns={columns}
+              data={currentItems}
+              customStyles={{
+                rows: { style: { fontSize: '0.8rem', padding: '4px' } },
+                headCells: { style: { fontSize: '0.8rem', padding: '4px' } },
+                cells: { style: { fontSize: '0.8rem', padding: '4px' } },
+              }}
+              pagination
+              paginationPerPage={itemsPerPageLocal}
+              paginationComponentOptions={{ rowsPerPageText: 'Filas por página:' }}
+              defaultSortField="nombre"
+              highlightOnHover
+              dense
+            />
+          )}
+        </Card.Body>
+      </Card>
 
+      {/* Paginación */}
+      <Pagination className="mb-3 justify-content-center">
+        <Pagination.Prev 
+          onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} 
+          disabled={currentPage === 1}
+        />
+        {[...Array(totalPagesLocal)].map((_, index) => (
+          <Pagination.Item
+            key={index + 1}
+            active={currentPage === index + 1}
+            onClick={() => handlePageChange(index + 1)}
+            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+          >
+            {index + 1}
+          </Pagination.Item>
+        ))}
+        <Pagination.Next 
+          onClick={() => currentPage < totalPagesLocal && handlePageChange(currentPage + 1)} 
+          disabled={currentPage === totalPagesLocal}
+        />
+      </Pagination>
+
+      {/* Modales */}
       {showAddModal && (
         <ProductModal
           show={showAddModal}
@@ -346,6 +474,8 @@ const handleEditInputChange = (e) => {
           onClose={() => setShowMovementsModal(false)}
         />
       )}
+      
+      <ToastContainer />
     </div>
   );
 };

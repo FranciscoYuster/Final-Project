@@ -1,7 +1,10 @@
+// src/components/SideNav/SideNav.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
+
+// Iconos de FontAwesome
 import {
   FaFileInvoiceDollar,
   FaUserTie,
@@ -26,6 +29,10 @@ import {
   FaChartBar,
   FaGears,
 } from "react-icons/fa6";
+
+// Componente para mostrar el tiempo restante de sesión
+import SessionTimer from "../SessionTimer";
+
 import "./SideNav.css";
 
 const sideNavVariants = {
@@ -48,7 +55,7 @@ const linkVariants = {
 };
 
 const SideNav = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   // Estados para controlar la visibilidad de cada submenú
@@ -62,6 +69,9 @@ const SideNav = () => {
     navigate("/"); // Redirige a la ruta de inicio o a '/login'
   };
 
+  // Obtener la hora de expiración del token desde sessionStorage (debe guardarse al iniciar sesión)
+  const tokenExpirationTime = sessionStorage.getItem("tokenExpirationTime");
+
   return (
     <motion.div
       className="side-nav-container"
@@ -70,18 +80,45 @@ const SideNav = () => {
       variants={sideNavVariants}
     >
       <nav className="side-nav">
-        <motion.h4
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: { delay: 0.2, duration: 0.5 } }}
-        >
-          Menú
-        </motion.h4>
+      {tokenExpirationTime && (
+            <SessionTimer tokenExpirationTime={parseInt(tokenExpirationTime, 10)} />
+          )}
+        <div className="d-flex justify-content-between align-items-center mt-4">
+          <motion.h4
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { delay: 0.2, duration: 0.5 } }}
+          >
+            Menú
+          </motion.h4>
+         
+        </div>
+
+        {/* Información del usuario */}
+        {user && (
+          <div className="d-flex align-items-center mb-3">
+            <img
+              src={user.profile && user.profile.avatar ? user.profile.avatar : "https://placehold.org/40x40"}
+              alt="Profile"
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                objectFit: "cover",
+                marginRight: "10px",
+              }}
+            />
+            <span className="text-white">
+              {user.first_name} {user.last_name}
+            </span>
+          </div>
+        )}
+
         <ul>
           <motion.li variants={linkVariants} whileHover="hover">
             <Link to="/profile">
-            <div className="d-flex align-items-center">
-              <FaTachometerAlt className="me-2"/> Dashboard
-            </div>
+              <div className="d-flex align-items-center">
+                <FaTachometerAlt className="me-2" /> Dashboard
+              </div>
             </Link>
           </motion.li>
 
@@ -92,10 +129,8 @@ const SideNav = () => {
             onClick={() => setShowGestion(!showGestion)}
             style={{ cursor: "pointer" }}
           >
-
-            <div className="d-flex align-items-center ">
-              <FaBox className="me-2" /> Gestión{" "}
-              {showGestion ? <FaAngleUp /> : <FaAngleDown />}
+            <div className="d-flex align-items-center">
+              <FaBox className="me-2" /> Gestión {showGestion ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showGestion && (
@@ -107,20 +142,17 @@ const SideNav = () => {
               </li>
               <li className="mx-3">
                 <Link to="/facturas">
-                  <FaFileInvoiceDollar className="me-2"/>
-                  Facturas
+                  <FaFileInvoiceDollar className="me-2" /> Boletas y Facturas
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/movements">
-                  <FaChartBar className="me-2"/>
-                  Movimientos
+                  <FaChartBar className="me-2" /> Movimientos
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/ubications">
-                <FaMapLocation className="me-2"/> 
-                Ubicaciones
+                  <FaMapLocation className="me-2" /> Ubicaciones
                 </Link>
               </li>
             </ul>
@@ -134,22 +166,20 @@ const SideNav = () => {
             style={{ cursor: "pointer" }}
           >
             <div className="d-flex align-items-center pt-2">
-            <FaTruckFast className="me-2 "/>Proveedores
+              <FaTruckFast className="me-2" /> Proveedores{" "}
               {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
             </div>
           </motion.li>
           {showClientesProveedores && (
             <ul className="sub-menu">
               <li className="mx-3">
-              <Link to="/clientes">
-                  <FaUserTie className="me-2" />
-                  Clientes
+                <Link to="/clientes">
+                  <FaUserTie className="me-2" /> Clientes
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/proveed">
-              <FaTruckPlane className="me-2" />
-                  Proveedores
+                  <FaTruckPlane className="me-2" /> Proveedores
                 </Link>
               </li>
             </ul>
@@ -170,21 +200,18 @@ const SideNav = () => {
           {showOperaciones && (
             <ul className="sub-menu">
               <li className="mx-3">
-              <Link to="/productos">
-                  <FaBoxArchive className="me-2"/>
-                  Productos
+                <Link to="/productos">
+                  <FaBoxArchive className="me-2" /> Productos
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/ventas">
-                  <FaCashRegister className="me-2" />
-                  Ventas
+                  <FaCashRegister className="me-2" /> Ventas
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/compras">
-                  <FaHandHoldingDollar className="me-2"/>
-                  Compras
+                  <FaHandHoldingDollar className="me-2" /> Compras
                 </Link>
               </li>
             </ul>
@@ -205,21 +232,18 @@ const SideNav = () => {
           {showAdmin && (
             <ul className="sub-menu">
               <li className="mx-3">
-              <Link to="/usuarios">
-                  <FaUser className="me-2"/>
-                  Usuarios
+                <Link to="/usuarios">
+                  <FaUser className="me-2" /> Usuarios
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/reports">
-                  <FaUncharted className="me-2"/>
-                  Reportes
+                  <FaUncharted className="me-2" /> Reportes
                 </Link>
               </li>
               <li className="mx-3">
                 <Link to="/configurations">
-                  <FaGears className="me-2" />
-                  Configuración
+                  <FaGears className="me-2" /> Configuración
                 </Link>
               </li>
             </ul>

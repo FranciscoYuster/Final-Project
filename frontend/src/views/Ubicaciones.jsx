@@ -21,6 +21,11 @@ const Ubicaciones = () => {
     descripcion: ""
   });
 
+  // Estados para modal de confirmación de eliminación individual y masiva
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ubicacionToDelete, setUbicacionToDelete] = useState(null);
+  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
+
   const token = sessionStorage.getItem("access_token");
 
   const filteredUbicaciones = ubicaciones.filter((ubicacion) =>
@@ -138,6 +143,7 @@ const Ubicaciones = () => {
     }
   };
 
+  // Función que elimina la ubicación (se llamará tras confirmar en el modal)
   const handleDeleteUbicacion = async (id) => {
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones/${id}`, {
@@ -176,6 +182,12 @@ const Ubicaciones = () => {
         console.error("Error eliminando ubicaciones:", err);
         toast.error("Error al eliminar ubicaciones.");
       });
+  };
+
+  // Función para abrir el modal de confirmación de eliminación individual
+  const confirmDeleteUbicacion = (id) => {
+    setUbicacionToDelete(id);
+    setShowDeleteModal(true);
   };
 
   return (
@@ -316,7 +328,7 @@ const Ubicaciones = () => {
                             variant="danger"
                             size="sm"
                             className="rounded-pill"
-                            onClick={() => handleDeleteUbicacion(ubicacion.id)}
+                            onClick={() => confirmDeleteUbicacion(ubicacion.id)}
                             style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
                           >
                             Eliminar
@@ -334,7 +346,7 @@ const Ubicaciones = () => {
         <Button
           variant="danger"
           disabled={selectedUbicaciones.length === 0}
-          onClick={handleDeleteAllUbicaciones}
+          onClick={() => setShowDeleteSelectedModal(true)}
           className="mb-3 rounded-pill"
           style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
         >
@@ -388,6 +400,51 @@ const Ubicaciones = () => {
             </Button>
           </Form>
         </Modal.Body>
+      </Modal>
+
+      {/* Modal de confirmación para eliminación individual */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Ubicación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar esta ubicación?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteUbicacion(ubicacionToDelete);
+              setShowDeleteModal(false);
+              setUbicacionToDelete(null);
+            }}
+          >
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal de confirmación para eliminación de ubicaciones seleccionadas */}
+      <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Eliminar Ubicaciones Seleccionadas</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>¿Estás seguro de eliminar las ubicaciones seleccionadas?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteAllUbicaciones();
+              setShowDeleteSelectedModal(false);
+            }}
+          >
+            Eliminar
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
