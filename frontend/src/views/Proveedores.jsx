@@ -21,7 +21,6 @@ const Proveedores = () => {
     }
   };
 
-
   // Usamos la propiedad "addres" para alinear con el modelo de la DB
   const [newProvider, setNewProvider] = useState({
     name: "",
@@ -141,10 +140,6 @@ const Proveedores = () => {
   };
 
   // Eliminación de proveedores seleccionados (modal de confirmación)
-  const openDeleteSelectedModal = () => {
-    setShowDeleteSelectedModal(true);
-  };
-
   const handleConfirmDeleteSelected = async () => {
     try {
       await Promise.all(
@@ -299,7 +294,12 @@ const Proveedores = () => {
               onChange={handleSearch}
             />
           </InputGroup>
-          <Button variant="primary" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }} onClick={handleOpenCreateModal}>
+          <Button
+            variant="primary"
+            className="rounded-pill"
+            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            onClick={handleOpenCreateModal}
+          >
             <FaPlus className="me-1" /> Crear Nuevo Proveedor
           </Button>
         </div>
@@ -455,14 +455,15 @@ const Proveedores = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            <Form.Group controlId="editProviderPhone" className="mt-2">
+            <Form.Group controlId="providerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
+              {/* Se corrige para usar newProvider en lugar de editProvider */}
               <Form.Control
                 className="rounded-pill"
                 type="tel"
                 placeholder="Teléfono del proveedor"
                 name="phone"
-                value={editProvider.phone}
+                value={newProvider.phone}
                 onChange={handleInputChange}
                 onKeyPress={handlePhoneKeyPress}
                 required
@@ -505,7 +506,7 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderName">
               <Form.Label>Nombre / Razón Social</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 type="text"
                 placeholder="Nombre del proveedor"
                 name="name"
@@ -518,7 +519,7 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderAddress" className="mt-2">
               <Form.Label>Dirección</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 type="text"
                 placeholder="Dirección del proveedor"
                 name="addres"
@@ -547,7 +548,7 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 type="email"
                 placeholder="Email del proveedor"
                 name="email"
