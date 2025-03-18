@@ -112,6 +112,19 @@ const Facturas = () => {
       .finally(() => setLoadingCustomers(false));
   };
 
+  // Al cargar el componente, obtenemos el estado guardado (si existe)
+  useEffect(() => {
+    const storedHiddenInvoices = localStorage.getItem("hiddenInvoices");
+    if (storedHiddenInvoices) {
+      setHiddenInvoices(JSON.parse(storedHiddenInvoices));
+    }
+  }, []);
+
+  // Cada vez que cambie el estado de hiddenInvoices, lo guardamos en localStorage
+  useEffect(() => {
+    localStorage.setItem("hiddenInvoices", JSON.stringify(hiddenInvoices));
+  }, [hiddenInvoices]);
+
   useEffect(() => {
     fetchConfig();
     fetchInvoices();
@@ -242,48 +255,29 @@ const Facturas = () => {
       });
   };
 
-  const handleOpenEditModal = (invoice) => {
-    setEditInvoice({
-      id: invoice.id,
-      monto_base: invoice.monto_base,
-      status: invoice.status,
-      tipo: invoice.tipo || "Factura"
-    });
-    setShowEditModal(true);
-  };
+  // Función para cambiar el estado de una factura
+  const handleChangeStatus = (invoiceId, newStatus) => {
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) return;
 
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setEditInvoice(null);
-  };
-
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditInvoice({ ...editInvoice, [name]: value });
-  };
-
-  const handleSubmitEdit = (e) => {
-    e.preventDefault();
-    const baseTotal = parseFloat(editInvoice.monto_base);
-    if (isNaN(baseTotal)) {
-      toast.error("El monto debe ser un número válido.");
+    // Si la factura ya está Pagada, no se permite cambiar el estado (excepto anulación)
+    if (invoice.status === "Pagada") {
+      toast.error("No se puede cambiar el estado de una factura pagada.");
       return;
     }
-    const tax = config.impuesto;
-    const impuesto_aplicado = baseTotal * tax;
-    const finalTotal = baseTotal + impuesto_aplicado;
-    fetch(`/api/invoices/${editInvoice.id}`, {
+
+    fetch(`/api/invoices/${invoiceId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
       body: JSON.stringify({
-        monto_base: baseTotal,
-        impuesto_aplicado: impuesto_aplicado,
-        total_final: finalTotal,
-        status: editInvoice.status,
-        tipo: editInvoice.tipo
+        monto_base: invoice.monto_base,
+        impuesto_aplicado: invoice.impuesto_aplicado,
+        total_final: invoice.total_final,
+        status: newStatus,
+        tipo: invoice.tipo
       })
     })
       .then(response => {
@@ -292,12 +286,11 @@ const Facturas = () => {
       })
       .then(updated => {
         setInvoices(invoices.map(inv => inv.id === updated.id ? updated : inv));
-        toast.success("Factura actualizada correctamente.");
-        handleCloseEditModal();
+        toast.success(`Factura marcada como ${newStatus}.`);
       })
       .catch(err => {
-        console.error("Error al actualizar factura:", err);
-        toast.error("Error al actualizar la factura.");
+        console.error("Error al actualizar el estado:", err);
+        toast.error("Error al actualizar el estado de la factura.");
       });
   };
 
@@ -397,7 +390,11 @@ const Facturas = () => {
         </div>
         <div className="d-flex justify-content-end mb-2">
           {hiddenInvoices.length > 0 && (
-            <Button className="rounded-pill" style={{ backgroundColor: "gray", borderColor: "gray", color: "white"}} onClick={() => setShowHidden(!showHidden)}>
+            <Button
+              className="rounded-pill"
+              style={{ backgroundColor: "gray", borderColor: "gray", color: "white" }}
+              onClick={() => setShowHidden(!showHidden)}
+            >
               {showHidden ? "Ocultar Facturas Ocultas" : "Mostrar Facturas Ocultas"}
             </Button>
           )}
@@ -458,9 +455,8 @@ const Facturas = () => {
                         </span>
                       ) : invoice.status === "Anular" ? (
                         <span style={{ color: "red" }}>
-                        <FaBan className="me-1" /> Anulada {invoice.numero_nota ? `(N°: ${invoice.numero_nota})` : ""}
-                      </span>
-                  
+                          <FaBan className="me-1" /> Anulada {invoice.numero_nota ? `(N°: ${invoice.numero_nota})` : ""}
+                        </span>
                       ) : (
                         <span style={{ color: "orange" }}>
                           <FaClock className="me-1" /> {invoice.status}
@@ -469,6 +465,24 @@ const Facturas = () => {
                     </td>
                     <td>{invoice.tipo || "Sin definir"}</td>
                     <td>
+                      <div className="d-flex justify-content-center gap-2 mb-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleChangeStatus(invoice.id, "Pendiente")}
+                          disabled={invoice.status === "Pendiente" || invoice.status === "Pagada"}
+                        >
+                          Pendiente
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleChangeStatus(invoice.id, "Pagada")}
+                          disabled={invoice.status === "Pagada"}
+                        >
+                          Pagada
+                        </Button>
+                      </div>
                       {invoice.status === "Anular" ? (
                         isHidden ? (
                           <Button
@@ -480,7 +494,6 @@ const Facturas = () => {
                             Mostrar
                           </Button>
                         ) : (
-                          
                           <Button
                             variant="info"
                             onClick={() => handleOcultarInvoice(invoice.id)}
@@ -491,34 +504,14 @@ const Facturas = () => {
                           </Button>
                         )
                       ) : (
-                        <>
-                        <div className="d-flex justify-content-between align-items-center mb-3">
-                          <Button
-                            variant="warning"
-                            onClick={() => handleOpenEditModal(invoice)}
-                            className="me-2 rounded-pill"
-                            style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            onClick={() => handleOpenAnularModal(invoice)}
-                            className="me-2 rounded-pill"
-                            style={{ backgroundColor: "orange", borderColor: "orange" }}
-                          >
-                            Anular
-                          </Button>
-                          <Button
-                            variant="info"
-                            onClick={() => handleOcultarInvoice(invoice.id)}
-                            className="rounded-pill text-white"
-                            style={{ backgroundColor: "gray", borderColor: "gray" }}
-                          >
-                            Ocultar
-                          </Button>
-                          </div>
-                        </>
+                        <Button
+                          variant="secondary"
+                          onClick={() => handleOpenAnularModal(invoice)}
+                          className="rounded-pill"
+                          style={{ backgroundColor: "orange", borderColor: "orange" }}
+                        >
+                          Anular
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -541,39 +534,41 @@ const Facturas = () => {
           ))}
         </Pagination>
 
-        {/* Modal para editar factura */}
-        <Modal show={showEditModal} onHide={handleCloseEditModal}>
+        {/* Modal para confirmar ocultar factura */}
+        <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
           <Modal.Header closeButton>
-            <Modal.Title>Editar Factura</Modal.Title>
+            <Modal.Title>Ocultar Factura</Modal.Title>
           </Modal.Header>
-          <Modal.Body>
-            {editInvoice && (
-              <Form onSubmit={handleSubmitEdit}>
-                <Form.Group controlId="formEstado">
-                  <Form.Label>Estado</Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={editInvoice.status || ""}
-                    onChange={handleEditInputChange}
-                    required
-                    className="rounded-pill"
-                    style={{ borderColor: "#074de3" }}
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Pagada">Pagada</option>
-                  </Form.Select>
-                </Form.Group>
-                <div className="mt-3 d-flex justify-content-end">
-                  <Button variant="secondary" onClick={handleCloseEditModal} className="me-2 rounded-pill">
-                    Cancelar
-                  </Button>
-                  <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
-                    Guardar cambios
-                  </Button>
-                </div>
-              </Form>
-            )}
-          </Modal.Body>
+          <Modal.Body>¿Estás seguro de ocultar esta factura?</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete}>
+              Ocultar
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal para confirmar ocultar facturas seleccionadas */}
+        <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Ocultar Facturas Seleccionadas</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>¿Estás seguro de ocultar las facturas seleccionadas?</Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={() => {
+              setHiddenInvoices([...hiddenInvoices, ...selectedInvoices]);
+              setSelectedInvoices([]);
+              setShowDeleteSelectedModal(false);
+              toast.info("Facturas ocultadas.");
+            }}>
+              Ocultar Seleccionadas
+            </Button>
+          </Modal.Footer>
         </Modal>
 
         {/* Modal para crear factura */}
@@ -669,7 +664,6 @@ const Facturas = () => {
                 </Form.Select>
               </Form.Group>
               <div className="mt-3 d-flex">
-
                 <Button variant="primary" type="submit" className="rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
                   Crear
                 </Button>
@@ -678,96 +672,6 @@ const Facturas = () => {
           </Modal.Body>
         </Modal>
       </div>
-
-      {/* Modal para confirmar ocultar factura */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Ocultar Factura</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>¿Estás seguro de ocultar esta factura?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="danger" onClick={handleConfirmDelete}>
-            Ocultar
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal para confirmar ocultar facturas seleccionadas */}
-      <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Ocultar Facturas Seleccionadas</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>¿Estás seguro de ocultar las facturas seleccionadas?</Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="danger" onClick={() => {
-            setHiddenInvoices([...hiddenInvoices, ...selectedInvoices]);
-            setSelectedInvoices([]);
-            setShowDeleteSelectedModal(false);
-            toast.info("Facturas ocultadas.");
-          }}>
-            Ocultar Seleccionadas
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal para anular factura */}
-      <Modal show={showAnularModal} onHide={() => setShowAnularModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Anular Factura</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p className="text-danger fw-bold">¡Atención! Esta acción es irreversible.</p>
-          <Form>
-            <Form.Group controlId="formAnularMotivo">
-              <Form.Label>Motivo de Anulación</Form.Label>
-              <Form.Select
-                value={anularMotive}
-                onChange={(e) => setAnularMotive(e.target.value)}
-              >
-                <option value="NOTA DE CRÉDITO ELECTRÓNICA">NOTA DE CRÉDITO ELECTRÓNICA</option>
-                <option value="NOTA DE DÉBITO ELECTRÓNICA">NOTA DE DÉBITO ELECTRÓNICA</option>
-                <option value="Otro">Otro</option>
-              </Form.Select>
-            </Form.Group>
-            {anularMotive === "Otro" && (
-              <Form.Group controlId="formAnularOtro" className="mt-2">
-                <Form.Label>Especifique otro motivo</Form.Label>
-                <Form.Control
-                  type="text"
-                  value={anularOtherMotive}
-                  onChange={(e) => setAnularOtherMotive(e.target.value)}
-                  placeholder="Especifique el motivo"
-                  required
-                />
-              </Form.Group>
-            )}
-            <Form.Group controlId="formAnularNumeroNota" className="mt-2">
-              <Form.Label>Número de Nota</Form.Label>
-              <Form.Control
-                type="text"
-                value={anularNumeroNota}
-                onChange={(e) => setAnularNumeroNota(e.target.value)}
-                placeholder="Ingrese el número de la nota"
-                required
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAnularModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="primary" onClick={handleConfirmAnular}>
-            Confirmar Anulación
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };
