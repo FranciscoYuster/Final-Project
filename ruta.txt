@@ -1,3 +1,7 @@
+@Movimientos
+- Boton eliminar
+- Campos
+
 @Ventas:
 -Productos: no despliega mis productos creados.
 -Tabla: Formato botones.
@@ -17,17 +21,10 @@ Observaciones:
 -Editar: el formulario no muestras los valores nombre, descripción y precio al editar
 -Eliminar: Falta modal de eliminación “Estás seguro….”
 
-@CATEGORIAS DEBE DE SER UN LISTADO QUE SE CREA EN PAGE INVENTARIO
-
-@Usuarios
--Formato Tabla
-
-@Reportes
--CREARLO
-
-CAMBIAR EL TOASTIFY DE LOS AVISOS DE CLIENTES & PROVEEDORES
-
+@CATEGORIAS 
+- DEBE DE SER UN LISTADO QUE SE CREA EN PAGE INVENTARIO
 
 # MEJORAS
-
 - SECCIÓN REPORTES (GENERAR REPORTAR CON CUALQUIER CAMPO TIPO TABLAS DINAMICA)
+- SECCIÓN USUARIOS (CREAR USUARIOS CON ROLES)
+- IMAGENES

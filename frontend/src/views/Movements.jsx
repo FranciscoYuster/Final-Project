@@ -321,14 +321,11 @@ const Movements = () => {
         <div className="d-flex justify-content-between align-items-center mb-3">
 
           <div className="d-flex gap-2">
-            <Button variant="secondary" size="sm" className="rounded-pill" onClick={handleExportCSV}>
+            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportCSV}>
               Exportar CSV
             </Button>
-            <Button variant="secondary" size="sm" className="rounded-pill" onClick={handleExportExcel}>
+            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportExcel}>
               Exportar Excel
-            </Button>
-            <Button variant="secondary" size="sm" className="rounded-pill" onClick={handleExportPDF}>
-              Exportar PDF
             </Button>
           </div>
         </div>

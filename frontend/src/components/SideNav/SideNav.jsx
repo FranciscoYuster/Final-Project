@@ -3,8 +3,12 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
+import SessionTimer from "../SessionTimer";
 
-// Iconos de FontAwesome
+// Importaciones de Material-UI
+import { Avatar, Divider, Box, Typography } from "@mui/material";
+
+// Iconos de FontAwesome y FontAwesome6
 import {
   FaFileInvoiceDollar,
   FaUserTie,
@@ -30,16 +34,13 @@ import {
   FaGears,
 } from "react-icons/fa6";
 
-// Componente para mostrar el tiempo restante de sesión
-import SessionTimer from "../SessionTimer";
-
 import "./SideNav.css";
 
 const sideNavVariants = {
   hidden: { x: -205, opacity: 0, y: -25 },
   visible: {
     x: 0,
-    y: 0, // Asegura que se posicione en Y=0 al animar
+    y: 0,
     opacity: 1,
     transition: {
       type: "spring",
@@ -58,7 +59,6 @@ const SideNav = () => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
 
-  // Estados para controlar la visibilidad de cada submenú
   const [showGestion, setShowGestion] = useState(false);
   const [showClientesProveedores, setShowClientesProveedores] = useState(false);
   const [showOperaciones, setShowOperaciones] = useState(false);
@@ -66,10 +66,9 @@ const SideNav = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/"); // Redirige a la ruta de inicio o a '/login'
+    navigate("/");
   };
 
-  // Obtener la hora de expiración del token desde sessionStorage (debe guardarse al iniciar sesión)
   const tokenExpirationTime = sessionStorage.getItem("tokenExpirationTime");
 
   return (
@@ -80,9 +79,9 @@ const SideNav = () => {
       variants={sideNavVariants}
     >
       <nav className="side-nav">
-      {tokenExpirationTime && (
-            <SessionTimer tokenExpirationTime={parseInt(tokenExpirationTime, 10)} />
-          )}
+        {tokenExpirationTime && (
+          <SessionTimer tokenExpirationTime={parseInt(tokenExpirationTime, 10)} />
+        )}
         <div className="d-flex justify-content-between align-items-center mt-4">
           <motion.h4
             initial={{ opacity: 0 }}
@@ -90,23 +89,19 @@ const SideNav = () => {
           >
             Menú
           </motion.h4>
-         
         </div>
 
         {/* Información del usuario */}
         {user && (
           <div className="d-flex align-items-center mb-3">
-            <img
-              src={user.profile && user.profile.avatar ? user.profile.avatar : "https://placehold.org/40x40"}
-              alt="Profile"
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                marginRight: "10px",
-              }}
-            />
+            <Avatar
+              src={user.profile && user.profile.avatar ? user.profile.avatar : ""}
+              alt={`${user.first_name} ${user.last_name}`}
+              sx={{ width: 56, height: 56, mr: 2 }}
+            >
+              {user.first_name[0]}
+              {user.last_name[0]}
+            </Avatar>
             <span className="text-white">
               {user.first_name} {user.last_name}
             </span>
@@ -218,36 +213,15 @@ const SideNav = () => {
           )}
 
           {/* Submenú de Administración */}
-          <motion.li
-            variants={linkVariants}
-            whileHover="hover"
-            onClick={() => setShowAdmin(!showAdmin)}
-            style={{ cursor: "pointer" }}
-          >
-            <div className="d-flex align-items-center pt-2">
-              <FaBoxOpen className="me-2" /> Administración{" "}
-              {showAdmin ? <FaAngleUp /> : <FaAngleDown />}
-            </div>
+          <motion.li variants={linkVariants} whileHover="hover">
+            <Link to="/configurations">
+              <div className="d-flex align-items-center pt-2">
+                <FaGears className="me-2" /> Configuración
+              </div>
+            </Link>
           </motion.li>
-          {showAdmin && (
-            <ul className="sub-menu">
-              <li className="mx-3">
-                <Link to="/usuarios">
-                  <FaUser className="me-2" /> Usuarios
-                </Link>
-              </li>
-              <li className="mx-3">
-                <Link to="/reports">
-                  <FaUncharted className="me-2" /> Reportes
-                </Link>
-              </li>
-              <li className="mx-3">
-                <Link to="/configurations">
-                  <FaGears className="me-2" /> Configuración
-                </Link>
-              </li>
-            </ul>
-          )}
+
+
 
           <motion.li>
             <motion.button

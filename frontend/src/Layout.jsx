@@ -122,14 +122,14 @@ const AppRoutes = () => {
                   </PrivateRoute>
                 }
               />
-              <Route
+             {/*  <Route
                 path="/usuarios"
                 element={
                   <PrivateRoute>
                     <Usuarios />
                   </PrivateRoute>
                 }
-              />
+              /> */}
               <Route
                 path="/proveed"
                 element={
@@ -138,14 +138,14 @@ const AppRoutes = () => {
                   </PrivateRoute>
                 }
               />
-              <Route
+             {/*  <Route
                 path="/reports"
                 element={
                   <PrivateRoute>
                     <Reportes />
                   </PrivateRoute>
                 }
-              />
+              /> */}
               <Route path="/services" element={<Services />} />
               <Route path="*" element={<Error404 />} />
             </Routes>

@@ -7,9 +7,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { FaPlus, FaEdit, FaTrash, FaEye } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaEye } from 'react-icons/fa';
 import { Bar } from 'react-chartjs-2';
-import { Pagination, Row, Col, Card, Button } from 'react-bootstrap';
+import { Pagination, Row, Col, Card, Button, Container } from 'react-bootstrap';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Title, Tooltip, Legend } from 'chart.js';
 
 import KPISection from './components/KPISections';
@@ -31,7 +31,6 @@ const InventoryManagement = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', description: '', price: '', stock: '', ubicacion_id: '' });
@@ -42,7 +41,7 @@ const InventoryManagement = () => {
   
   const token = sessionStorage.getItem('access_token');
   
-  // Cargar productos
+  // Función para cargar productos
   const fetchProducts = async () => {
     setLoadingProducts(true);
     try {
@@ -64,11 +63,7 @@ const InventoryManagement = () => {
     }
   };
 
-  const handleEditInputChange = (e) => {
-    setEditProduct({ ...editProduct, [e.target.name]: e.target.value });
-  };
-
-  // Cargar ubicaciones
+  // Función para cargar ubicaciones
   const fetchLocations = async () => {
     setLoadingLocations(true);
     try {
@@ -110,7 +105,7 @@ const InventoryManagement = () => {
   const isValidStock = stock => !isNaN(parseInt(stock)) && parseInt(stock) >= 0;
   const isValidPrice = price => !isNaN(parseFloat(price)) && parseFloat(price) >= 0;
 
-  // Función para agregar producto
+  // Agregar producto
   const handleAddProduct = async e => {
     e.preventDefault();
     if (!isValidStock(newProduct.stock)) { 
@@ -133,7 +128,7 @@ const InventoryManagement = () => {
         precio: parseFloat(newProduct.price),
         stock: parseInt(newProduct.stock),
         categoria: "General",
-        inventory_id: 1, // Ajusta según corresponda
+        inventory_id: 1,
         user_id: sessionStorage.getItem('user_id') || "1",
         ubicacion_id: newProduct.ubicacion_id
       };
@@ -157,7 +152,7 @@ const InventoryManagement = () => {
     }
   };
 
-  // Función para editar producto
+  // Editar producto
   const handleEditProduct = async e => {
     e.preventDefault();
     if (!isValidStock(editProduct.stock)) { 
@@ -200,8 +195,7 @@ const InventoryManagement = () => {
     }
   };
 
-
-  // Función para obtener movimientos de un producto
+  // Obtener movimientos de un producto
   const fetchMovements = async productId => {
     try {
       const response = await fetch(`/api/movements?product_id=${productId}`, {
@@ -258,7 +252,7 @@ const InventoryManagement = () => {
     }
   };
 
-  // Configuración para la tabla de productos (columnas)
+  // Configuración para la tabla de productos
   const columns = [
     { name: '#', cell: (row, index) => index + 1, width: '40px' },
     { name: 'Nombre', selector: row => row.nombre, sortable: true },
@@ -276,7 +270,6 @@ const InventoryManagement = () => {
           <button className="btn btn-info btn-sm me-1" onClick={() => fetchMovements(row.id)}>
             <FaEye />
           </button>
-       
         </>
       ),
       ignoreRowClick: true,
@@ -285,7 +278,7 @@ const InventoryManagement = () => {
     },
   ];
 
-  // Funciones de exportación (ejemplo básico)
+  // Funciones de exportación (lógica pendiente)
   const exportCSV = () => { /* lógica de exportación */ };
   const exportXLSX = () => { /* lógica de exportación */ };
   const exportPDF = () => { /* lógica de exportación */ };
@@ -300,51 +293,25 @@ const InventoryManagement = () => {
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
-    <div className="container-fluid p-4" style={{ fontSize: '0.9rem' }}>
+    <Container className="py-4">
       <ToastContainer />
-      <h1 className="mb-4 text-white text-center">Dashboard de Inventario</h1>
+      <header className="mb-4 text-center">
+        <h1 className="fw-bold text-primary">Dashboard de Inventario</h1>
+        <p className="text-muted">Control y gestión integral de productos</p>
+      </header>
 
-      {/* Sección de KPIs */}
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <Card.Title>Total Productos</Card.Title>
-              <Card.Text>{totalProducts}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <Card.Title>Stock Total</Card.Title>
-              <Card.Text>{totalStock}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <Card.Title>Productos con Bajo Stock</Card.Title>
-              <Card.Text>{lowStockCount}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="text-center shadow-sm">
-            <Card.Body>
-              <Card.Title>Filtrado Activo</Card.Title>
-              <Card.Text>{filteredProducts.length} productos</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+      {/* Sección de KPIs usando el componente KPISection */}
+      <KPISection 
+        totalProducts={totalProducts} 
+        totalStock={totalStock} 
+        lowStockCount={lowStockCount} 
+      />
 
       {/* Gráfico de Stock */}
       <Row className="mb-4">
         <Col>
           <Card className="shadow-sm">
-            <Card.Header>Distribución de Stock</Card.Header>
+            <Card.Header className="bg-secondary text-white">Distribución de Stock</Card.Header>
             <Card.Body style={{ height: '300px' }}>
               <Bar data={chartData} options={chartOptions} />
             </Card.Body>
@@ -353,7 +320,7 @@ const InventoryManagement = () => {
       </Row>
 
       {/* Filtros y Exportación */}
-      <Row className="mb-3">
+      <Row className="align-items-center mb-3">
         <Col md={6}>
           <Filters
             globalFilter={globalFilter}
@@ -364,8 +331,12 @@ const InventoryManagement = () => {
             setMaxPrice={setMaxPrice}
           />
         </Col>
-        <Col md={6} className="d-flex justify-content-end align-items-center">
-          <ExportButtons exportCSV={exportCSV} exportXLSX={exportXLSX} exportPDF={exportPDF} />
+        <Col md={6} className="d-flex justify-content-end">
+          <ExportButtons 
+            exportCSV={exportCSV} 
+            exportXLSX={exportXLSX} 
+            exportPDF={exportPDF} 
+          />
         </Col>
       </Row>
 
@@ -374,10 +345,9 @@ const InventoryManagement = () => {
         <Button
           variant="primary"
           className="rounded-pill"
-          style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           onClick={() => setShowAddModal(true)}
         >
-          <FaPlus className="me-1" /> Crear nuevo producto
+          <FaPlus className="me-1" /> Nuevo Producto
         </Button>
       </div>
 
@@ -417,7 +387,7 @@ const InventoryManagement = () => {
             key={index + 1}
             active={currentPage === index + 1}
             onClick={() => handlePageChange(index + 1)}
-            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            className="bg-primary border-primary text-white"
           >
             {index + 1}
           </Pagination.Item>
@@ -445,7 +415,7 @@ const InventoryManagement = () => {
         <ProductModal
           show={showEditModal}
           product={editProduct}
-          onChange={handleEditInputChange}
+          onChange={e => setEditProduct({ ...editProduct, [e.target.name]: e.target.value })}
           onSubmit={handleEditProduct}
           onClose={handleCloseEditModal}
           title="Editar Producto"
@@ -462,7 +432,7 @@ const InventoryManagement = () => {
       )}
       
       <ToastContainer />
-    </div>
+    </Container>
   );
 };
 

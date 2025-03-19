@@ -283,6 +283,7 @@ class Invoice(db.Model):
     invoice_date = db.Column(db.DateTime, server_default=db.func.now())
     status = db.Column(db.String, nullable=False, default="Pending")
     tipo = db.Column(db.String(20), nullable=False, default="Factura")
+    hidden = db.Column(db.Boolean, nullable=False, default=False)  # Nuevo campo para persistir la ocultación
     
     # Relación con Customer (se asume que Customer tiene un método serialize)
     customer = db.relationship("Customer", backref="invoices")
@@ -300,8 +301,10 @@ class Invoice(db.Model):
             "total_final": self.total_final,
             "invoice_date": self.invoice_date.isoformat() if self.invoice_date else None,
             "status": self.status,
-            "tipo": self.tipo
+            "tipo": self.tipo,
+            "hidden": self.hidden  # Incluir el campo en la serialización
         }
+
 
             
     def save(self):

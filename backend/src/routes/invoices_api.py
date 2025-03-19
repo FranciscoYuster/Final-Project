@@ -1,3 +1,4 @@
+# src/api/invoices_api.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Invoice, Configuration, User, Customer
@@ -12,23 +13,12 @@ def get_invoices():
     invoices = Invoice.query.filter_by(user_id=user_id).all()
     return jsonify([invoice.serialize() for invoice in invoices]), 200
 
-# Endpoint para obtener una factura específica
-@invoices_api.route('/invoices/<int:id>', methods=['GET'])
-@jwt_required()
-def get_invoice(id):
-    user_id = get_jwt_identity()
-    invoice = Invoice.query.filter_by(id=id, user_id=user_id).first()
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
-    return jsonify(invoice.serialize()), 200
-
 # Endpoint para crear una factura
 @invoices_api.route('/invoices', methods=['POST'])
 @jwt_required()
 def create_invoice():
     data = request.get_json()
     
-    # Validaciones básicas
     if "monto_base" not in data:
         return jsonify({"error": "monto_base is required"}), 400
     if "numero_comprobante" not in data:
@@ -68,7 +58,6 @@ def create_invoice():
     except ValueError:
         return jsonify({"error": "monto_base must be a valid number"}), 400
 
-    # Se obtiene el impuesto desde la configuración del usuario; si no hay, se usa 0.19
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
     tax = config_obj.impuesto if config_obj else 0.19
 
@@ -84,7 +73,8 @@ def create_invoice():
         total_final=total_final,
         status=data.get("status", "Pending"),
         numero_comprobante=data["numero_comprobante"],
-        tipo=data.get("tipo", "Factura")
+        tipo=data.get("tipo", "Factura"),
+        hidden=data.get("hidden", False)  # Por defecto la factura se crea sin ocultar
     )
 
     try:
@@ -95,7 +85,7 @@ def create_invoice():
 
     return jsonify(invoice.serialize()), 200
 
-# Endpoint para actualizar una factura (incluye opción de anulación)
+# Endpoint para actualizar una factura (incluye ocultación)
 @invoices_api.route('/invoices/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_invoice(id):
@@ -116,17 +106,18 @@ def update_invoice(id):
         except ValueError:
             return jsonify({"error": "monto_base must be a valid number"}), 400
 
-    # Actualiza el estado, el tipo y otros campos relevantes
     if "status" in data:
         invoice.status = data["status"]
     if "tipo" in data:
         invoice.tipo = data["tipo"]
 
-    # Si se envía el número de nota (para anulación, por ejemplo), se actualiza en la factura
+    # Actualizar el campo oculto
+    if "hidden" in data:
+        invoice.hidden = data["hidden"]
+
     if "numero_nota" in data:
         invoice.numero_nota = data["numero_nota"]
 
-    # Se recalcula el impuesto y total final usando el impuesto de la configuración o 0.19 por defecto
     config_obj = Configuration.query.filter_by(user_id=user.id).first()
     tax = config_obj.impuesto if config_obj else 0.19
     invoice.impuesto_aplicado = invoice.monto_base * tax

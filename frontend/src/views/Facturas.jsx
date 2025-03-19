@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Table, Form, InputGroup, FormControl, Pagination } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
+import DatePicker from "react-multi-date-picker";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
+import "react-multi-date-picker/styles/colors/teal.css";
 import { FaCheck, FaClock, FaBan, FaPlus } from "react-icons/fa";
 
 const Facturas = () => {
@@ -43,6 +45,13 @@ const Facturas = () => {
   const [hiddenInvoices, setHiddenInvoices] = useState([]);
   // Bandera para alternar si se muestran o no las facturas ocultas
   const [showHidden, setShowHidden] = useState(false);
+
+  // Estados para filtros por columna
+  const [filterCliente, setFilterCliente] = useState("");
+  const [filterEmail, setFilterEmail] = useState("");
+  const [filterFolio, setFilterFolio] = useState("");
+  // Estado para seleccionar múltiples fechas en el filtro (almacenaremos un arreglo de strings "YYYY-MM-DD")
+  const [filterDates, setFilterDates] = useState([]);
 
   const token = sessionStorage.getItem("access_token");
 
@@ -133,22 +142,47 @@ const Facturas = () => {
 
   if (!config) return <p>Cargando configuración...</p>;
 
-  // Filtrado de facturas, incluyendo el campo "tipo". Además, se omiten las facturas ocultas si showHidden es false.
+  // Función auxiliar para obtener la fecha en formato YYYY-MM-DD
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toISOString().substring(0, 10);
+  };
+
+  // Filtrado de facturas, combinando filtro global, filtros por columnas y el filtro por fechas seleccionadas.
   const filteredInvoices = invoices.filter(invoice => {
     const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : (invoice.customer_name || "").toLowerCase();
     const email = invoice.customer ? invoice.customer.email.toLowerCase() : (invoice.customer_email || "").toLowerCase();
     const monto = invoice.monto_base ? invoice.monto_base.toString() : "";
     const status = invoice.status ? invoice.status.toLowerCase() : "";
     const tipo = invoice.tipo ? invoice.tipo.toLowerCase() : "";
+    const folio = invoice.numero_comprobante ? invoice.numero_comprobante.toLowerCase() : "";
+    const invoiceDate = invoice.invoice_date ? formatDate(invoice.invoice_date) : "";
     const query = searchQuery.toLowerCase();
-    return (
+
+    // Filtro global
+    const globalMatch = (
       cliente.includes(query) ||
       email.includes(query) ||
       monto.includes(query) ||
       status.includes(query) ||
-      tipo.includes(query)
+      tipo.includes(query) ||
+      folio.includes(query) ||
+      invoiceDate.includes(query)
     );
-  }).filter(invoice => showHidden || !hiddenInvoices.includes(invoice.id));
+
+    // Filtros por columna y fechas:
+    // Si se han seleccionado fechas, se verifica que la fecha de la factura coincida con alguna
+    const dateMatch =
+      filterDates.length === 0 || filterDates.includes(invoiceDate);
+
+    const columnMatch =
+      cliente.includes(filterCliente.toLowerCase()) &&
+      email.includes(filterEmail.toLowerCase()) &&
+      folio.includes(filterFolio.toLowerCase()) &&
+      dateMatch;
+
+    return globalMatch && columnMatch && (showHidden || !hiddenInvoices.includes(invoice.id));
+  });
 
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
   const currentItems = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -222,7 +256,7 @@ const Facturas = () => {
       monto_base: baseTotal,
       impuesto_aplicado: impuesto_aplicado,
       total_final: finalTotal,
-      tipo: newInvoice.tipo, // Enviar el tipo ("Factura" o "Boleta")
+      tipo: newInvoice.tipo,
       status: newInvoice.status,
       numero_comprobante: newInvoice.numero_comprobante
     };
@@ -312,7 +346,7 @@ const Facturas = () => {
   // Modal para anular factura: incluye mensaje de advertencia y campo para el número de nota
   const handleOpenAnularModal = (invoice) => {
     setInvoiceToAnular(invoice);
-    setAnularMotive("NOTA DE CRÉDITO ELECTRÓNICA"); // Valor por defecto
+    setAnularMotive("NOTA DE CRÉDITO ELECTRÓNICA");
     setAnularOtherMotive("");
     setAnularNumeroNota("");
     setShowAnularModal(true);
@@ -366,19 +400,7 @@ const Facturas = () => {
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Boletas y Facturas</h1>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <FormControl
-              placeholder="Buscar factura..."
-              aria-label="Buscar factura"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="rounded-pill"
-            />
-          </InputGroup>
+        <div className="d-flex justify-content-end align-items-center mb-3">
           <Button
             variant="primary"
             onClick={() => setShowModal(true)}
@@ -416,13 +438,53 @@ const Facturas = () => {
                     className="rounded-circle"
                   />
                 </th>
-                <th>Cliente</th>
-                <th>Email</th>
+                <th>
+                  Cliente
+                  <FormControl
+                    placeholder="Filtrar..."
+                    value={filterCliente}
+                    onChange={(e) => setFilterCliente(e.target.value)}
+                    size="sm"
+                  />
+                </th>
+                <th>
+                  Email
+                  <FormControl
+                    placeholder="Filtrar..."
+                    value={filterEmail}
+                    onChange={(e) => setFilterEmail(e.target.value)}
+                    size="sm"
+                  />
+                </th>
                 <th>Monto Bruto</th>
                 <th>Impuesto Aplicado</th>
                 <th>Total Neto</th>
-                <th>N° de Folio</th>
-                <th>Fecha</th>
+                <th>
+                  N° de Folio
+                  <FormControl
+                    placeholder="Filtrar..."
+                    value={filterFolio}
+                    onChange={(e) => setFilterFolio(e.target.value)}
+                    size="sm"
+                  />
+                </th>
+                <th>
+                  Fecha
+                  <div className="mt-1">
+                    <DatePicker
+                      value={filterDates}
+                      onChange={(dates) => {
+                        // Convertir las fechas seleccionadas a strings en formato YYYY-MM-DD
+                        const formatted = dates.map(date => date.format("YYYY-MM-DD"));
+                        setFilterDates(formatted);
+                      }}
+                      multiple
+                      sort
+                      placeholder="Selecciona fechas"
+                      className="w-100"
+                    />
+                  </div>
+                </th>
                 <th>Estado</th>
                 <th>Tipo</th>
                 <th>Acciones</th>
@@ -447,7 +509,7 @@ const Facturas = () => {
                     <td>{formatCurrency(invoice.impuesto_aplicado)}</td>
                     <td>{formatCurrency(invoice.total_final)}</td>
                     <td>{invoice.numero_comprobante}</td>
-                    <td>{invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString() : ""}</td>
+                    <td>{invoice.invoice_date ? formatDate(invoice.invoice_date) : ""}</td>
                     <td>
                       {invoice.status === "Pagada" ? (
                         <span style={{ color: "green" }}>

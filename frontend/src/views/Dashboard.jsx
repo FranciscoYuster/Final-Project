@@ -1,9 +1,88 @@
 import React, { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend } from 'chart.js';
 import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import {
+  Container,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Box
+} from '@mui/material';
+import styled from '@emotion/styled';
+import {
+  Chart as ChartJS,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 
 ChartJS.register(LineElement, CategoryScale, LinearScale, PointElement, Title, Tooltip, Legend);
+
+const StyledCard = ({ title, children }) => (
+  <Card sx={{ mb: 2 }}>
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        {title}
+      </Typography>
+      {children}
+    </CardContent>
+  </Card>
+);
+
+// Opciones personalizadas para el gráfico
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: {
+        font: {
+          size: 14,
+        },
+      },
+    },
+    title: {
+      display: true,
+      text: 'Ingresos Recientes',
+      font: {
+        size: 16,
+      },
+    },
+  },
+  elements: {
+    line: {
+      tension: 0.4, // Líneas con curvatura
+      borderWidth: 3,
+    },
+    point: {
+      radius: 5,
+      hoverRadius: 7,
+    },
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false,
+      },
+    },
+    y: {
+      grid: {
+        color: 'rgba(0,0,0,0.1)',
+      },
+      ticks: {
+        beginAtZero: true,
+      },
+    },
+  },
+};
 
 const Dashboard = () => {
   const [kpiData, setKpiData] = useState({
@@ -28,20 +107,17 @@ const Dashboard = () => {
     const token = sessionStorage.getItem('access_token');
     if (!token) return;
 
-    // 1. Traer facturas del backend
     axios.get('/api/invoices', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     })
     .then(response => {
-      const allInvoices = response.data; // Array con todas las facturas del usuario
+      const allInvoices = response.data;
 
-      // 2. Últimas 3 facturas (o las que quieras mostrar)
+      // Últimas 3 facturas
       const lastThree = allInvoices.slice(-3);
       setLatestInvoices(lastThree);
 
-      // 3. Calcular KPIs usando total_final
+      // Calcular KPIs
       const totalInvoices = allInvoices.length;
       const moneyCollected = allInvoices
         .filter(inv => inv.status === 'Paid')
@@ -63,7 +139,7 @@ const Dashboard = () => {
         totalCustomers,
       });
 
-      // 4. Agrupar facturas por mes para el gráfico de ingresos recientes (usando total_final)
+      // Agrupar facturas por mes para el gráfico
       const monthlyData = {};
       allInvoices.forEach(invoice => {
         const date = new Date(invoice.invoice_date);
@@ -90,78 +166,79 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="container mt-4">
-      <h1 className="mb-4">Dashboard</h1>
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" gutterBottom>
+        Dashboard
+      </Typography>
       
       {/* Tarjetas de KPIs */}
-      <div className="row">
-        <div className="col-md-3 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Dinero Recogido</h5>
-              <p className="card-text">${(kpiData.moneyCollected || 0).toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Dinero Pendiente</h5>
-              <p className="card-text">${(kpiData.moneyPending || 0).toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Total Facturas</h5>
-              <p className="card-text">{kpiData.totalInvoices}</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Total Clientes</h5>
-              <p className="card-text">{kpiData.totalCustomers}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <StyledCard title="Dinero Recogido">
+            <Typography variant="h5">
+              ${kpiData.moneyCollected.toFixed(2)}
+            </Typography>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StyledCard title="Dinero Pendiente">
+            <Typography variant="h5">
+              ${kpiData.moneyPending.toFixed(2)}
+            </Typography>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StyledCard title="Total Facturas">
+            <Typography variant="h5">
+              {kpiData.totalInvoices}
+            </Typography>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <StyledCard title="Total Clientes">
+            <Typography variant="h5">
+              {kpiData.totalCustomers}
+            </Typography>
+          </StyledCard>
+        </Grid>
+      </Grid>
 
-      {/* Gráfico de ingresos recientes y últimas facturas */}
-      <div className="row">
-        <div className="col-md-8 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Ingresos Recientes</h5>
-              <Line data={revenueData} />
-            </div>
-          </div>
-        </div>
-
-        <div className="col-md-4 mb-3">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Últimas Facturas</h5>
-              <ul className="list-group list-group-flush">
-                {latestInvoices.map(invoice => (
-                  <li key={invoice.id} className="list-group-item">
-                    <strong>{invoice.customer ? invoice.customer.name : 'Sin Cliente'}</strong>: {' $' + (invoice.total_final || 0).toFixed(2)} <br/>
-                    <small>{new Date(invoice.invoice_date).toLocaleDateString()}</small>
-                  </li>
-                ))}
-                {latestInvoices.length === 0 && (
-                  <li className="list-group-item">
-                    No hay facturas recientes
-                  </li>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Gráfico y lista de últimas facturas */}
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={8}>
+          <StyledCard title="Ingresos Recientes">
+            <Box sx={{ height: 300 }}>
+              <Line data={revenueData} options={chartOptions} />
+            </Box>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StyledCard title="Últimas Facturas">
+            <List>
+              {latestInvoices.length > 0 ? (
+                latestInvoices.map(invoice => (
+                  <ListItem key={invoice.id} divider>
+                    <ListItemText
+                      primary={invoice.customer ? invoice.customer.name : 'Sin Cliente'}
+                      secondary={
+                        <>
+                          ${ (invoice.total_final || 0).toFixed(2) } <br />
+                          { new Date(invoice.invoice_date).toLocaleDateString() }
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No hay facturas recientes" />
+                </ListItem>
+              )}
+            </List>
+          </StyledCard>
+        </Grid>
+      </Grid>
+    </Container>
   );
 };
 
