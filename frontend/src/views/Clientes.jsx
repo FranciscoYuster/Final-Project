@@ -341,7 +341,7 @@ const Clientes = () => {
               style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
             >
               <FaPlus className="me-1" />
-              Crear Ubicacion
+              Crear Cliente
             </Button>
           </div>
           <div>
