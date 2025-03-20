@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
 import { toast, ToastContainer } from "react-toastify";
+import { FaPlus } from "react-icons/fa";
+import * as XLSX from "xlsx";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
-import { FaPlus } from 'react-icons/fa';
 
 export const baseUrl = import.meta.env.VITE_BASE_URL;
 
@@ -144,7 +145,6 @@ const Ubicaciones = () => {
     }
   };
 
-  // Función que elimina la ubicación (se llamará tras confirmar en el modal)
   const handleDeleteUbicacion = async (id) => {
     try {
       const response = await fetch(`${baseUrl}/api/ubicaciones/${id}`, {
@@ -185,10 +185,37 @@ const Ubicaciones = () => {
       });
   };
 
-  // Función para abrir el modal de confirmación de eliminación individual
   const confirmDeleteUbicacion = (id) => {
     setUbicacionToDelete(id);
     setShowDeleteModal(true);
+  };
+
+  // Función para exportar a CSV
+  const exportToCSV = () => {
+    if (!ubicaciones.length) return;
+    const headers = Object.keys(ubicaciones[0]);
+    const csvRows = [
+      headers.join(","), 
+      ...ubicaciones.map(u => headers.map(header => `"${u[header]}"`).join(","))
+    ];
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ubicaciones.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Función para exportar a Excel
+  const exportToExcel = () => {
+    if (!ubicaciones.length) return;
+    const worksheet = XLSX.utils.json_to_sheet(ubicaciones);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ubicaciones");
+    XLSX.writeFile(workbook, "ubicaciones.xlsx");
   };
 
   return (
@@ -196,31 +223,23 @@ const Ubicaciones = () => {
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Gestión de Ubicaciones</h1>
-
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <Form.Control
-              placeholder="Buscar ubicaciones..."
-              aria-label="Buscar ubicaciones"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="rounded-pill"
-            />
-          </InputGroup>
-
+        <InputGroup className="mb-3">
+         
           <Button
-            variant="primary"
-            onClick={() => handleShowModal()}
+            variant="success"
             className="rounded-pill"
-            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            onClick={exportToCSV}
           >
-            <FaPlus className="me-1" /> Crear Nueva ubicación
+            Exportar CSV
           </Button>
-        </div>
-
+          <Button
+            variant="success"
+            className="rounded-pill ms-2"
+            onClick={exportToExcel}
+          >
+            Exportar Excel
+          </Button>
+        </InputGroup>
         <div className="table-responsive">
           <Table
             bordered
@@ -339,7 +358,6 @@ const Ubicaciones = () => {
             </tbody>
           </Table>
         </div>
-
         <Button
           variant="danger"
           disabled={selectedUbicaciones.length === 0}
@@ -349,7 +367,6 @@ const Ubicaciones = () => {
         >
           Eliminar Seleccionadas
         </Button>
-
         <Pagination className="mb-3 justify-content-center">
           {[...Array(totalPages)].map((_, index) => (
             <Pagination.Item
@@ -363,7 +380,6 @@ const Ubicaciones = () => {
           ))}
         </Pagination>
       </div>
-
       {/* Modal para crear o editar ubicaciones */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
@@ -374,10 +390,10 @@ const Ubicaciones = () => {
             <Form.Group className="mb-3">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 type="text"
                 className="rounded-pill"
-                placeholder='Nombre de la ubicación'
+                placeholder="Nombre de la ubicación"
                 value={newUbicacion.nombre}
                 onChange={(e) =>
                   setNewUbicacion({ ...newUbicacion, nombre: e.target.value })
@@ -388,22 +404,21 @@ const Ubicaciones = () => {
             <Form.Group className="mb-3">
               <Form.Label>Descripción</Form.Label>
               <Form.Control
-              style={{ borderColor: "#074de3" }}
+                style={{ borderColor: "#074de3" }}
                 className="rounded-pill"
-                placeholder='Descripción de la ubicación'
+                placeholder="Descripción de la ubicación"
                 value={newUbicacion.descripcion}
                 onChange={(e) =>
                   setNewUbicacion({ ...newUbicacion, descripcion: e.target.value })
                 }
               />
             </Form.Group>
-            <Button type="submit" className="mt-3 rounded-pill" variant='primary' style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
+            <Button type="submit" className="mt-3 rounded-pill" variant="primary" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
               {editingUbicacion ? "Guardar" : "Crear"}
             </Button>
           </Form>
         </Modal.Body>
       </Modal>
-
       {/* Modal de confirmación para eliminación individual */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
@@ -426,7 +441,6 @@ const Ubicaciones = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
       {/* Modal de confirmación para eliminación de ubicaciones seleccionadas */}
       <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
         <Modal.Header closeButton>

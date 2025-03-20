@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Table, Form, InputGroup, Pagination, Row, Col } from "react-bootstrap";
+import {
+  Button,
+  Modal,
+  Table,
+  Form,
+  InputGroup,
+  Pagination,
+  Row,
+  Col
+} from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
+import * as XLSX from "xlsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
-  const [categories, setCategories] = useState([]); // Estado para categorías
+  const [categories, setCategories] = useState([]); // Categorías
+  const [locations, setLocations] = useState([]);     // Ubicaciones
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +31,7 @@ const Productos = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const itemsPerPage = 10;
 
+  // Estado para el nuevo producto (incluye ubicacion_id)
   const [newProduct, setNewProduct] = useState({
     nombre: "",
     descripcion: "",
@@ -27,7 +39,7 @@ const Productos = () => {
     stock: "",
     codigo: "",
     categoria: "",
-    inventory_id: "",
+    ubicacion_id: "",
   });
 
   const token = sessionStorage.getItem("access_token");
@@ -42,11 +54,7 @@ const Productos = () => {
     currentPage * itemsPerPage
   );
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, []);
-
+  // Carga de productos
   const fetchProducts = () => {
     fetch("/api/products", {
       method: "GET",
@@ -66,6 +74,7 @@ const Productos = () => {
       });
   };
 
+  // Carga de categorías
   const fetchCategories = () => {
     fetch("/api/categories", {
       method: "GET",
@@ -84,6 +93,32 @@ const Productos = () => {
         toast.error("Error al cargar categorías.");
       });
   };
+
+  // Carga de ubicaciones
+  const fetchLocations = () => {
+    fetch("/api/ubicaciones", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((resp) => {
+        if (!resp.ok) throw new Error(`Error HTTP: ${resp.status}`);
+        return resp.json();
+      })
+      .then((data) => setLocations(data))
+      .catch((err) => {
+        console.error("Error al obtener ubicaciones:", err);
+        toast.error("Error al cargar ubicaciones.");
+      });
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+    fetchLocations();
+  }, []);
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -113,7 +148,7 @@ const Productos = () => {
         stock: "",
         codigo: "",
         categoria: "",
-        inventory_id: "",
+        ubicacion_id: "",
       });
       setIsCreatingCategory(false);
       setNewCategoryName("");
@@ -128,6 +163,7 @@ const Productos = () => {
     setNewCategoryName("");
   };
 
+  // Creación de producto (con campo ubicacion_id)
   const handleCreateProduct = (nuevoProducto) => {
     const stock = Number(nuevoProducto.stock);
     const precio = Number(nuevoProducto.precio);
@@ -148,7 +184,8 @@ const Productos = () => {
         precio: nuevoProducto.precio,
         codigo: nuevoProducto.codigo,
         categoria: nuevoProducto.categoria,
-        inventory_id: nuevoProducto.inventory_id,
+        // Envío de la ubicación asignada
+        ubicacion_id: nuevoProducto.ubicacion_id,
       }),
     })
       .then((response) => {
@@ -158,6 +195,31 @@ const Productos = () => {
       .then((productoCreado) => {
         setProductos([...productos, productoCreado]);
         toast.success("Producto creado exitosamente.");
+        // Registrar movimiento de ingreso
+        fetch("/api/movements", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            product_id: productoCreado.id,
+            inventory_id: productoCreado.inventory_id,
+            type: "ingreso",
+            quantity: productoCreado.stock,
+          }),
+        })
+          .then((resp) => {
+            if (!resp.ok) throw new Error(`Error HTTP: ${resp.status}`);
+            return resp.json();
+          })
+          .then(() => {
+            toast.success("Movimiento de ingreso registrado.");
+          })
+          .catch((err) => {
+            console.error("Error al registrar movimiento:", err);
+            toast.error("Error al registrar el movimiento.");
+          });
       })
       .catch((err) => {
         console.error("Error al agregar producto:", err);
@@ -283,9 +345,7 @@ const Productos = () => {
       })
       .then((data) => {
         toast.success("Categoría creada");
-        // Actualiza la lista de categorías
         setCategories([...categories, data]);
-        // Selecciona la categoría recién creada en el producto
         if (editingProduct) {
           setEditingProduct({ ...editingProduct, categoria: data.nombre });
         } else {
@@ -300,30 +360,58 @@ const Productos = () => {
       });
   };
 
+  // Funciones para exportar datos a CSV y Excel
+  const exportToCSV = () => {
+    if (!productos.length) return;
+    const headers = Object.keys(productos[0]);
+    const csvRows = [
+      headers.join(","),
+      ...productos.map((prod) =>
+        headers.map((header) => `"${prod[header]}"`).join(",")
+      ),
+    ];
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "productos.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const exportToExcel = () => {
+    if (!productos.length) return;
+    const worksheet = XLSX.utils.json_to_sheet(productos);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
+    XLSX.writeFile(workbook, "productos.xlsx");
+  };
+
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Lista de Productos</h1>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <Form.Control
-              placeholder="Buscar productos"
-              aria-label="Buscar productos"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="rounded-pill"
-            />
-          </InputGroup>
-          <Button
-            variant="primary"
-            onClick={() => handleShowModal()}
-            className="rounded-pill"
-            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-          >
-            <FaPlus className="me-1" /> Crear Nuevo Producto
-          </Button>
-        </div>
+        <Row className="mb-3">
+          <Col md={6} className="text-end">
+            <Button
+              variant="primary"
+              onClick={() => handleShowModal()}
+              className="rounded-pill me-2"
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              <FaPlus className="me-1" /> Crear Nuevo Producto
+            </Button>
+            <Button variant="success" className="rounded-pill me-2" onClick={exportToCSV}>
+              Exportar CSV
+            </Button>
+            <Button variant="success" className="rounded-pill" onClick={exportToExcel}>
+              Exportar Excel
+            </Button>
+          </Col>
+        </Row>
         <div className="table-responsive">
           <Table
             bordered
@@ -351,6 +439,7 @@ const Productos = () => {
                 <th>Stock</th>
                 <th>Precio</th>
                 <th>Categoría</th>
+                <th>Ubicación</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -370,6 +459,7 @@ const Productos = () => {
                   <td>{producto.stock}</td>
                   <td>{producto.precio}</td>
                   <td>{producto.categoria}</td>
+                  <td>{producto.ubicacion ? producto.ubicacion.nombre : "Sin asignar"}</td>
                   <td>
                     <Button
                       variant="warning"
@@ -439,7 +529,7 @@ const Productos = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* Modal para confirmación de eliminación masiva */}
+      {/* Modal para confirmación de eliminación de todos */}
       <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -476,15 +566,17 @@ const Productos = () => {
               const codigo = e.target.codigo.value;
               const precio = Number(e.target.precio.value);
               const categoria = e.target.categoria.value;
+              // Obtener el valor de Ubicación
+              const ubicacion_id = e.target.ubicacion_id.value;
               if (isNaN(stock) || isNaN(precio)) {
                 console.error("Error: stock o precio no son números válidos");
                 toast.error("Stock o precio no son números válidos.");
                 return;
               }
               if (editingProduct) {
-                handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria });
+                handleUpdateProduct(editingProduct.id, { nombre, codigo, stock, precio, categoria, ubicacion_id });
               } else {
-                handleCreateProduct({ nombre, codigo, stock, precio, categoria });
+                handleCreateProduct({ nombre, codigo, stock, precio, categoria, inventory_id: ubicacion_id, ubicacion_id });
               }
               handleCloseModal();
             }}
@@ -606,7 +698,38 @@ const Productos = () => {
                 </Row>
               )}
             </Form.Group>
-
+            {/* Campo Ubicación */}
+            <Form.Group controlId="formUbicacion" className="mt-2">
+              <Form.Label>Ubicación</Form.Label>
+              <Form.Select
+                name="ubicacion_id"
+                value={editingProduct ? (editingProduct.ubicacion ? editingProduct.ubicacion.id : "") : newProduct.ubicacion_id}
+                onChange={(e) => {
+                  if (editingProduct) {
+                    setEditingProduct({
+                      ...editingProduct,
+                      // Se guarda como objeto, ajusta según cómo manejes el dato en el backend
+                      ubicacion: { id: parseInt(e.target.value) },
+                    });
+                  } else {
+                    setNewProduct({
+                      ...newProduct,
+                      ubicacion_id: e.target.value,
+                    });
+                  }
+                }}
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              >
+                <option value="">Seleccione una ubicación</option>
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.id}>
+                    {loc.nombre}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
             <Button
               variant="primary"
               type="submit"

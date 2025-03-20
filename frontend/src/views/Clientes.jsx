@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
+import * as XLSX from "xlsx";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -100,30 +101,7 @@ const Clientes = () => {
     }
   };
 
-  // Funciones para eliminar clientes seleccionados
-  const handleDeleteSelected = async () => {
-    try {
-      await Promise.all(
-        selectedCustomers.map(async (id) => {
-          const response = await fetch(`/api/customers/${id}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${token}` },
-          });
-          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-          await response.json();
-        })
-      );
-      setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
-      setSelectedCustomers([]);
-      toast.success("Clientes eliminados correctamente.");
-    } catch (err) {
-      console.error("Error deleting customers:", err);
-      setError("No se pudieron eliminar los clientes.");
-      toast.error("No se pudieron eliminar los clientes.");
-    }
-  };
-
-  // Funciones para eliminar un cliente con confirmación
+  // Funciones para eliminación
   const confirmDelete = (id) => {
     setCustomerToDelete(id);
     setShowDeleteModal(true);
@@ -137,7 +115,6 @@ const Clientes = () => {
       setCustomerToDelete(null);
       return;
     }
-
     try {
       const response = await fetch(`/api/customers/${customerToDelete}`, {
         method: "DELETE",
@@ -168,6 +145,38 @@ const Clientes = () => {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setCustomerToDelete(null);
+  };
+
+  const openDeleteSelectedModal = () => {
+    setShowDeleteSelectedModal(true);
+  };
+
+  const handleConfirmDeleteSelected = async () => {
+    try {
+      await Promise.all(
+        selectedCustomers.map(async (id) => {
+          const response = await fetch(`/api/customers/${id}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${token}` },
+          });
+          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+          await response.json();
+        })
+      );
+      setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
+      setSelectedCustomers([]);
+      toast.success("Clientes eliminados correctamente.");
+    } catch (err) {
+      console.error("Error deleting customers:", err);
+      setError("No se pudieron eliminar los clientes.");
+      toast.error("No se pudieron eliminar los clientes.");
+    } finally {
+      setShowDeleteSelectedModal(false);
+    }
+  };
+
+  const handleCancelDeleteSelected = () => {
+    setShowDeleteSelectedModal(false);
   };
 
   // Modal de creación
@@ -288,37 +297,33 @@ const Clientes = () => {
     }
   };
 
-  // Modal de confirmación para eliminación de clientes seleccionados
-  const openDeleteSelectedModal = () => {
-    setShowDeleteSelectedModal(true);
+  // Funciones de exportación: CSV y Excel
+  const exportToCSV = () => {
+    if (!customers.length) return;
+    const headers = Object.keys(customers[0]);
+    const csvRows = [
+      headers.join(","),
+      ...customers.map(cust =>
+        headers.map(header => `"${cust[header]}"`).join(",")
+      )
+    ];
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "clientes.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
-  const handleConfirmDeleteSelected = async () => {
-    try {
-      await Promise.all(
-        selectedCustomers.map(async (id) => {
-          const response = await fetch(`/api/customers/${id}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bearer ${token}` },
-          });
-          if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-          await response.json();
-        })
-      );
-      setCustomers(customers.filter(customer => !selectedCustomers.includes(customer.id)));
-      setSelectedCustomers([]);
-      toast.success("Clientes eliminados correctamente.");
-    } catch (err) {
-      console.error("Error deleting customers:", err);
-      setError("No se pudieron eliminar los clientes.");
-      toast.error("No se pudieron eliminar los clientes.");
-    } finally {
-      setShowDeleteSelectedModal(false);
-    }
-  };
-
-  const handleCancelDeleteSelected = () => {
-    setShowDeleteSelectedModal(false);
+  const exportToExcel = () => {
+    if (!customers.length) return;
+    const worksheet = XLSX.utils.json_to_sheet(customers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clientes");
+    XLSX.writeFile(workbook, "clientes.xlsx");
   };
 
   return (
@@ -326,23 +331,15 @@ const Clientes = () => {
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3" style={{ color: "white" }}>Clientes</h1>
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <FormControl
-              type="text"
-              className="rounded-pill"
-              placeholder="Buscar clientes"
-              aria-label="Buscar clientes"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </InputGroup>
-          <Button variant="primary" className="rounded-pill" onClick={handleOpenCreateModal} style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
-            <FaPlus className="me-1" /> Crear Nuevo Cliente
+        <InputGroup className="mb-3">
+         
+          <Button variant="success" className="rounded-pill" onClick={exportToCSV}>
+            Exportar CSV
           </Button>
-        </div>
+          <Button variant="success" className="rounded-pill ms-2" onClick={exportToExcel}>
+            Exportar Excel
+          </Button>
+        </InputGroup>
 
         {isLoading ? (
           <div>Cargando clientes...</div>

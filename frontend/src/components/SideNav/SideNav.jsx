@@ -6,7 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import SessionTimer from "../SessionTimer";
 
 // Importaciones de Material-UI
-import { Avatar, Divider, Box, Typography } from "@mui/material";
+import { Avatar } from "@mui/material";
 
 // Iconos de FontAwesome y FontAwesome6
 import {
@@ -60,8 +60,9 @@ const SideNav = () => {
   const navigate = useNavigate();
 
   const [showGestion, setShowGestion] = useState(false);
-  const [showClientesProveedores, setShowClientesProveedores] = useState(false);
-  const [showOperaciones, setShowOperaciones] = useState(false);
+  // Se elimina el estado y submenú de Clientes y Proveedores
+  // const [showClientesProveedores, setShowClientesProveedores] = useState(false);
+  // const [showOperaciones, setShowOperaciones] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
 
   const handleLogout = () => {
@@ -130,7 +131,6 @@ const SideNav = () => {
           </motion.li>
           {showGestion && (
             <ul className="sub-menu">
-           
               <li className="mx-3">
                 <Link to="/inventory">
                   <FaDiagramProject className="me-2" /> Inventario
@@ -159,59 +159,14 @@ const SideNav = () => {
             </ul>
           )}
 
-          {/* Submenú de Clientes y Proveedores */}
-          <motion.li
-            variants={linkVariants}
-            whileHover="hover"
-            onClick={() => setShowClientesProveedores(!showClientesProveedores)}
-            style={{ cursor: "pointer" }}
-          >
-            <div className="d-flex align-items-center pt-2">
-              <FaTruckFast className="me-2" /> Proveedores{" "}
-              {showClientesProveedores ? <FaAngleUp /> : <FaAngleDown />}
-            </div>
+          {/* Ítem de Clientes como opción de nivel superior */}
+          <motion.li variants={linkVariants} whileHover="hover" className="pt-2">
+            <Link to="/clientes">
+              <div className="d-flex align-items-center">
+                <FaUserTie className="me-2" /> Clientes
+              </div>
+            </Link>
           </motion.li>
-          {showClientesProveedores && (
-            <ul className="sub-menu">
-              <li className="mx-3">
-                <Link to="/clientes">
-                  <FaUserTie className="me-2" /> Clientes
-                </Link>
-              </li>
-              <li className="mx-3">
-                <Link to="/proveed">
-                  <FaTruckPlane className="me-2" /> Proveedores
-                </Link>
-              </li>
-            </ul>
-          )}
-
-       {/*    <motion.li
-            variants={linkVariants}
-            whileHover="hover"
-            onClick={() => setShowOperaciones(!showOperaciones)}
-            style={{ cursor: "pointer" }}
-          >
-            <div className="d-flex align-items-center pt-2">
-              <FaShoppingCart className="me-2" /> Operaciones{" "}
-              {showOperaciones ? <FaAngleUp /> : <FaAngleDown />}
-            </div>
-          </motion.li>
-          {showOperaciones && (
-            <ul className="sub-menu">
-              
-              <li className="mx-3">
-                <Link to="/ventas">
-                  <FaCashRegister className="me-2" /> Ventas
-                </Link>
-              </li>
-              <li className="mx-3">
-                <Link to="/compras">
-                  <FaHandHoldingDollar className="me-2" /> Compras
-                </Link>
-              </li>
-            </ul>
-          )} */}
 
           {/* Submenú de Administración */}
           <motion.li variants={linkVariants} whileHover="hover">
@@ -221,8 +176,6 @@ const SideNav = () => {
               </div>
             </Link>
           </motion.li>
-
-
 
           <motion.li>
             <motion.button

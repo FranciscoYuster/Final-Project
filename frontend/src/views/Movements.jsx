@@ -14,7 +14,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { FaTrash, FaPlus } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 
 const Movements = () => {
   // Estados para movimientos y productos
@@ -31,16 +31,10 @@ const Movements = () => {
   });
   const [showModal, setShowModal] = useState(false);
 
-  // Estados para búsqueda, paginación y selección múltiple
+  // Estados para búsqueda y paginación
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [selectedMovements, setSelectedMovements] = useState([]);
-
-  // Estados para confirmación de eliminación individual y masiva
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [movementToDelete, setMovementToDelete] = useState(null);
-  const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
 
   const token = sessionStorage.getItem("access_token");
 
@@ -160,70 +154,6 @@ const Movements = () => {
     }
   };
 
-  /* ======== Eliminación Individual ======== */
-
-  const handleDeleteMovement = async (id) => {
-    try {
-      const response = await fetch(`/api/movements/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-      setMovements((prev) => prev.filter((mov) => mov.id !== id));
-      toast.success("Movimiento eliminado.");
-    } catch (error) {
-      console.error("Error al eliminar movimiento:", error);
-      toast.error("Error al eliminar movimiento.");
-    }
-  };
-
-  const confirmDeleteMovement = (id) => {
-    setMovementToDelete(id);
-    setShowDeleteModal(true);
-  };
-
-  /* ======== Eliminación Masiva ======== */
-
-  const handleDeleteAllMovements = async () => {
-    const deleteRequests = selectedMovements.map((id) =>
-      fetch(`/api/movements/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      }).then((response) => {
-        if (!response.ok)
-          throw new Error(`Error al eliminar movimiento con ID: ${id}`);
-      })
-    );
-    Promise.all(deleteRequests)
-      .then(() => {
-        setMovements(movements.filter((mov) => !selectedMovements.includes(mov.id)));
-        setSelectedMovements([]);
-        toast.success("Movimientos eliminados correctamente.");
-      })
-      .catch((error) => {
-        console.error("Error eliminando movimientos:", error);
-        toast.error("Error al eliminar movimientos.");
-      });
-  };
-
-  /* ======== Selección de Movimientos ======== */
-
-  const handleSelectMovement = (id) => {
-    if (selectedMovements.includes(id)) {
-      setSelectedMovements(selectedMovements.filter((mid) => mid !== id));
-    } else {
-      setSelectedMovements([...selectedMovements, id]);
-    }
-  };
-
-  const handleSelectAll = () => {
-    if (selectedMovements.length === currentItems.length) {
-      setSelectedMovements([]);
-    } else {
-      setSelectedMovements(currentItems.map((mov) => mov.id));
-    }
-  };
-
   /* ======== Exportación ======== */
 
   const handleExportCSV = () => {
@@ -289,18 +219,7 @@ const Movements = () => {
         <h1 className="mb-3 text-white">Historial de Movimientos</h1>
         {/* Filtro global */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <FormControl
-              placeholder="Buscar movimiento..."
-              aria-label="Buscar movimiento"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="rounded-pill"
-            />
-          </InputGroup>
+         
           <Button
             variant="primary"
             onClick={() => setShowModal(true)}
@@ -311,7 +230,7 @@ const Movements = () => {
           </Button>
         </div>
 
-        {/* Botones de acciones y exportación */}
+        {/* Botones de exportación */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div className="d-flex gap-2">
             <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportCSV}>
@@ -340,70 +259,29 @@ const Movements = () => {
           >
             <thead style={{ backgroundColor: "#0775e3" }}>
               <tr>
-                <th>
-                  <Form.Check
-                    type="checkbox"
-                    checked={selectedMovements.length === currentItems.length && currentItems.length > 0}
-                    onChange={handleSelectAll}
-                    className="rounded-circle"
-                  />
-                </th>
                 <th>Producto</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th>Fecha</th>
-                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="6">No hay movimientos.</td>
+                  <td colSpan="4">No hay movimientos.</td>
                 </tr>
               ) : (
                 currentItems.map((mov) => (
                   <tr key={mov.id}>
-                    <td>
-                      <Form.Check
-                        type="checkbox"
-                        checked={selectedMovements.includes(mov.id)}
-                        onChange={() => handleSelectMovement(mov.id)}
-                        className="rounded-circle"
-                      />
-                    </td>
                     <td>{getProductName(mov.product_id)}</td>
                     <td>{mov.type}</td>
                     <td>{mov.quantity}</td>
                     <td>{mov.date ? new Date(mov.date).toLocaleDateString() : ""}</td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => confirmDeleteMovement(mov.id)}
-                        className="rounded-pill"
-                        style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
-                      >
-                        <FaTrash />
-                      </Button>
-                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </Table>
-        </div>
-
-        {/* Botón para eliminar movimientos seleccionados */}
-        <div className="d-flex justify-content-start w-100">
-          <Button
-            variant="danger"
-            disabled={selectedMovements.length === 0}
-            onClick={() => setShowDeleteSelectedModal(true)}
-            className="mb-3 rounded-pill"
-            style={{ backgroundColor: "#e30e07", borderColor: "#e30e07" }}
-          >
-            Eliminar Seleccionadas
-          </Button>
         </div>
 
         {/* Paginación */}
@@ -486,54 +364,6 @@ const Movements = () => {
           </Modal.Body>
         </Modal>
       )}
-
-      {/* Modal de confirmación para eliminación individual */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Eliminar Movimiento</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          ¿Estás seguro de eliminar este movimiento?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              handleDeleteMovement(movementToDelete);
-              setShowDeleteModal(false);
-            }}
-          >
-            Eliminar
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal de confirmación para eliminación de movimientos seleccionados */}
-      <Modal show={showDeleteSelectedModal} onHide={() => setShowDeleteSelectedModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Eliminar Seleccionados</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          ¿Estás seguro de eliminar los movimientos seleccionados?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteSelectedModal(false)}>
-            Cancelar
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              handleDeleteAllMovements();
-              setShowDeleteSelectedModal(false);
-            }}
-          >
-            Eliminar
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 };

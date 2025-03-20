@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
+import * as XLSX from "xlsx";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -11,15 +12,6 @@ const Proveedores = () => {
   const [selectedProviders, setSelectedProviders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Función para evitar que se ingresen letras en el input de teléfono
-  const handlePhoneKeyPress = (e) => {
-    const charCode = e.which ? e.which : e.keyCode;
-    // Permitir sólo dígitos (0-9)
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault();
-    }
-  };
 
   const [newProvider, setNewProvider] = useState({
     name: "",
@@ -38,7 +30,6 @@ const Proveedores = () => {
     rut: "",
   });
 
-  // Estados para modales
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -49,7 +40,29 @@ const Proveedores = () => {
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Función para obtener proveedores
+  const filteredProviders = providers.filter(provider =>
+    provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    provider.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredProviders.length / itemsPerPage);
+  const currentItems = filteredProviders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
+
+  const handlePhoneKeyPress = (e) => {
+    const charCode = e.which ? e.which : e.keyCode;
+    if (charCode < 48 || charCode > 57) {
+      e.preventDefault();
+    }
+  };
+  
+
   const fetchProviders = async () => {
     setIsLoading(true);
     try {
@@ -72,30 +85,10 @@ const Proveedores = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProviders();
-  }, []);
-
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
   };
 
-  const filteredProviders = providers.filter(provider =>
-    provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    provider.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredProviders.length / itemsPerPage);
-  const currentItems = filteredProviders.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
-
-  // Selección individual y masiva
   const handleSelectProvider = (id) => {
     setSelectedProviders(prev =>
       prev.includes(id) ? prev.filter(pid => pid !== id) : [...prev, id]
@@ -110,7 +103,10 @@ const Proveedores = () => {
     }
   };
 
-  // Eliminación individual
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   const confirmDelete = (id) => {
     setProviderToDelete(id);
     setShowDeleteModal(true);
@@ -141,7 +137,6 @@ const Proveedores = () => {
     setProviderToDelete(null);
   };
 
-  // Eliminación de proveedores seleccionados (modal de confirmación)
   const handleConfirmDeleteSelected = async () => {
     try {
       await Promise.all(
@@ -170,7 +165,6 @@ const Proveedores = () => {
     setShowDeleteSelectedModal(false);
   };
 
-  // Modal de creación
   const handleOpenCreateModal = () => {
     setShowCreateModal(true);
   };
@@ -224,15 +218,14 @@ const Proveedores = () => {
     }
   };
 
-  // Modal de edición
   const handleOpenEditModal = (provider) => {
     setEditProvider({
       id: provider.id,
       name: provider.name,
-      addres: provider.addres, // Se usa "addres" para alinear con el modelo
+      addres: provider.addres,
       phone: provider.phone,
       email: provider.email,
-      rut: provider.rut,  // Asignamos el rut
+      rut: provider.rut,
     });
     setShowEditModal(true);
   };
@@ -265,7 +258,7 @@ const Proveedores = () => {
           addres: editProvider.addres,
           phone: editProvider.phone,
           email: editProvider.email,
-          rut: editProvider.rut,  // Se envía el rut actualizado
+          rut: editProvider.rut,
         }),
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -280,33 +273,56 @@ const Proveedores = () => {
     }
   };
 
+  // Funciones de exportación: CSV y Excel
+  const exportToCSV = () => {
+    if (!providers.length) return;
+    const headers = Object.keys(providers[0]);
+    const csvRows = [
+      headers.join(","),
+      ...providers.map(prod =>
+        headers.map(header => `"${prod[header]}"`).join(",")
+      )
+    ];
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "proveedores.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const exportToExcel = () => {
+    if (!providers.length) return;
+    const worksheet = XLSX.utils.json_to_sheet(providers);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Proveedores");
+    XLSX.writeFile(workbook, "proveedores.xlsx");
+  };
+
   return (
     <div className="container mt-4 d-flex flex-column align-items-center" style={{ fontSize: "0.9rem" }}>
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Proveedores</h1>
-        {error && <div className="alert alert-danger">{error}</div>}
-
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <InputGroup className="w-50">
-            <FormControl
-              type="text"
-              className="rounded-pill"
-              placeholder="Buscar proveedores"
-              aria-label="Buscar proveedores"
-              value={searchTerm}
-              onChange={handleSearch}
-            />
-          </InputGroup>
-          <Button
-            variant="primary"
+        <InputGroup className="mb-3">
+          <FormControl
+            type="text"
             className="rounded-pill"
-            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-            onClick={handleOpenCreateModal}
-          >
-            <FaPlus className="me-1" /> Crear Nuevo Proveedor
+            placeholder="Buscar proveedores"
+            aria-label="Buscar proveedores"
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+          <Button variant="success" className="rounded-pill" onClick={exportToCSV}>
+            Exportar CSV
           </Button>
-        </div>
+          <Button variant="success" className="rounded-pill ms-2" onClick={exportToExcel}>
+            Exportar Excel
+          </Button>
+        </InputGroup>
 
         {isLoading ? (
           <div>Cargando proveedores...</div>
@@ -414,7 +430,7 @@ const Proveedores = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal para confirmar eliminación de seleccionados */}
+      {/* Modal para confirmar eliminación de proveedores seleccionados */}
       <Modal show={showDeleteSelectedModal} onHide={handleCancelDeleteSelected}>
         <Modal.Header closeButton>
           <Modal.Title>Eliminar Proveedores Seleccionados</Modal.Title>
