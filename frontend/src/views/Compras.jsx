@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
-import { FaPlus } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
+import { FaPlus } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const Compras = () => {
   const [purchases, setPurchases] = useState([]);
-  const [providers, setProviders] = useState([]); // Estado para proveedores
+  const [providers, setProviders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
@@ -17,7 +17,6 @@ const Compras = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
   
-  // Estado para una nueva compra
   const [newPurchase, setNewPurchase] = useState({
     numero_comprobante: "",
     orden_compra: "",
@@ -36,7 +35,7 @@ const Compras = () => {
 
   useEffect(() => {
     fetchPurchases();
-    fetchProviders(); // Cargar proveedores para el select
+    fetchProviders();
   }, []);
 
   const fetchPurchases = () => {
@@ -60,7 +59,6 @@ const Compras = () => {
       });
   };
 
-  // Función para cargar proveedores
   const fetchProviders = () => {
     fetch("/api/providers", {
       method: "GET",
@@ -80,7 +78,6 @@ const Compras = () => {
       });
   };
 
-  // Filtrado y paginación
   const filteredPurchases = purchases.filter(purchase =>
     purchase.orden_compra.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -109,7 +106,6 @@ const Compras = () => {
     }
   };
 
-  // Abrir modal para crear o editar compra
   const handleShowModal = (purchase = null) => {
     setEditPurchase(purchase);
     if (purchase) {
@@ -130,7 +126,7 @@ const Compras = () => {
         numero_comprobante: "",
         orden_compra: "",
         metodo: "",
-        provider_id: "", // Se seleccionará del select
+        provider_id: "",
         product_id: "",
         inventory_id: "",
         quantity: "",
@@ -159,8 +155,7 @@ const Compras = () => {
     });
   };
 
-  // Stubs: funciones para crear, actualizar y eliminar compras.
-  // Aquí debes implementar la lógica de comunicación con el backend.
+  // Funciones stubs para crear, actualizar y eliminar compras (deben implementar la lógica de backend)
   const handleCreatePurchases = (purchaseData) => {
     console.log("Crear compra", purchaseData);
     // Implementa la lógica de creación
@@ -188,7 +183,6 @@ const Compras = () => {
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Lista de Compras</h1>
-
         <div className="d-flex justify-content-between align-items-center mb-3">
           <InputGroup className="w-50">
             <Form.Control
@@ -199,7 +193,6 @@ const Compras = () => {
               className="rounded-pill"
             />
           </InputGroup>
-
           <Button
             variant="primary"
             onClick={() => handleShowModal()}
@@ -211,17 +204,12 @@ const Compras = () => {
         </div>
 
         <div className="table-responsive">
-          <Table
-            bordered
-            hover
-            className="mt-4"
-            style={{
-              borderRadius: "10px",
-              overflow: "hidden",
-              backgroundColor: "#E8F8FF",
-              textAlign: "center",
-            }}
-          >
+          <Table bordered hover className="mt-4" style={{
+            borderRadius: "10px",
+            overflow: "hidden",
+            backgroundColor: "#E8F8FF",
+            textAlign: "center",
+          }}>
             <thead style={{ backgroundColor: "#0775e3" }}>
               <tr>
                 <th>
@@ -281,6 +269,11 @@ const Compras = () => {
                   </td>
                 </tr>
               ))}
+              {currentItems.length === 0 && (
+                <tr>
+                  <td colSpan="8" className="text-center">No se encontraron resultados</td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </div>
@@ -309,7 +302,7 @@ const Compras = () => {
         </Pagination>
       </div>
 
-      {/* Modal para confirmación de eliminación individual */}
+      {/* Modal para confirmar eliminación individual */}
       <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -327,7 +320,7 @@ const Compras = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal para confirmación de eliminación masiva */}
+      {/* Modal para confirmar eliminación masiva */}
       <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -354,7 +347,6 @@ const Compras = () => {
           <Form
             onSubmit={(e) => {
               e.preventDefault();
-              // Obtén los datos del formulario
               const orden_compra = e.target.orden_compra.value;
               const metodo = e.target.metodo.value;
               const provider_id = e.target.provider_id.value;
@@ -362,7 +354,6 @@ const Compras = () => {
               const inventory_id = e.target.inventory_id.value;
               const quantity = e.target.quantity.value;
 
-              // Ejemplo de validación
               if (isNaN(quantity)) {
                 console.error("Error: la cantidad no es un número válido");
                 toast.error("La cantidad no es un número válido.");
@@ -389,7 +380,7 @@ const Compras = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            <Form.Group controlId="formMetodo">
+            <Form.Group controlId="formMetodo" className="mt-2">
               <Form.Label>Método</Form.Label>
               <Form.Control
                 type="text"
@@ -401,9 +392,8 @@ const Compras = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            <Form.Group controlId="formProvider">
+            <Form.Group controlId="formProvider" className="mt-2">
               <Form.Label>Proveedor</Form.Label>
-              {/* Aquí se reemplaza el input por un select que lista los proveedores */}
               <Form.Select
                 name="provider_id"
                 defaultValue={editPurchase ? editPurchase.provider_id : ""}
@@ -419,7 +409,7 @@ const Compras = () => {
                 ))}
               </Form.Select>
             </Form.Group>
-            <Form.Group controlId="formProduct">
+            <Form.Group controlId="formProduct" className="mt-2">
               <Form.Label>Producto</Form.Label>
               <Form.Control
                 type="number"
@@ -431,7 +421,7 @@ const Compras = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            <Form.Group controlId="formInventory">
+            <Form.Group controlId="formInventory" className="mt-2">
               <Form.Label>Inventario</Form.Label>
               <Form.Control
                 type="text"
@@ -443,7 +433,7 @@ const Compras = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            <Form.Group controlId="formQuantity" className="mb-2">
+            <Form.Group controlId="formQuantity" className="mt-2 mb-2">
               <Form.Label>Cantidad</Form.Label>
               <Form.Control
                 type="number"
@@ -455,12 +445,7 @@ const Compras = () => {
                 required
               />
             </Form.Group>
-            <Button
-              variant="primary"
-              type="submit"
-              className="mt-3 rounded-pill"
-              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-            >
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
               {editPurchase ? "Actualizar" : "Crear"}
             </Button>
           </Form>

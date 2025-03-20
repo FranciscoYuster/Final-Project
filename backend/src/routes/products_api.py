@@ -41,8 +41,7 @@ def create_product():
         stock=data.get("stock"),
         categoria=data.get("categoria"),
         inventory_id=user.inventory.id,
-        # El campo ubicacion_id es opcional
-        ubicacion_id=data.get("ubicacion_id"),
+        ubicacion_id=data.get("ubicacion_id"),  # opcional
         user_id=user_id
     )
     try:
@@ -86,8 +85,7 @@ def delete_product(id):
     if not product:
         return jsonify({"error": "Product not found"}), 404
 
-    # Verificar si el producto tiene historial.
-    # Nota: Se realizan consultas directas usando el product_id ya que en tu modelo Product no se han definido relaciones
+    # Verificar si el producto tiene historial
     movement_exist = Movement.query.filter_by(product_id=product.id).first() is not None
     sale_exist = Sale.query.filter_by(product_id=product.id).first() is not None
     purchase_exist = Purchase.query.filter_by(product_id=product.id).first() is not None

@@ -7,6 +7,30 @@ from flask import current_app
 
 db = SQLAlchemy()
 
+class Category(db.Model):
+    __tablename__ = 'categories'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(50), unique=True, nullable=False)
+    
+    def serialize(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre
+        }
+    
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+    
+    def update(self):
+        db.session.commit()
+    
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+
+
 # Tabla Inventory (Inventario)
 class Inventory(db.Model):
     __tablename__ = 'inventories'
@@ -198,7 +222,6 @@ class Product(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
 
-    # Relación con Ubicacion
     ubicacion = db.relationship("Ubicacion", backref="products", foreign_keys=[ubicacion_id])
 
     def serialize(self):

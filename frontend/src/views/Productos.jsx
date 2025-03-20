@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { Button, Modal, Table, Form, InputGroup, Pagination, Row, Col } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
   const [productos, setProductos] = useState([]);
+  const [categories, setCategories] = useState([]); // Estado para categorías
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -15,6 +16,8 @@ const Productos = () => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [productToDelete, setProductToDelete] = useState(null);
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const itemsPerPage = 10;
 
   const [newProduct, setNewProduct] = useState({
@@ -41,6 +44,7 @@ const Productos = () => {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const fetchProducts = () => {
@@ -52,17 +56,32 @@ const Productos = () => {
       },
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
         return response.json();
       })
-      .then((data) => {
-        setProductos(data);
-      })
+      .then((data) => setProductos(data))
       .catch((err) => {
         console.error("Error al obtener productos:", err);
         toast.error("Error al cargar productos.");
+      });
+  };
+
+  const fetchCategories = () => {
+    fetch("/api/categories", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+    })
+      .then((resp) => {
+        if (!resp.ok) throw new Error(`Error HTTP: ${resp.status}`);
+        return resp.json();
+      })
+      .then((data) => setCategories(data))
+      .catch((err) => {
+        console.error("Error al obtener categorías:", err);
+        toast.error("Error al cargar categorías.");
       });
   };
 
@@ -96,6 +115,8 @@ const Productos = () => {
         categoria: "",
         inventory_id: "",
       });
+      setIsCreatingCategory(false);
+      setNewCategoryName("");
     }
     setShowModal(true);
   };
@@ -103,6 +124,8 @@ const Productos = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingProduct(null);
+    setIsCreatingCategory(false);
+    setNewCategoryName("");
   };
 
   const handleCreateProduct = (nuevoProducto) => {
@@ -129,9 +152,7 @@ const Productos = () => {
       }),
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
         return response.json();
       })
       .then((productoCreado) => {
@@ -154,9 +175,7 @@ const Productos = () => {
         },
         body: JSON.stringify(updatedProductData),
       });
-      if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
       const data = await response.json();
       setProductos((prevProductos) =>
         prevProductos.map((producto) => (producto.id === id ? data : producto))
@@ -168,7 +187,6 @@ const Productos = () => {
     }
   };
 
-  // Eliminación individual: si la respuesta es 409, se muestra el toast.info
   const handleDeleteProduct = (id) => {
     fetch(`/api/products/${id}`, {
       method: "DELETE",
@@ -181,9 +199,7 @@ const Productos = () => {
           toast.info("Este producto tiene historial y no se puede eliminar.");
           throw new Error("Product has historical records.");
         }
-        if (!response.ok) {
-          throw new Error(`Error HTTP: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
         return response.json();
       })
       .then(() => {
@@ -203,10 +219,13 @@ const Productos = () => {
     const nonDeletableIds = [];
     selectedProducts.forEach((id) => {
       const prod = productos.find((p) => p.id === id);
-      if (prod && ((prod.movements && prod.movements.length > 0) ||
+      if (
+        prod &&
+        ((prod.movements && prod.movements.length > 0) ||
           (prod.sales && prod.sales.length > 0) ||
           (prod.purchases && prod.purchases.length > 0) ||
-          (prod.invoices && prod.invoices.length > 0))) {
+          (prod.invoices && prod.invoices.length > 0))
+      ) {
         nonDeletableIds.push(id);
       } else {
         deletableIds.push(id);
@@ -223,12 +242,8 @@ const Productos = () => {
           "Authorization": `Bearer ${token}`,
         },
       }).then((response) => {
-        if (response.status === 409) {
-          throw new Error("Product has historical records.");
-        }
-        if (!response.ok) {
-          throw new Error(`Error al eliminar el producto con ID: ${id}`);
-        }
+        if (response.status === 409) throw new Error("Product has historical records.");
+        if (!response.ok) throw new Error(`Error al eliminar el producto con ID: ${id}`);
       })
     );
     Promise.all(deleteRequests)
@@ -246,6 +261,43 @@ const Productos = () => {
   const confirmDeleteProduct = (id) => {
     setProductToDelete(id);
     setShowDeleteConfirmation(true);
+  };
+
+  // Función para crear una nueva categoría
+  const handleCreateCategory = () => {
+    if (!newCategoryName) {
+      toast.error("Ingrese el nombre de la categoría");
+      return;
+    }
+    fetch("/api/categories", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nombre: newCategoryName }),
+    })
+      .then((resp) => {
+        if (!resp.ok) throw new Error(`Error HTTP: ${resp.status}`);
+        return resp.json();
+      })
+      .then((data) => {
+        toast.success("Categoría creada");
+        // Actualiza la lista de categorías
+        setCategories([...categories, data]);
+        // Selecciona la categoría recién creada en el producto
+        if (editingProduct) {
+          setEditingProduct({ ...editingProduct, categoria: data.nombre });
+        } else {
+          setNewProduct({ ...newProduct, categoria: data.nombre });
+        }
+        setIsCreatingCategory(false);
+        setNewCategoryName("");
+      })
+      .catch((err) => {
+        console.error("Error al crear categoría:", err);
+        toast.error("Error al crear categoría");
+      });
   };
 
   return (
@@ -363,7 +415,7 @@ const Productos = () => {
           ))}
         </Pagination>
       </div>
-      {/* Modal de confirmación para eliminación individual */}
+      {/* Modal para confirmación de eliminación individual */}
       <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -387,7 +439,7 @@ const Productos = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* Modal para confirmación de eliminación de todos */}
+      {/* Modal para confirmación de eliminación masiva */}
       <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -486,21 +538,78 @@ const Productos = () => {
                 step="0.01"
               />
             </Form.Group>
-            <Form.Group controlId="formCategoria">
+            {/* Campo Categoría */}
+            <Form.Group controlId="formCategoria" className="mt-2">
               <Form.Label>Categoría</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Categoría del producto"
-                defaultValue={editingProduct ? editingProduct.categoria : ""}
-                name="categoria"
-                required
-                className="rounded-pill"
-                style={{ borderColor: "#074de3" }}
-              />
+              <Row className="align-items-center">
+                <Col xs={9}>
+                  <Form.Select
+                    name="categoria"
+                    value={editingProduct ? editingProduct.categoria : newProduct.categoria}
+                    onChange={(e) => {
+                      if (editingProduct) {
+                        setEditingProduct({
+                          ...editingProduct,
+                          categoria: e.target.value,
+                        });
+                      } else {
+                        setNewProduct({
+                          ...newProduct,
+                          categoria: e.target.value,
+                        });
+                      }
+                    }}
+                    required
+                    className="rounded-pill"
+                    style={{ borderColor: "#074de3" }}
+                  >
+                    <option value="">Selecciona categoría</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.nombre}>
+                        {cat.nombre}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Col>
+                <Col xs={3}>
+                  <Button
+                    variant="outline-primary"
+                    className="rounded-pill"
+                    onClick={() => setIsCreatingCategory(true)}
+                  >
+                    <FaPlus />
+                  </Button>
+                </Col>
+              </Row>
+              {isCreatingCategory && (
+                <Row className="mt-2">
+                  <Col xs={9}>
+                    <Form.Control
+                      type="text"
+                      placeholder="Nueva categoría"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="rounded-pill"
+                      style={{ borderColor: "#074de3" }}
+                      required
+                    />
+                  </Col>
+                  <Col xs={3}>
+                    <Button
+                      variant="primary"
+                      className="rounded-pill"
+                      onClick={handleCreateCategory}
+                    >
+                      Confirmar
+                    </Button>
+                  </Col>
+                </Row>
+              )}
             </Form.Group>
-            <Button 
-              variant="primary" 
-              type="submit" 
+
+            <Button
+              variant="primary"
+              type="submit"
               className="mt-3 rounded-pill"
               style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
             >
