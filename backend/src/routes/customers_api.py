@@ -1,10 +1,11 @@
+# src/routes/customers_api.py
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Customer
 
 customers_api = Blueprint("customers_api", __name__)
 
-# GET /api/customers: Obtiene todos los clientes creados por el usuario autenticado
+# GET /api/customers
 @customers_api.route('/customers', methods=['GET'])
 @jwt_required()
 def get_customers():
@@ -12,7 +13,7 @@ def get_customers():
     customers = Customer.query.filter_by(user_id=user_id).all()
     return jsonify([customer.serialize() for customer in customers]), 200
 
-# POST /api/customers: Crea un nuevo cliente y lo asigna al usuario autenticado
+# POST /api/customers
 @customers_api.route('/customers', methods=['POST'])
 @jwt_required()
 def create_customer():
@@ -26,6 +27,8 @@ def create_customer():
         name=data.get("name"),
         email=data.get("email"),
         phone=data.get("phone", ""),
+        rut=data.get("rut", ""),
+        direccion=data.get("direccion", ""),
         user_id=user_id
     )
     try:
@@ -34,7 +37,7 @@ def create_customer():
         return jsonify({"error": "Error saving customer", "details": str(e)}), 500
     return jsonify(customer.serialize()), 201
 
-# PUT /api/customers/<id>: Actualiza un cliente (solo si pertenece al usuario autenticado)
+# PUT /api/customers/<id>
 @customers_api.route('/customers/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_customer(id):
@@ -49,13 +52,15 @@ def update_customer(id):
     customer.name = data.get("name", customer.name)
     customer.email = data.get("email", customer.email)
     customer.phone = data.get("phone", customer.phone)
+    customer.rut = data.get("rut", customer.rut)              # Actualiza rut
+
     try:
         customer.update()
     except Exception as e:
         return jsonify({"error": "Error updating customer", "details": str(e)}), 500
     return jsonify(customer.serialize()), 200
 
-# DELETE /api/customers/<id>: Elimina un cliente (solo si pertenece al usuario autenticado)
+# DELETE /api/customers/<id>
 @customers_api.route('/customers/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_customer(id):
@@ -75,4 +80,3 @@ def delete_customer(id):
     except Exception as e:
         return jsonify({"error": "Error deleting customer", "details": str(e)}), 500
     return jsonify({"message": "Customer deleted"}), 200
-

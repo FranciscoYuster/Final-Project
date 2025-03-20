@@ -1,24 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Compras = () => {
-  const [purchases, setPurchase] = useState([]);
+  const [purchases, setPurchases] = useState([]);
+  const [providers, setProviders] = useState([]); // Estado para proveedores
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedPurchases, setSelectedPurchases] = useState([]);
   const [editPurchase, setEditPurchase] = useState(null);
   const [deletePurchase, setDeletePurchase] = useState(null);
-  const [deleteAllPurchase, setDeleteAllPurchase] = useState(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
-  const [locations, setLocations] = useState([]);
-  const itemsPerPage = 10;
-
+  
   // Estado para una nueva compra
   const [newPurchase, setNewPurchase] = useState({
     numero_comprobante: "",
@@ -34,9 +32,11 @@ const Compras = () => {
   });
 
   const token = sessionStorage.getItem("access_token");
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchPurchases();
+    fetchProviders(); // Cargar proveedores para el select
   }, []);
 
   const fetchPurchases = () => {
@@ -53,10 +53,30 @@ const Compras = () => {
         }
         return response.json();
       })
-      .then(data => setPurchase(data))
+      .then(data => setPurchases(data))
       .catch((error) => {
         console.error("Error al obtener compras", error);
         toast.error("Error al cargar compras!");
+      });
+  };
+
+  // Función para cargar proveedores
+  const fetchProviders = () => {
+    fetch("/api/providers", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        return response.json();
+      })
+      .then(data => setProviders(data))
+      .catch(error => {
+        console.error("Error al cargar proveedores", error);
+        toast.error("Error al cargar proveedores!");
       });
   };
 
@@ -71,9 +91,7 @@ const Compras = () => {
     currentPage * itemsPerPage
   );
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleSelectPurchases = (id) => {
     if (selectedPurchases.includes(id)) {
@@ -91,7 +109,7 @@ const Compras = () => {
     }
   };
 
-  // Abrir modal para crear/editar
+  // Abrir modal para crear o editar compra
   const handleShowModal = (purchase = null) => {
     setEditPurchase(purchase);
     if (purchase) {
@@ -112,7 +130,7 @@ const Compras = () => {
         numero_comprobante: "",
         orden_compra: "",
         metodo: "",
-        provider_id: "",
+        provider_id: "", // Se seleccionará del select
         product_id: "",
         inventory_id: "",
         quantity: "",
@@ -141,26 +159,27 @@ const Compras = () => {
     });
   };
 
-  // Funciones de creación, actualización y eliminación (stubs)
+  // Stubs: funciones para crear, actualizar y eliminar compras.
+  // Aquí debes implementar la lógica de comunicación con el backend.
   const handleCreatePurchases = (purchaseData) => {
-    // Implementa la lógica para crear una nueva compra
     console.log("Crear compra", purchaseData);
+    // Implementa la lógica de creación
   };
 
   const handleUpdatePurchases = (id, purchaseData) => {
-    // Implementa la lógica para actualizar la compra con id dado
     console.log("Actualizar compra", id, purchaseData);
+    // Implementa la lógica de actualización
   };
 
   const handleDeletePurchases = (id) => {
-    // Implementa la lógica para eliminar la compra con id dado
     console.log("Eliminar compra", id);
+    // Implementa la lógica de eliminación
     setShowDeleteConfirmation(false);
   };
 
   const handleDeleteAllPurchases = () => {
-    // Implementa la lógica para eliminar todas las compras seleccionadas
     console.log("Eliminar compras seleccionadas", selectedPurchases);
+    // Implementa la lógica para eliminar todas las compras seleccionadas
     setShowDeleteAllConfirmation(false);
   };
 
@@ -214,7 +233,7 @@ const Compras = () => {
                   />
                 </th>
                 <th>Orden De Compra</th>
-                <th>Metodo</th>
+                <th>Método</th>
                 <th>Proveedor</th>
                 <th>Producto</th>
                 <th>Inventario</th>
@@ -288,158 +307,165 @@ const Compras = () => {
             </Pagination.Item>
           ))}
         </Pagination>
-
-        {/* Modal para Confirmar Eliminación Individual */}
-        <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmar Eliminación</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            ¿Estás seguro de que deseas eliminar esta compra?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={() => handleDeletePurchases(deletePurchase)}>
-              Eliminar
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        {/* Modal para Confirmar Eliminación de Todos */}
-        <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Confirmar Eliminación</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            ¿Estás seguro de que deseas eliminar todas las compras seleccionadas?
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowDeleteAllConfirmation(false)}>
-              Cancelar
-            </Button>
-            <Button variant="danger" onClick={handleDeleteAllPurchases}>
-              Eliminar Seleccionados
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        {/* Modal para Crear/Editar Compras */}
-        <Modal show={showModal} onHide={handleCloseModal}>
-          <Modal.Header closeButton>
-            <Modal.Title>{editPurchase ? "Editar Compra" : "Nueva Compra"}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const orden_compra = e.target.orden_compra.value;
-                const metodo = e.target.metodo.value;
-                const provider_id = e.target.provider_id.value;
-                const product_id = e.target.product_id.value;
-                const inventory_id = e.target.inventory_id.value;
-                const quantity = e.target.quantity.value;
-
-                // Ejemplo de validación
-                if (isNaN(quantity)) {
-                  console.error("Error: la cantidad no es un número válido");
-                  toast.error("La cantidad no es un número válido.");
-                  return;
-                }
-
-                if (editPurchase) {
-                  handleUpdatePurchases(editPurchase.id, { orden_compra, metodo, provider_id, product_id, inventory_id, quantity });
-                } else {
-                  handleCreatePurchases({ orden_compra, metodo, provider_id, product_id, inventory_id, quantity });
-                }
-                handleCloseModal();
-              }}
-            >
-              <Form.Group controlId="formOrdenCompra">
-                <Form.Label>Orden De Compra</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Código de compra"
-                  defaultValue={editPurchase ? editPurchase.orden_compra : ""}
-                  name="orden_compra"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formMetodo">
-                <Form.Label>Metodo</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Metodo"
-                  defaultValue={editPurchase ? editPurchase.metodo : ""}
-                  name="metodo"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formProvider">
-                <Form.Label>Proveedor</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Proveedor"
-                  defaultValue={editPurchase ? editPurchase.provider_id : ""}
-                  name="provider_id"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formProduct">
-                <Form.Label>Producto</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="ID del producto"
-                  defaultValue={editPurchase ? editPurchase.product_id : ""}
-                  name="product_id"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formInventory">
-                <Form.Label>Inventario</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Inventario"
-                  defaultValue={editPurchase ? editPurchase.inventory_id : ""}
-                  name="inventory_id"
-                  required
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                />
-              </Form.Group>
-              <Form.Group controlId="formQuantity" className="mb-2">
-                <Form.Label>Cantidad</Form.Label>
-                <Form.Control
-                  type="number"
-                  placeholder="Cantidad"
-                  name="quantity"
-                  defaultValue={editPurchase ? editPurchase.quantity : ""}
-                  className="rounded-pill"
-                  style={{ borderColor: "#074de3" }}
-                  required
-                />
-              </Form.Group>
-              <Button
-                variant="primary"
-                type="submit"
-                className="mt-3 rounded-pill"
-                style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-              >
-                {editPurchase ? "Actualizar" : "Crear"}
-              </Button>
-            </Form>
-          </Modal.Body>
-        </Modal>
       </div>
+
+      {/* Modal para confirmación de eliminación individual */}
+      <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar Eliminación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de que deseas eliminar esta compra?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={() => handleDeletePurchases(deletePurchase)}>
+            Eliminar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para confirmación de eliminación masiva */}
+      <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmar Eliminación</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          ¿Estás seguro de que deseas eliminar todas las compras seleccionadas?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteAllConfirmation(false)}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleDeleteAllPurchases}>
+            Eliminar Seleccionados
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal para crear/editar compra */}
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{editPurchase ? "Editar Compra" : "Nueva Compra"}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form
+            onSubmit={(e) => {
+              e.preventDefault();
+              // Obtén los datos del formulario
+              const orden_compra = e.target.orden_compra.value;
+              const metodo = e.target.metodo.value;
+              const provider_id = e.target.provider_id.value;
+              const product_id = e.target.product_id.value;
+              const inventory_id = e.target.inventory_id.value;
+              const quantity = e.target.quantity.value;
+
+              // Ejemplo de validación
+              if (isNaN(quantity)) {
+                console.error("Error: la cantidad no es un número válido");
+                toast.error("La cantidad no es un número válido.");
+                return;
+              }
+
+              if (editPurchase) {
+                handleUpdatePurchases(editPurchase.id, { orden_compra, metodo, provider_id, product_id, inventory_id, quantity });
+              } else {
+                handleCreatePurchases({ orden_compra, metodo, provider_id, product_id, inventory_id, quantity });
+              }
+              handleCloseModal();
+            }}
+          >
+            <Form.Group controlId="formOrdenCompra">
+              <Form.Label>Orden De Compra</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Código de compra"
+                defaultValue={editPurchase ? editPurchase.orden_compra : ""}
+                name="orden_compra"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formMetodo">
+              <Form.Label>Método</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Método"
+                defaultValue={editPurchase ? editPurchase.metodo : ""}
+                name="metodo"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formProvider">
+              <Form.Label>Proveedor</Form.Label>
+              {/* Aquí se reemplaza el input por un select que lista los proveedores */}
+              <Form.Select
+                name="provider_id"
+                defaultValue={editPurchase ? editPurchase.provider_id : ""}
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              >
+                <option value="">Seleccione un proveedor</option>
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.name} ({provider.email})
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group controlId="formProduct">
+              <Form.Label>Producto</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="ID del producto"
+                defaultValue={editPurchase ? editPurchase.product_id : ""}
+                name="product_id"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formInventory">
+              <Form.Label>Inventario</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Inventario"
+                defaultValue={editPurchase ? editPurchase.inventory_id : ""}
+                name="inventory_id"
+                required
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="formQuantity" className="mb-2">
+              <Form.Label>Cantidad</Form.Label>
+              <Form.Control
+                type="number"
+                placeholder="Cantidad"
+                name="quantity"
+                defaultValue={editPurchase ? editPurchase.quantity : ""}
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+                required
+              />
+            </Form.Group>
+            <Button
+              variant="primary"
+              type="submit"
+              className="mt-3 rounded-pill"
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              {editPurchase ? "Actualizar" : "Crear"}
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

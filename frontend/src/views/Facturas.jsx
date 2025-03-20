@@ -5,57 +5,58 @@ import DatePicker from "react-multi-date-picker";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "react-multi-date-picker/styles/colors/teal.css";
-import { FaCheck, FaClock, FaBan, FaPlus } from "react-icons/fa";
+import { FaCheck, FaClock, FaBan, FaPlus, FaEye, FaEyeSlash } from "react-icons/fa";
+import * as XLSX from "xlsx"; // Asegúrate de tener instalada la librería
 
 const Facturas = () => {
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
-  // La configuración se obtiene desde la API; se espera que tenga impuesto 0.19 y moneda "CLP"
+  // Configuración con impuesto y moneda
   const [config, setConfig] = useState(null);
   const [loadingConfig, setLoadingConfig] = useState(false);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editInvoice, setEditInvoice] = useState(null);
-  // Para crear factura se utiliza "total" para calcular el monto_base y se añade "tipo"
+  // Datos para crear factura
   const [newInvoice, setNewInvoice] = useState({
     customer: "",
     customer_name: "",
     customer_email: "",
     total: "",
-    tipo: "Factura", // Opciones: "Factura" o "Boleta"
+    tipo: "Factura",
     status: "Pendiente",
     numero_comprobante: ""
   });
   const [selectedInvoices, setSelectedInvoices] = useState([]);
-  // Estados para modales de ocultación y anulación
+  // Modales de ocultación y anulación
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState(null);
   const [showDeleteSelectedModal, setShowDeleteSelectedModal] = useState(false);
   const [showAnularModal, setShowAnularModal] = useState(false);
   const [invoiceToAnular, setInvoiceToAnular] = useState(null);
+  // Datos para anulación
   const [anularMotive, setAnularMotive] = useState("NOTA DE CRÉDITO ELECTRÓNICA");
   const [anularOtherMotive, setAnularOtherMotive] = useState("");
   const [anularNumeroNota, setAnularNumeroNota] = useState("");
-  // Estado para controlar las facturas ocultas (por ID)
+  // Facturas ocultas
   const [hiddenInvoices, setHiddenInvoices] = useState([]);
-  // Bandera para alternar si se muestran o no las facturas ocultas
   const [showHidden, setShowHidden] = useState(false);
 
-  // Estados para filtros por columna
+  // Filtros por columna
   const [filterCliente, setFilterCliente] = useState("");
   const [filterEmail, setFilterEmail] = useState("");
   const [filterFolio, setFilterFolio] = useState("");
-  // Estado para seleccionar múltiples fechas en el filtro (almacenaremos un arreglo de strings "YYYY-MM-DD")
+  // Filtro de fechas (arreglo de strings "YYYY-MM-DD")
   const [filterDates, setFilterDates] = useState([]);
 
   const token = sessionStorage.getItem("access_token");
 
-  // Cargar configuración del usuario
+  // Cargar configuración
   const fetchConfig = () => {
     setLoadingConfig(true);
     fetch("/api/configuraciones", {
@@ -121,7 +122,6 @@ const Facturas = () => {
       .finally(() => setLoadingCustomers(false));
   };
 
-  // Al cargar el componente, obtenemos el estado guardado (si existe)
   useEffect(() => {
     const storedHiddenInvoices = localStorage.getItem("hiddenInvoices");
     if (storedHiddenInvoices) {
@@ -129,7 +129,6 @@ const Facturas = () => {
     }
   }, []);
 
-  // Cada vez que cambie el estado de hiddenInvoices, lo guardamos en localStorage
   useEffect(() => {
     localStorage.setItem("hiddenInvoices", JSON.stringify(hiddenInvoices));
   }, [hiddenInvoices]);
@@ -142,13 +141,13 @@ const Facturas = () => {
 
   if (!config) return <p>Cargando configuración...</p>;
 
-  // Función auxiliar para obtener la fecha en formato YYYY-MM-DD
+  // Formatear fecha a "YYYY-MM-DD"
   const formatDate = (dateStr) => {
     const date = new Date(dateStr);
     return date.toISOString().substring(0, 10);
   };
 
-  // Filtrado de facturas, combinando filtro global, filtros por columnas y el filtro por fechas seleccionadas.
+  // Filtrar facturas
   const filteredInvoices = invoices.filter(invoice => {
     const cliente = invoice.customer ? invoice.customer.name.toLowerCase() : (invoice.customer_name || "").toLowerCase();
     const email = invoice.customer ? invoice.customer.email.toLowerCase() : (invoice.customer_email || "").toLowerCase();
@@ -159,7 +158,6 @@ const Facturas = () => {
     const invoiceDate = invoice.invoice_date ? formatDate(invoice.invoice_date) : "";
     const query = searchQuery.toLowerCase();
 
-    // Filtro global
     const globalMatch = (
       cliente.includes(query) ||
       email.includes(query) ||
@@ -170,8 +168,6 @@ const Facturas = () => {
       invoiceDate.includes(query)
     );
 
-    // Filtros por columna y fechas:
-    // Si se han seleccionado fechas, se verifica que la fecha de la factura coincida con alguna
     const dateMatch =
       filterDates.length === 0 || filterDates.includes(invoiceDate);
 
@@ -215,7 +211,7 @@ const Facturas = () => {
     }
   };
 
-  // Ocultar (marcar como oculta) una factura
+  // Ocultar factura
   const handleOcultarInvoice = (id) => {
     if (!hiddenInvoices.includes(id)) {
       setHiddenInvoices([...hiddenInvoices, id]);
@@ -223,7 +219,7 @@ const Facturas = () => {
     }
   };
 
-  // Mostrar (desocultar) una factura
+  // Mostrar factura
   const handleMostrarInvoice = (id) => {
     setHiddenInvoices(hiddenInvoices.filter(hiddenId => hiddenId !== id));
     toast.info("Factura mostrada.");
@@ -249,7 +245,7 @@ const Facturas = () => {
       toast.error("El monto debe ser un número válido.");
       return;
     }
-    const tax = config.impuesto; // 0.19
+    const tax = config.impuesto;
     const impuesto_aplicado = baseTotal * tax;
     const finalTotal = baseTotal + impuesto_aplicado;
     const invoiceData = {
@@ -289,17 +285,14 @@ const Facturas = () => {
       });
   };
 
-  // Función para cambiar el estado de una factura
+  // Cambiar estado (Pendiente o Pagada)
   const handleChangeStatus = (invoiceId, newStatus) => {
     const invoice = invoices.find(inv => inv.id === invoiceId);
     if (!invoice) return;
-
-    // Si la factura ya está Pagada, no se permite cambiar el estado (excepto anulación)
     if (invoice.status === "Pagada") {
       toast.error("No se puede cambiar el estado de una factura pagada.");
       return;
     }
-
     fetch(`/api/invoices/${invoiceId}`, {
       method: "PUT",
       headers: {
@@ -328,13 +321,12 @@ const Facturas = () => {
       });
   };
 
-  // Modal para confirmar ocultar factura (acción en lugar de eliminar)
+  // Modal para ocultar factura
   const confirmDeleteInvoice = (id) => {
     setInvoiceToDelete(id);
     setShowDeleteModal(true);
   };
 
-  // Confirmar y ejecutar la ocultación individual
   const handleConfirmDelete = () => {
     if (invoiceToDelete) {
       handleOcultarInvoice(invoiceToDelete);
@@ -343,7 +335,7 @@ const Facturas = () => {
     }
   };
 
-  // Modal para anular factura: incluye mensaje de advertencia y campo para el número de nota
+  // Modal para anular factura
   const handleOpenAnularModal = (invoice) => {
     setInvoiceToAnular(invoice);
     setAnularMotive("NOTA DE CRÉDITO ELECTRÓNICA");
@@ -352,7 +344,6 @@ const Facturas = () => {
     setShowAnularModal(true);
   };
 
-  // Confirmar anulación: se envía el motivo y el número de nota en la petición PUT
   const handleConfirmAnular = () => {
     if (!invoiceToAnular) return;
     const motive = anularMotive === "Otro" ? anularOtherMotive : anularMotive;
@@ -366,7 +357,7 @@ const Facturas = () => {
         monto_base: invoiceToAnular.monto_base,
         impuesto_aplicado: invoiceToAnular.monto_base * config.impuesto,
         total_final: invoiceToAnular.monto_base + (invoiceToAnular.monto_base * config.impuesto),
-        status: "Anular",
+        status: "Anulada",
         tipo: invoiceToAnular.tipo,
         motivo: motive,
         numero_nota: anularNumeroNota
@@ -388,11 +379,59 @@ const Facturas = () => {
       });
   };
 
-  // Función para formatear valores a moneda CLP
+  // Formatear valores a moneda CLP
   const formatCurrency = (value) => {
     const amount = parseFloat(value);
     if (isNaN(amount)) return "";
     return new Intl.NumberFormat("es-CL", { style: "currency", currency: config.moneda }).format(amount);
+  };
+
+  // Función para exportar a CSV
+  const exportToCSV = () => {
+    // Se toma la data filtrada (por ejemplo, las facturas actualmente visibles)
+    const data = currentItems.map(invoice => ({
+      Cliente: invoice.customer ? invoice.customer.name : invoice.customer_name,
+      Email: invoice.customer ? invoice.customer.email : invoice.customer_email,
+      "Monto Bruto": invoice.monto_base,
+      "Impuesto Aplicado": invoice.impuesto_aplicado,
+      "Total Neto": invoice.total_final,
+      "N° de Folio": invoice.numero_comprobante,
+      Fecha: invoice.invoice_date ? formatDate(invoice.invoice_date) : "",
+      Estado: invoice.status,
+      Tipo: invoice.tipo || "Sin definir"
+    }));
+
+    const header = Object.keys(data[0]).join(",");
+    const rows = data.map(row =>
+      Object.values(row)
+        .map(val => `"${val}"`)
+        .join(",")
+    );
+    const csvContent = [header, ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "facturas.csv";
+    link.click();
+  };
+
+  // Función para exportar a Excel
+  const exportToExcel = () => {
+    const data = currentItems.map(invoice => ({
+      Cliente: invoice.customer ? invoice.customer.name : invoice.customer_name,
+      Email: invoice.customer ? invoice.customer.email : invoice.customer_email,
+      "Monto Bruto": invoice.monto_base,
+      "Impuesto Aplicado": invoice.impuesto_aplicado,
+      "Total Neto": invoice.total_final,
+      "N° de Folio": invoice.numero_comprobante,
+      Fecha: invoice.invoice_date ? formatDate(invoice.invoice_date) : "",
+      Estado: invoice.status,
+      Tipo: invoice.tipo || "Sin definir"
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Facturas");
+    XLSX.writeFile(workbook, "facturas.xlsx");
   };
 
   return (
@@ -400,15 +439,33 @@ const Facturas = () => {
       <ToastContainer />
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Boletas y Facturas</h1>
-        <div className="d-flex justify-content-end align-items-center mb-3">
-          <Button
-            variant="primary"
-            onClick={() => setShowModal(true)}
-            className="rounded-pill"
-            style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-          >
-            <FaPlus className="me-1" />Crear Factura
-          </Button>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => setShowModal(true)}
+              className="rounded-pill me-2"
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              <FaPlus className="me-1" />Crear Factura
+            </Button>
+          </div>
+          <div>
+            <Button
+              variant="success"
+              onClick={exportToExcel}
+              className="rounded-pill me-2"
+            >
+              Exportar a Excel
+            </Button>
+            <Button
+              variant="success"
+              onClick={exportToCSV}
+              className="rounded-pill"
+            >
+              Exportar a CSV
+            </Button>
+          </div>
         </div>
         <div className="d-flex justify-content-end mb-2">
           {hiddenInvoices.length > 0 && (
@@ -474,7 +531,6 @@ const Facturas = () => {
                     <DatePicker
                       value={filterDates}
                       onChange={(dates) => {
-                        // Convertir las fechas seleccionadas a strings en formato YYYY-MM-DD
                         const formatted = dates.map(date => date.format("YYYY-MM-DD"));
                         setFilterDates(formatted);
                       }}
@@ -515,7 +571,7 @@ const Facturas = () => {
                         <span style={{ color: "green" }}>
                           <FaCheck className="me-1" /> {invoice.status}
                         </span>
-                      ) : invoice.status === "Anular" ? (
+                      ) : invoice.status === "Anulada" ? (
                         <span style={{ color: "red" }}>
                           <FaBan className="me-1" /> Anulada {invoice.numero_nota ? `(N°: ${invoice.numero_nota})` : ""}
                         </span>
@@ -545,27 +601,18 @@ const Facturas = () => {
                           Pagada
                         </Button>
                       </div>
-                      {invoice.status === "Anular" ? (
-                        isHidden ? (
-                          <Button
-                            variant="success"
-                            onClick={() => handleMostrarInvoice(invoice.id)}
-                            className="rounded-pill"
-                            style={{ backgroundColor: "#28a745", borderColor: "#28a745" }}
-                          >
-                            Mostrar
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="info"
-                            onClick={() => handleOcultarInvoice(invoice.id)}
-                            className="rounded-pill text-white"
-                            style={{ backgroundColor: "gray", borderColor: "gray" }}
-                          >
-                            Ocultar
-                          </Button>
-                        )
-                      ) : (
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() =>
+                          hiddenInvoices.includes(invoice.id)
+                            ? handleMostrarInvoice(invoice.id)
+                            : handleOcultarInvoice(invoice.id)
+                        }
+                        className="rounded-pill"
+                      >
+                        {hiddenInvoices.includes(invoice.id) ? <FaEye /> : <FaEyeSlash />}
+                      </Button>
+                      {invoice.status !== "Anulada" && (
                         <Button
                           variant="secondary"
                           onClick={() => handleOpenAnularModal(invoice)}
@@ -732,6 +779,40 @@ const Facturas = () => {
               </div>
             </Form>
           </Modal.Body>
+        </Modal>
+
+        {/* Modal para anular factura */}
+        <Modal show={showAnularModal} onHide={() => setShowAnularModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Anular Factura</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>¿Estás seguro de anular esta factura?</p>
+            <Form.Group controlId="anularMotive">
+              <Form.Label>Motivo</Form.Label>
+              <Form.Control
+                type="text"
+                value={anularMotive}
+                onChange={(e) => setAnularMotive(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group controlId="anularNumeroNota" className="mt-2">
+              <Form.Label>N° de Nota</Form.Label>
+              <Form.Control
+                type="text"
+                value={anularNumeroNota}
+                onChange={(e) => setAnularNumeroNota(e.target.value)}
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAnularModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="danger" onClick={handleConfirmAnular}>
+              Confirmar Anulación
+            </Button>
+          </Modal.Footer>
         </Modal>
       </div>
     </div>

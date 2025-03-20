@@ -131,6 +131,11 @@ const SideNav = () => {
           {showGestion && (
             <ul className="sub-menu">
               <li className="mx-3">
+                <Link to="/productos">
+                  <FaBoxArchive className="me-2" /> Productos
+                </Link>
+              </li>
+              <li className="mx-3">
                 <Link to="/inventory">
                   <FaDiagramProject className="me-2" /> Inventario
                 </Link>
@@ -194,11 +199,7 @@ const SideNav = () => {
           </motion.li>
           {showOperaciones && (
             <ul className="sub-menu">
-              <li className="mx-3">
-                <Link to="/productos">
-                  <FaBoxArchive className="me-2" /> Productos
-                </Link>
-              </li>
+              
               <li className="mx-3">
                 <Link to="/ventas">
                   <FaCashRegister className="me-2" /> Ventas

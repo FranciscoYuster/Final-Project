@@ -156,7 +156,9 @@ class Customer(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False)
     phone = db.Column(db.String, default='')
-    # Relación: cada cliente es creado por un usuario
+    rut = db.Column(db.String, nullable=True)  # NUEVO CAMPO RUT
+    direccion = db.Column(db.String, nullable=True)  # Asegúrate de tener este campo también
+    
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     def serialize(self):
@@ -165,8 +167,11 @@ class Customer(db.Model):
             "name": self.name,
             "email": self.email,
             "phone": self.phone,
+            "rut": self.rut,
+            "direccion": self.direccion,
             "user_id": self.user_id
         }
+
         
     def save(self):
         db.session.add(self)
@@ -402,8 +407,8 @@ class Provider(db.Model):
     addres = db.Column(db.String, default='')
     phone = db.Column(db.String, default='')
     email = db.Column(db.String, default='')
+    rut = db.Column(db.String, nullable=True)  # NUEVO CAMPO RUT
     
-    # Vinculación al inventario
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventories.id'), nullable=False)
     
     def serialize(self):
@@ -413,6 +418,7 @@ class Provider(db.Model):
             "addres": self.addres,
             "phone": self.phone,
             "email": self.email,
+            "rut": self.rut,
             "inventory_id": self.inventory_id
         }
     

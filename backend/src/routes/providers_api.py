@@ -1,5 +1,6 @@
+# src/routes/providers_api.py
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from flask import Blueprint, request, jsonify
 from src.models import db, Provider, User
 
 providers_api = Blueprint("providers_api", __name__)
@@ -16,7 +17,7 @@ def get_provider(id):
         return jsonify({"error": "Provider not found"}), 404
     return jsonify(provider.serialize()), 200
 
-# Requiere autenticación para crear un proveedor y asigna el inventory_id del usuario
+# Crear proveedor (requiere autenticación)
 @providers_api.route('/providers', methods=['POST'])
 @jwt_required()
 def create_provider():
@@ -35,9 +36,13 @@ def create_provider():
         addres=data.get('addres', ''),
         phone=data.get('phone', ''),
         email=data.get('email', ''),
+        rut=data.get('rut', ''),  # NUEVO CAMPO
         inventory_id=user.inventory.id  # Asigna el inventory_id del usuario
     )
-    provider.save()
+    try:
+        provider.save()
+    except Exception as e:
+        return jsonify({"error": "Error saving provider", "details": str(e)}), 500
     return jsonify(provider.serialize()), 200
 
 @providers_api.route('/providers/<int:id>', methods=['PUT'])
@@ -50,6 +55,7 @@ def update_provider(id):
     provider.addres = data.get('addres', provider.addres)
     provider.phone = data.get('phone', provider.phone)
     provider.email = data.get('email', provider.email)
+    provider.rut = data.get('rut', provider.rut)  # Actualiza el rut
     provider.update()
     return jsonify(provider.serialize()), 200
 

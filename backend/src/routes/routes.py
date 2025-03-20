@@ -12,12 +12,15 @@ api = Blueprint("api", __name__)
 mail = Mail()
 
 @api.route('/renew-token', methods=['POST'])
-@jwt_required()  # Ahora usa el access token almacenado en "access_token"
+@jwt_required()
 def renew_token():
     try:
         identity = get_jwt_identity()
-        new_access_token = create_access_token(identity=identity)
-        expires_in = 3600 * 1000  # 1 hora en milisegundos.
+        new_access_token = create_access_token(
+            identity=identity,
+            expires_delta=timedelta(hours=1)  # renovar explícitamente por 1 hora
+        )
+        expires_in = 3600 * 1000  # 1 hora en milisegundos
         return jsonify({
             "access_token": new_access_token,
             "expires_in": expires_in
@@ -27,6 +30,7 @@ def renew_token():
             "error": "Error al renovar el token",
             "details": str(e)
         }), 422
+
 
 
 @api.route('/verificar-token', methods=['POST'])
@@ -288,57 +292,6 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({"error": "Error al eliminar usuario", "details": str(e)}), 500
 
-# Rutas para Ventas
-sales_api = Blueprint("sales_api", __name__)
-
-@sales_api.route('/sales', methods=['GET'])
-def get_sales():
-    sales = Sale.get_all()
-    return jsonify([sale.serialize() for sale in sales]), 200
-
-@sales_api.route('/sales/<int:id>', methods=['GET'])
-def get_sale(id):
-    sale = Sale.find_by_id(id)
-    if not sale:
-        return jsonify({"error": "Sale not found"}), 404
-    return jsonify(sale.serialize()), 200
-
-@sales_api.route('/sales', methods=['POST'])
-def create_sale():
-    data = request.get_json()
-    required_fields = ['user_id', 'product_id', 'quantity', 'total']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"{field} is required"}), 400
-    sale = Sale(
-        user_id=data['user_id'],
-        product_id=data['product_id'],
-        quantity=data['quantity'],
-        total=data['total']
-    )
-    sale.save()
-    return jsonify(sale.serialize()), 201
-
-@sales_api.route('/sales/<int:id>', methods=['PUT'])
-def update_sale(id):
-    sale = Sale.find_by_id(id)
-    if not sale:
-        return jsonify({"error": "Sale not found"}), 404
-    data = request.get_json()
-    sale.user_id = data.get('user_id', sale.user_id)
-    sale.product_id = data.get('product_id', sale.product_id)
-    sale.quantity = data.get('quantity', sale.quantity)
-    sale.total = data.get('total', sale.total)
-    sale.update()
-    return jsonify(sale.serialize()), 200
-
-@sales_api.route('/sales/<int:id>', methods=['DELETE'])
-def delete_sale(id):
-    sale = Sale.find_by_id(id)
-    if not sale:
-        return jsonify({"error": "Sale not found"}), 404
-    sale.delete()
-    return jsonify({"message": "Sale deleted"}), 200
 
 # Rutas para Inventario
 inventory_api = Blueprint("inventory_api", __name__)

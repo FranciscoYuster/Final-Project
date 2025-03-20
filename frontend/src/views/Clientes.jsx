@@ -22,12 +22,17 @@ const Clientes = () => {
     name: "",
     email: "",
     phone: "",
+    rut: "",
+    direccion: "",
   });
+
   const [editCustomer, setEditCustomer] = useState({
     id: "",
     name: "",
     email: "",
     phone: "",
+    rut: "",
+    direccion: "",
   });
 
   const token = sessionStorage.getItem("access_token");
@@ -125,10 +130,7 @@ const Clientes = () => {
   };
 
   const handleConfirmDelete = async () => {
-    // Buscar el cliente que se desea eliminar
     const customer = customers.find(cust => cust.id === customerToDelete);
-
-    // Verificar si el cliente tiene facturas asociadas y mostrar toast.error si es el caso
     if (customer && customer.invoices && customer.invoices.length > 0) {
       toast.error("Cliente tiene facturas creadas a través de Toastify");
       setShowDeleteModal(false);
@@ -144,7 +146,7 @@ const Clientes = () => {
       if (!response.ok) {
         if (response.status === 409) {
           const errorData = await response.json();
-          toast.error(errorData.error || "No se pudo eliminar el cliente.");
+          toast.info(errorData.error || "No se pudo eliminar el cliente.");
         } else {
           throw new Error(`Error HTTP: ${response.status}`);
         }
@@ -175,7 +177,7 @@ const Clientes = () => {
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
-    setNewCustomer({ name: "", email: "", phone: "" });
+    setNewCustomer({ name: "", email: "", phone: "", rut: "", direccion: "" });
     setError(null);
   };
 
@@ -237,13 +239,15 @@ const Clientes = () => {
       name: customer.name,
       email: customer.email,
       phone: customer.phone,
+      rut: customer.rut,
+      direccion: customer.direccion
     });
     setShowEditModal(true);
   };
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
-    setEditCustomer({ id: "", name: "", email: "", phone: "" });
+    setEditCustomer({ id: "", name: "", email: "", phone: "", rut: "", direccion: "" });
     setError(null);
   };
 
@@ -268,6 +272,8 @@ const Clientes = () => {
           name: editCustomer.name,
           email: editCustomer.email,
           phone: editCustomer.phone,
+          rut: editCustomer.rut,
+          direccion: editCustomer.direccion
         }),
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -359,6 +365,7 @@ const Clientes = () => {
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Teléfono</th>
+                <th>RUT</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -375,6 +382,7 @@ const Clientes = () => {
                   <td>{customer.name}</td>
                   <td>{customer.email}</td>
                   <td>{customer.phone}</td>
+                  <td>{customer.rut}</td>
                   <td>
                     <Button
                       variant="warning"
@@ -396,7 +404,7 @@ const Clientes = () => {
               ))}
               {filteredCustomers.length === 0 && (
                 <tr>
-                  <td colSpan="5" className="text-center">
+                  <td colSpan="6" className="text-center">
                     No se encontraron resultados
                   </td>
                 </tr>
@@ -462,6 +470,19 @@ const Clientes = () => {
             onSubmit={handleSubmitCustomer}
             onKeyDown={(e) => { if (e.key === "Enter") handleSubmitCustomer(e); }}
           >
+            <Form.Group controlId="customerRut" className="mt-2">
+              <Form.Label>RUT</Form.Label>
+              <Form.Control
+                className="rounded-pill"
+                type="text"
+                placeholder="RUT del cliente"
+                name="rut"
+                value={newCustomer.rut}
+                onChange={handleInputChange}
+                required
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
             <Form.Group controlId="customerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control
@@ -523,6 +544,19 @@ const Clientes = () => {
             onSubmit={handleSubmitEditCustomer}
             onKeyDown={(e) => { if (e.key === "Enter") handleSubmitEditCustomer(e); }}
           >
+            <Form.Group controlId="editCustomerRut" className="mt-2">
+              <Form.Label>RUT</Form.Label>
+              <Form.Control
+                className="rounded-pill"
+                type="text"
+                placeholder="RUT del cliente"
+                name="rut"
+                value={editCustomer.rut}
+                onChange={handleEditInputChange}
+                required
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
             <Form.Group controlId="editCustomerName">
               <Form.Label>Nombre</Form.Label>
               <Form.Control

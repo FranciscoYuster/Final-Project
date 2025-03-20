@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Modal, Table, Form, InputGroup, Pagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { toast, ToastContainer } from "react-toastify";
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 
 const Productos = () => {
@@ -17,7 +17,6 @@ const Productos = () => {
   const [showDeleteAllConfirmation, setShowDeleteAllConfirmation] = useState(false);
   const itemsPerPage = 10;
 
-  // Estado sin el campo ubicación
   const [newProduct, setNewProduct] = useState({
     nombre: "",
     descripcion: "",
@@ -40,7 +39,6 @@ const Productos = () => {
     currentPage * itemsPerPage
   );
 
-  // Cargar productos al montar el componente
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -68,13 +66,11 @@ const Productos = () => {
       });
   };
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber);
-  };
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleSelectProduct = (id) => {
     if (selectedProducts.includes(id)) {
-      setSelectedProducts(selectedProducts.filter((productId) => productId !== id));
+      setSelectedProducts(selectedProducts.filter((pid) => pid !== id));
     } else {
       setSelectedProducts([...selectedProducts, id]);
     }
@@ -108,9 +104,6 @@ const Productos = () => {
     setShowModal(false);
     setEditingProduct(null);
   };
-
-  const isValidStock = (stock) => !isNaN(parseInt(stock)) && parseInt(stock) >= 0;
-  const isValidPrice = (price) => !isNaN(parseFloat(price)) && parseFloat(price) >= 0;
 
   const handleCreateProduct = (nuevoProducto) => {
     const stock = Number(nuevoProducto.stock);
@@ -175,6 +168,7 @@ const Productos = () => {
     }
   };
 
+  // Eliminación individual: si la respuesta es 409, se muestra el toast.info
   const handleDeleteProduct = (id) => {
     fetch(`/api/products/${id}`, {
       method: "DELETE",
@@ -183,6 +177,10 @@ const Productos = () => {
       },
     })
       .then((response) => {
+        if (response.status === 409) {
+          toast.info("Este producto tiene historial y no se puede eliminar.");
+          throw new Error("Product has historical records.");
+        }
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`);
         }
@@ -194,18 +192,40 @@ const Productos = () => {
       })
       .catch((err) => {
         console.error("Error al eliminar producto:", err);
-        toast.error("Error al eliminar el producto.");
+        if (err.message !== "Product has historical records.") {
+          toast.error("Error al eliminar el producto.");
+        }
       });
   };
 
   const handleDeleteAllProducts = () => {
-    const deleteRequests = selectedProducts.map((id) =>
+    const deletableIds = [];
+    const nonDeletableIds = [];
+    selectedProducts.forEach((id) => {
+      const prod = productos.find((p) => p.id === id);
+      if (prod && ((prod.movements && prod.movements.length > 0) ||
+          (prod.sales && prod.sales.length > 0) ||
+          (prod.purchases && prod.purchases.length > 0) ||
+          (prod.invoices && prod.invoices.length > 0))) {
+        nonDeletableIds.push(id);
+      } else {
+        deletableIds.push(id);
+      }
+    });
+    if (nonDeletableIds.length > 0) {
+      toast.info("Algunos productos tienen historial y no se pueden eliminar.");
+    }
+    if (deletableIds.length === 0) return;
+    const deleteRequests = deletableIds.map((id) =>
       fetch(`/api/products/${id}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`,
         },
       }).then((response) => {
+        if (response.status === 409) {
+          throw new Error("Product has historical records.");
+        }
         if (!response.ok) {
           throw new Error(`Error al eliminar el producto con ID: ${id}`);
         }
@@ -213,7 +233,7 @@ const Productos = () => {
     );
     Promise.all(deleteRequests)
       .then(() => {
-        setProductos(productos.filter((producto) => !selectedProducts.includes(producto.id)));
+        setProductos(productos.filter((producto) => !deletableIds.includes(producto.id)));
         setSelectedProducts([]);
         toast.success("Productos eliminados exitosamente.");
       })
@@ -223,7 +243,6 @@ const Productos = () => {
       });
   };
 
-  // Función para abrir el modal de confirmación de eliminación individual
   const confirmDeleteProduct = (id) => {
     setProductToDelete(id);
     setShowDeleteConfirmation(true);
@@ -344,7 +363,7 @@ const Productos = () => {
           ))}
         </Pagination>
       </div>
-      {/* Modal para Confirmar Eliminación Individual */}
+      {/* Modal de confirmación para eliminación individual */}
       <Modal show={showDeleteConfirmation} onHide={() => setShowDeleteConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -356,16 +375,19 @@ const Productos = () => {
           <Button variant="secondary" onClick={() => setShowDeleteConfirmation(false)}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={() => {
-            handleDeleteProduct(productToDelete);
-            setShowDeleteConfirmation(false);
-            setProductToDelete(null);
-          }}>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteProduct(productToDelete);
+              setShowDeleteConfirmation(false);
+              setProductToDelete(null);
+            }}
+          >
             Eliminar
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* Modal para Confirmar Eliminación de Todos */}
+      {/* Modal para confirmación de eliminación de todos */}
       <Modal show={showDeleteAllConfirmation} onHide={() => setShowDeleteAllConfirmation(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirmar Eliminación</Modal.Title>
@@ -377,10 +399,13 @@ const Productos = () => {
           <Button variant="secondary" onClick={() => setShowDeleteAllConfirmation(false)}>
             Cancelar
           </Button>
-          <Button variant="danger" onClick={() => {
-            handleDeleteAllProducts();
-            setShowDeleteAllConfirmation(false);
-          }}>
+          <Button
+            variant="danger"
+            onClick={() => {
+              handleDeleteAllProducts();
+              setShowDeleteAllConfirmation(false);
+            }}
+          >
             Eliminar Seleccionados
           </Button>
         </Modal.Footer>
@@ -399,7 +424,6 @@ const Productos = () => {
               const codigo = e.target.codigo.value;
               const precio = Number(e.target.precio.value);
               const categoria = e.target.categoria.value;
-              // Se elimina el campo de ubicación en la sumisión
               if (isNaN(stock) || isNaN(precio)) {
                 console.error("Error: stock o precio no son números válidos");
                 toast.error("Stock o precio no son números válidos.");
@@ -474,7 +498,6 @@ const Productos = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
-            {/* Se eliminó el grupo de Ubicación */}
             <Button 
               variant="primary" 
               type="submit" 

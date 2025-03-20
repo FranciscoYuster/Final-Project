@@ -10,7 +10,9 @@ import {
   List,
   ListItem,
   ListItemText,
-  Box
+  Box,
+  ListItemAvatar,
+  Avatar
 } from '@mui/material';
 import styled from '@emotion/styled';
 import {
@@ -84,6 +86,16 @@ const chartOptions = {
   },
 };
 
+// Función para formatear números en dinero (CLP, sin decimales)
+const formatMoney = (amount) => {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(amount);
+};
+
 const Dashboard = () => {
   const [kpiData, setKpiData] = useState({
     moneyCollected: 0,
@@ -95,13 +107,24 @@ const Dashboard = () => {
   const [latestInvoices, setLatestInvoices] = useState([]);
   const [revenueData, setRevenueData] = useState({
     labels: [],
-    datasets: [{
-      label: 'Ingresos Recientes',
-      data: [],
-      fill: false,
-      borderColor: '#4bc0c0',
-    }]
+    datasets: []
   });
+
+  // Estado para almacenar comparativas de KPIs (mes actual vs mes anterior)
+  const [comparativeKpi, setComparativeKpi] = useState({
+    collected: { current: 0, previous: 0, percentage: 0 },
+    pending: { current: 0, previous: 0, percentage: 0 },
+    totalInvoices: { current: 0, previous: 0, percentage: 0 },
+    totalCustomers: { current: 0, previous: 0, percentage: 0 },
+  });
+
+  // Función para calcular la variación porcentual
+  const calculatePercentage = (current, previous) => {
+    if (previous > 0) {
+      return Math.round(((current - previous) / previous) * 100);
+    }
+    return current > 0 ? 100 : 0;
+  };
 
   useEffect(() => {
     const token = sessionStorage.getItem('access_token');
@@ -117,13 +140,13 @@ const Dashboard = () => {
       const lastThree = allInvoices.slice(-3);
       setLatestInvoices(lastThree);
 
-      // Calcular KPIs
+      // KPIs globales (todas las facturas)
       const totalInvoices = allInvoices.length;
       const moneyCollected = allInvoices
-        .filter(inv => inv.status === 'Paid')
+        .filter(inv => inv.status === 'Pagada')
         .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
       const moneyPending = allInvoices
-        .filter(inv => inv.status === 'Pending')
+        .filter(inv => inv.status === 'Pendiente')
         .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
       const uniqueCustomers = new Set(
         allInvoices
@@ -140,24 +163,119 @@ const Dashboard = () => {
       });
 
       // Agrupar facturas por mes para el gráfico
-      const monthlyData = {};
+      const monthlyDataCollected = {};
+      const monthlyDataPending = {};
+
       allInvoices.forEach(invoice => {
         const date = new Date(invoice.invoice_date);
+        // Obtén el mes en formato corto (por ejemplo, "ene", "feb", etc.)
         const month = date.toLocaleString('default', { month: 'short' });
-        monthlyData[month] = (monthlyData[month] || 0) + (invoice.total_final || 0);
+        if (invoice.status === 'Pagada') {
+          monthlyDataCollected[month] = (monthlyDataCollected[month] || 0) + (invoice.total_final || 0);
+        } else if (invoice.status === 'Pendiente') {
+          monthlyDataPending[month] = (monthlyDataPending[month] || 0) + (invoice.total_final || 0);
+        }
       });
 
-      const labels = Object.keys(monthlyData);
-      const dataValues = Object.values(monthlyData);
+      const allMonthsSet = new Set([
+        ...Object.keys(monthlyDataCollected),
+        ...Object.keys(monthlyDataPending)
+      ]);
+      const monthsOrder = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+      const sortedLabels = [...allMonthsSet].sort(
+        (a, b) => monthsOrder.indexOf(a.toLowerCase()) - monthsOrder.indexOf(b.toLowerCase())
+      );
+
+      const collectedValues = sortedLabels.map(month => monthlyDataCollected[month] || 0);
+      const pendingValues = sortedLabels.map(month => monthlyDataPending[month] || 0);
 
       setRevenueData({
-        labels,
-        datasets: [{
-          label: 'Ingresos Recientes',
-          data: dataValues,
-          fill: false,
-          borderColor: '#4bc0c0',
-        }]
+        labels: sortedLabels,
+        datasets: [
+          {
+            label: 'Dinero Recogido',
+            data: collectedValues,
+            fill: false,
+            borderColor: 'green',
+          },
+          {
+            label: 'Dinero Pendiente',
+            data: pendingValues,
+            fill: false,
+            borderColor: 'orange',
+          }
+        ]
+      });
+
+      // Cálculo de KPIs para mes actual y mes anterior
+      const now = new Date();
+      const currentMonth = now.getMonth(); // 0-11
+      const currentYear = now.getFullYear();
+      const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+      const currentInvoices = allInvoices.filter(invoice => {
+        const d = new Date(invoice.invoice_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      });
+      const previousInvoices = allInvoices.filter(invoice => {
+        const d = new Date(invoice.invoice_date);
+        return d.getMonth() === previousMonth && d.getFullYear() === previousYear;
+      });
+
+      // Dinero Recogido
+      const currentCollected = currentInvoices
+        .filter(inv => inv.status === 'Pagada')
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
+      const previousCollected = previousInvoices
+        .filter(inv => inv.status === 'Pagada')
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
+
+      // Dinero Pendiente
+      const currentPending = currentInvoices
+        .filter(inv => inv.status === 'Pendiente')
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
+      const previousPending = previousInvoices
+        .filter(inv => inv.status === 'Pendiente')
+        .reduce((acc, inv) => acc + (inv.total_final || 0), 0);
+
+      // Total Facturas
+      const currentTotalInvoices = currentInvoices.length;
+      const previousTotalInvoices = previousInvoices.length;
+
+      // Total Clientes (únicos por email)
+      const currentCustomers = new Set(
+        currentInvoices
+          .filter(inv => inv.customer && inv.customer.email)
+          .map(inv => inv.customer.email)
+      ).size;
+      const previousCustomers = new Set(
+        previousInvoices
+          .filter(inv => inv.customer && inv.customer.email)
+          .map(inv => inv.customer.email)
+      ).size;
+
+      setComparativeKpi({
+        collected: {
+          current: currentCollected,
+          previous: previousCollected,
+          percentage: calculatePercentage(currentCollected, previousCollected),
+        },
+        pending: {
+          current: currentPending,
+          previous: previousPending,
+          percentage: calculatePercentage(currentPending, previousPending),
+        },
+        totalInvoices: {
+          current: currentTotalInvoices,
+          previous: previousTotalInvoices,
+          percentage: calculatePercentage(currentTotalInvoices, previousTotalInvoices),
+        },
+        totalCustomers: {
+          current: currentCustomers,
+          previous: previousCustomers,
+          percentage: calculatePercentage(currentCustomers, previousCustomers),
+        }
       });
     })
     .catch(error => {
@@ -167,23 +285,35 @@ const Dashboard = () => {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h2" gutterBottom sx={{ color: 'white' }}>
         Dashboard
       </Typography>
       
-      {/* Tarjetas de KPIs */}
+      {/* Tarjetas de KPIs con comparativas integradas */}
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StyledCard title="Dinero Recogido">
             <Typography variant="h5">
-              ${kpiData.moneyCollected.toFixed(2)}
+              {formatMoney(kpiData.moneyCollected)}
+            </Typography>
+            <Typography variant="body2">
+              Mes anterior: {formatMoney(comparativeKpi.collected.previous)}
+            </Typography>
+            <Typography variant="body2" sx={{ color: comparativeKpi.collected.percentage >= 0 ? 'green' : 'red' }}>
+              {comparativeKpi.collected.percentage >= 0 ? '↑' : '↓'} {Math.abs(comparativeKpi.collected.percentage)}%
             </Typography>
           </StyledCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StyledCard title="Dinero Pendiente">
             <Typography variant="h5">
-              ${kpiData.moneyPending.toFixed(2)}
+              {formatMoney(kpiData.moneyPending)}
+            </Typography>
+            <Typography variant="body2">
+              Mes anterior: {formatMoney(comparativeKpi.pending.previous)}
+            </Typography>
+            <Typography variant="body2" sx={{ color: comparativeKpi.pending.percentage >= 0 ? 'green' : 'red' }}>
+              {comparativeKpi.pending.percentage >= 0 ? '↑' : '↓'} {Math.abs(comparativeKpi.pending.percentage)}%
             </Typography>
           </StyledCard>
         </Grid>
@@ -192,12 +322,24 @@ const Dashboard = () => {
             <Typography variant="h5">
               {kpiData.totalInvoices}
             </Typography>
+            <Typography variant="body2">
+              Mes anterior: {comparativeKpi.totalInvoices.previous}
+            </Typography>
+            <Typography variant="body2" sx={{ color: comparativeKpi.totalInvoices.percentage >= 0 ? 'green' : 'red' }}>
+              {comparativeKpi.totalInvoices.percentage >= 0 ? '↑' : '↓'} {Math.abs(comparativeKpi.totalInvoices.percentage)}%
+            </Typography>
           </StyledCard>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StyledCard title="Total Clientes">
             <Typography variant="h5">
               {kpiData.totalCustomers}
+            </Typography>
+            <Typography variant="body2">
+              Mes anterior: {comparativeKpi.totalCustomers.previous}
+            </Typography>
+            <Typography variant="body2" sx={{ color: comparativeKpi.totalCustomers.percentage >= 0 ? 'green' : 'red' }}>
+              {comparativeKpi.totalCustomers.percentage >= 0 ? '↑' : '↓'} {Math.abs(comparativeKpi.totalCustomers.percentage)}%
             </Typography>
           </StyledCard>
         </Grid>
@@ -218,12 +360,32 @@ const Dashboard = () => {
               {latestInvoices.length > 0 ? (
                 latestInvoices.map(invoice => (
                   <ListItem key={invoice.id} divider>
+                    <ListItemAvatar>
+                      <Avatar>
+                        {invoice.customer
+                          ? invoice.customer.name.charAt(0).toUpperCase()
+                          : 'S'}
+                      </Avatar>
+                    </ListItemAvatar>
                     <ListItemText
                       primary={invoice.customer ? invoice.customer.name : 'Sin Cliente'}
                       secondary={
                         <>
-                          ${ (invoice.total_final || 0).toFixed(2) } <br />
-                          { new Date(invoice.invoice_date).toLocaleDateString() }
+                          {formatMoney(invoice.total_final || 0)} <br />
+                          {new Date(invoice.invoice_date).toLocaleDateString()} <br />
+                          <Typography variant="body2" 
+                            sx={{ 
+                              color: invoice.status === 'Pagada' 
+                                ? 'green' 
+                                : invoice.status === 'Pendiente' 
+                                  ? 'orange'
+                                  : invoice.status === 'Anulada'
+                                    ? 'red'
+                                    : 'text.secondary'
+                            }}
+                          >
+                            {invoice.status}
+                          </Typography>
                         </>
                       }
                     />
@@ -243,3 +405,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+9

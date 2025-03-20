@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Button, 
-  Modal, 
-  Table, 
-  Form, 
-  InputGroup, 
-  FormControl, 
-  Pagination 
+import {
+  Button,
+  Modal,
+  Table,
+  Form,
+  InputGroup,
+  FormControl,
+  Pagination
 } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -95,13 +95,22 @@ const Movements = () => {
     fetchProducts();
   }, []);
 
+  /* ======== Función para obtener el nombre del producto ======== */
+
+  const getProductName = (productId) => {
+    const prod = products.find(
+      (p) => p.id.toString() === productId.toString()
+    );
+    return prod ? prod.nombre : "N/D";
+  };
+
   /* ======== Filtrado y Paginación ======== */
 
+  // Se filtra por el tipo de movimiento
   const filteredMovements = movements.filter((mov) => {
-    const prod = mov.product_id ? mov.product_id.toString() : "";
     const type = mov.type ? mov.type.toLowerCase() : "";
     const query = searchQuery.toLowerCase();
-    return prod.includes(query) || type.includes(query);
+    return type.includes(query);
   });
 
   const totalPages = Math.ceil(filteredMovements.length / itemsPerPage);
@@ -134,6 +143,7 @@ const Movements = () => {
         },
         body: JSON.stringify({
           product_id: newMovement.product_id,
+          // El campo "type" debe ser "Compra" o "Venta"
           type: newMovement.type,
           quantity: parseInt(newMovement.quantity)
         })
@@ -167,7 +177,6 @@ const Movements = () => {
     }
   };
 
-  // Función para abrir el modal de confirmación de eliminación individual
   const confirmDeleteMovement = (id) => {
     setMovementToDelete(id);
     setShowDeleteModal(true);
@@ -215,25 +224,17 @@ const Movements = () => {
     }
   };
 
-  // Para abrir el modal de confirmación de eliminación masiva
-  const openDeleteSelectedModal = () => {
-    setShowDeleteSelectedModal(true);
-  };
-
   /* ======== Exportación ======== */
 
   const handleExportCSV = () => {
-    const headers = ["#", "Producto ID", "Tipo", "Cantidad", "Fecha", "Registrado Por", "Rol"];
+    const headers = ["Producto", "Tipo", "Cantidad", "Fecha"];
     let csvContent = headers.join(",") + "\n";
-    movements.forEach((mov, index) => {
+    movements.forEach((mov) => {
       const row = [
-        index + 1,
-        mov.product_id,
+        getProductName(mov.product_id),
         mov.type,
         mov.quantity,
-        mov.date ? new Date(mov.date).toLocaleDateString() : "",
-        mov.registered_by && mov.registered_by.name ? mov.registered_by.name : "N/D",
-        mov.registered_by && mov.registered_by.role ? mov.registered_by.role : "N/D"
+        mov.date ? new Date(mov.date).toLocaleDateString() : ""
       ];
       csvContent += row.join(",") + "\n";
     });
@@ -248,16 +249,13 @@ const Movements = () => {
   };
 
   const handleExportExcel = () => {
-    const wsData = movements.map((mov, index) => [
-      index + 1,
-      mov.product_id,
+    const wsData = movements.map((mov) => [
+      getProductName(mov.product_id),
       mov.type,
       mov.quantity,
-      mov.date ? new Date(mov.date).toLocaleDateString() : "",
-      mov.registered_by && mov.registered_by.name ? mov.registered_by.name : "N/D",
-      mov.registered_by && mov.registered_by.role ? mov.registered_by.role : "N/D"
+      mov.date ? new Date(mov.date).toLocaleDateString() : ""
     ]);
-    wsData.unshift(["#", "Producto ID", "Tipo", "Cantidad", "Fecha", "Registrado Por", "Rol"]);
+    wsData.unshift(["Producto", "Tipo", "Cantidad", "Fecha"]);
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
@@ -266,17 +264,14 @@ const Movements = () => {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["#", "Producto ID", "Tipo", "Cantidad", "Fecha", "Registrado Por", "Rol"];
+    const tableColumn = ["Producto", "Tipo", "Cantidad", "Fecha"];
     const tableRows = [];
-    movements.forEach((mov, index) => {
+    movements.forEach((mov) => {
       const rowData = [
-        index + 1,
-        mov.product_id,
+        getProductName(mov.product_id),
         mov.type,
         mov.quantity,
-        mov.date ? new Date(mov.date).toLocaleDateString() : "",
-        mov.registered_by && mov.registered_by.name ? mov.registered_by.name : "N/D",
-        mov.registered_by && mov.registered_by.role ? mov.registered_by.role : "N/D"
+        mov.date ? new Date(mov.date).toLocaleDateString() : ""
       ];
       tableRows.push(rowData);
     });
@@ -306,20 +301,18 @@ const Movements = () => {
               className="rounded-pill"
             />
           </InputGroup>
-
-          <Button 
-            variant="primary" 
-            onClick={() => setShowModal(true)} 
-            className="rounded-pill" 
+          <Button
+            variant="primary"
+            onClick={() => setShowModal(true)}
+            className="rounded-pill"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-           <FaPlus className="me-1" />  Agregar Nuevo movimiento
+            <FaPlus className="me-1" /> Agregar Nuevo movimiento
           </Button>
         </div>
 
         {/* Botones de acciones y exportación */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-
           <div className="d-flex gap-2">
             <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportCSV}>
               Exportar CSV
@@ -327,14 +320,17 @@ const Movements = () => {
             <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportExcel}>
               Exportar Excel
             </Button>
+            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportPDF}>
+              Exportar PDF
+            </Button>
           </div>
         </div>
 
         {/* Tabla de movimientos */}
         <div className="table-responsive">
-          <Table 
-            bordered 
-            hover 
+          <Table
+            bordered
+            hover
             style={{
               borderRadius: "10px",
               overflow: "hidden",
@@ -352,23 +348,20 @@ const Movements = () => {
                     className="rounded-circle"
                   />
                 </th>
-                <th>#</th>
-                <th>Producto ID</th>
+                <th>Producto</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th>Fecha</th>
-                <th>Registrado Por</th>
-                <th>Rol</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="9">No hay movimientos.</td>
+                  <td colSpan="6">No hay movimientos.</td>
                 </tr>
               ) : (
-                currentItems.map((mov, index) => (
+                currentItems.map((mov) => (
                   <tr key={mov.id}>
                     <td>
                       <Form.Check
@@ -378,13 +371,10 @@ const Movements = () => {
                         className="rounded-circle"
                       />
                     </td>
-                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td>{mov.product_id}</td>
+                    <td>{getProductName(mov.product_id)}</td>
                     <td>{mov.type}</td>
                     <td>{mov.quantity}</td>
                     <td>{mov.date ? new Date(mov.date).toLocaleDateString() : ""}</td>
-                    <td>{mov.registered_by && mov.registered_by.name ? mov.registered_by.name : "N/D"}</td>
-                    <td>{mov.registered_by && mov.registered_by.role ? mov.registered_by.role : "N/D"}</td>
                     <td>
                       <Button
                         variant="danger"
@@ -437,8 +427,7 @@ const Movements = () => {
           <Modal.Header closeButton>
             <Modal.Title>Nuevo Movimiento</Modal.Title>
           </Modal.Header>
-
-            <Modal.Body>
+          <Modal.Body>
             <form onSubmit={handleAddMovement}>
               <div className="mb-3">
                 <label className="form-label">Producto:</label>
@@ -450,7 +439,6 @@ const Movements = () => {
                     value={newMovement.product_id}
                     onChange={handleInputChange}
                     className="form-control rounded-pill"
-                    placeholder="Selecciona un producto"
                     style={{ borderColor: "#074de3" }}
                     required
                   >
@@ -464,37 +452,37 @@ const Movements = () => {
                 )}
               </div>
               <div className="mb-3">
-                <label className="form-label">Tipo (Sale o Purchase):</label>
-                <input
-                style={{ borderColor: "#074de3" }}
-                  type="text"
+                <label className="form-label">Tipo:</label>
+                <select
                   name="type"
                   value={newMovement.type}
                   onChange={handleInputChange}
                   className="form-control rounded-pill"
-                  placeholder="Selecciona Sale o Purchase"
+                  style={{ borderColor: "#074de3" }}
                   required
-                />
+                >
+                  <option value="">Selecciona Compra o Venta</option>
+                  <option value="Compra">Compra</option>
+                  <option value="Venta">Venta</option>
+                </select>
               </div>
               <div className="mb-3">
-                <label className="form-label">Cantidad</label>
+                <label className="form-label">Cantidad:</label>
                 <input
-                style={{ borderColor: "#074de3" }}
                   type="number"
                   name="quantity"
                   value={newMovement.quantity}
                   onChange={handleInputChange}
                   className="form-control rounded-pill"
                   placeholder="Cantidad del movimiento"
+                  style={{ borderColor: "#074de3" }}
                   required
                 />
               </div>
-
-
               <Button type="submit" variant="primary" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
                 Guardar
               </Button>
-          </form>
+            </form>
           </Modal.Body>
         </Modal>
       )}

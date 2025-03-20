@@ -12,19 +12,17 @@ import Error404 from './views/Error404';
 import Productos from './views/Productos';
 import Ventas from './views/Ventas/Ventas';
 import Compras from './views/Compras';
-import Usuarios from './views/Usuarios';
 import Proveedores from './views/Proveedores';
-import Reportes from './views/Reportes';
 import Services from './views/Services';
 import ForgotPassword from './views/ForgotPassword';
 import ResetPassword from './views/ResetPassword';
 import Facturas from './views/Facturas';
 import Dashboard from './views/Dashboard';
 import Clientes from './views/Clientes';
-import InventoryManagement from './views/Inventory/InventoryManagement';
 import Movements from './views/Movements';
 import Ubicaciones from './views/Ubicaciones';
 import Configurations from './views/Configurations/Configurations';
+import InventoryControl from './views/Inventory/InventoryControl';
 
 
 const AppRoutes = () => {
@@ -70,7 +68,7 @@ const AppRoutes = () => {
               path="/inventory"
               element={
                 <PrivateRoute>
-                  <InventoryManagement />
+                  <InventoryControl/>                  
                 </PrivateRoute>
               }
             />

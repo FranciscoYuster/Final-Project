@@ -22,6 +22,7 @@ from src.routes.movements_api import movements_api
 from src.routes.ubications_api import ubications_api
 from src.routes.configurations_api import configurations_api
 from src.routes.purchases_api import purchases_api
+from src.routes.sales_api import sales_api
 
 load_dotenv()
 
@@ -66,6 +67,7 @@ app.register_blueprint(movements_api, url_prefix="/api")
 app.register_blueprint(ubications_api, url_prefix="/api")
 app.register_blueprint(configurations_api, url_prefix="/api")
 app.register_blueprint(purchases_api, url_prefix="/api")
+app.register_blueprint(sales_api, url_prefix="/api")
 
 if __name__ == '__main__':
     app.run()

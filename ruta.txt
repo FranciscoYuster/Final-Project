@@ -16,7 +16,7 @@
 Observaciones:
 @Inventario: 
 -Campo precio, modificar formato moneda.
--Campo ubicación, solo indica valor“Sin asignar ”.
+-Campo ubicación, solo indica valor “Sin asignar ”.
 -Campo descripción, debería decir Descripción producto para no confundir con el de ubicación 
 -Editar: el formulario no muestras los valores nombre, descripción y precio al editar
 -Eliminar: Falta modal de eliminación “Estás seguro….”
@@ -28,3 +28,16 @@ Observaciones:
 - SECCIÓN REPORTES (GENERAR REPORTAR CON CUALQUIER CAMPO TIPO TABLAS DINAMICA)
 - SECCIÓN USUARIOS (CREAR USUARIOS CON ROLES)
 - IMAGENES
+- ENVIAR MENSAJES DE COBRO A clientes
+- INTEGRAR CHECKOUT DE MERCADO PAGO PARA RECIBIR LOS PAGOS Y PODER ENVIAR LINKS DE PAGO
+(EVALUAR STRIPE O MERCADO PAGO)
+
+- INTEGRAR API DE GOOGLEMASP PARA RUTAS Y DISTRIBUCIÓN
+- integración con SERVICIOS DE IMPUUSTOS INTERNOS
+
+
+
+1.- GENERA UNA FACTURA O BOLETA
+2.- GENERA UN REGISTRO EN EL HISTORIAL DE MOVIMIENTOS
+3.- ACTUALIZA EL STOCK
+

@@ -21,19 +21,21 @@ const Proveedores = () => {
     }
   };
 
-  // Usamos la propiedad "addres" para alinear con el modelo de la DB
   const [newProvider, setNewProvider] = useState({
     name: "",
     addres: "",
     phone: "",
     email: "",
+    rut: "",
   });
+
   const [editProvider, setEditProvider] = useState({
     id: null,
     name: "",
     addres: "",
     phone: "",
     email: "",
+    rut: "",
   });
 
   // Estados para modales
@@ -175,7 +177,7 @@ const Proveedores = () => {
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false);
-    setNewProvider({ name: "", addres: "", phone: "", email: "" });
+    setNewProvider({ name: "", addres: "", phone: "", email: "", rut: "" });
     setError(null);
   };
 
@@ -230,13 +232,14 @@ const Proveedores = () => {
       addres: provider.addres, // Se usa "addres" para alinear con el modelo
       phone: provider.phone,
       email: provider.email,
+      rut: provider.rut,  // Asignamos el rut
     });
     setShowEditModal(true);
   };
 
   const handleCloseEditModal = () => {
     setShowEditModal(false);
-    setEditProvider({ id: null, name: "", addres: "", phone: "", email: "" });
+    setEditProvider({ id: null, name: "", addres: "", phone: "", email: "", rut: "" });
     setError(null);
   };
 
@@ -262,6 +265,7 @@ const Proveedores = () => {
           addres: editProvider.addres,
           phone: editProvider.phone,
           email: editProvider.email,
+          rut: editProvider.rut,  // Se envía el rut actualizado
         }),
       });
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -326,6 +330,7 @@ const Proveedores = () => {
                 <th>Dirección</th>
                 <th>Teléfono</th>
                 <th>Email</th>
+                <th>RUT</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -343,6 +348,7 @@ const Proveedores = () => {
                   <td>{provider.addres}</td>
                   <td>{provider.phone}</td>
                   <td>{provider.email}</td>
+                  <td>{provider.rut}</td>
                   <td>
                     <Button
                       variant="warning"
@@ -364,7 +370,7 @@ const Proveedores = () => {
               ))}
               {filteredProviders.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="text-center">
+                  <td colSpan="7" className="text-center">
                     No se encontraron resultados
                   </td>
                 </tr>
@@ -457,7 +463,6 @@ const Proveedores = () => {
             </Form.Group>
             <Form.Group controlId="providerPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
-              {/* Se corrige para usar newProvider en lugar de editProvider */}
               <Form.Control
                 className="rounded-pill"
                 type="tel"
@@ -485,9 +490,22 @@ const Proveedores = () => {
                 style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
+            <Form.Group controlId="providerRut" className="mt-2">
+              <Form.Label>RUT</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="RUT del proveedor"
+                name="rut"
+                value={newProvider.rut}
+                onChange={handleInputChange}
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+                required
+              />
+            </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
             <Button variant="primary" type="submit" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
-              Crear 
+              Crear
             </Button>
           </Form>
         </Modal.Body>
@@ -506,39 +524,39 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderName">
               <Form.Label>Nombre / Razón Social</Form.Label>
               <Form.Control
-                style={{ borderColor: "#074de3" }}
                 type="text"
                 placeholder="Nombre del proveedor"
                 name="name"
                 value={editProvider.name}
                 onChange={handleEditInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
                 required
               />
             </Form.Group>
             <Form.Group controlId="editProviderAddress" className="mt-2">
               <Form.Label>Dirección</Form.Label>
               <Form.Control
-                style={{ borderColor: "#074de3" }}
                 type="text"
                 placeholder="Dirección del proveedor"
                 name="addres"
                 value={editProvider.addres}
                 onChange={handleEditInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
               />
             </Form.Group>
             <Form.Group controlId="editProviderPhone" className="mt-2">
               <Form.Label>Teléfono</Form.Label>
               <Form.Control
-                className="rounded-pill"
-                style={{ borderColor: "#074de3" }}
                 type="tel"
                 placeholder="Teléfono del proveedor"
                 name="phone"
                 value={editProvider.phone}
                 onChange={handleEditInputChange}
                 onKeyPress={handlePhoneKeyPress}
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
                 required
                 maxLength="9"
                 pattern="^9[0-9]{8}$"
@@ -548,17 +566,30 @@ const Proveedores = () => {
             <Form.Group controlId="editProviderEmail" className="mt-2">
               <Form.Label>Email</Form.Label>
               <Form.Control
-                style={{ borderColor: "#074de3" }}
                 type="email"
                 placeholder="Email del proveedor"
                 name="email"
                 value={editProvider.email}
                 onChange={handleEditInputChange}
                 className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+              />
+            </Form.Group>
+            <Form.Group controlId="editProviderRut" className="mt-2">
+              <Form.Label>RUT</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="RUT del proveedor"
+                name="rut"
+                value={editProvider.rut}
+                onChange={handleEditInputChange}
+                className="rounded-pill"
+                style={{ borderColor: "#074de3" }}
+                required
               />
             </Form.Group>
             {error && <div className="alert alert-danger mt-3">{error}</div>}
-            <Button variant="primary" type="submit" className="mt-3 rounded-pill">
+            <Button variant="primary" type="submit" className="mt-3 rounded-pill" style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}>
               Guardar cambios
             </Button>
           </Form>

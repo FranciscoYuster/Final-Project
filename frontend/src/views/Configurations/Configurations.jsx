@@ -125,10 +125,10 @@ const ConfigurationSettings = () => {
             <Box mb={2}>
               <TextField
                 label="Impuesto"
-                value={configuration.impuesto}
+                value="19%"
                 fullWidth
                 disabled
-                helperText="Este valor se fija automáticamente (0.19)"
+                helperText="Este valor se fija automáticamente (19%)"
               />
             </Box>
             <Box mb={2}>
@@ -147,7 +147,6 @@ const ConfigurationSettings = () => {
                 onChange={(e) => setFormatoFacturacion(e.target.value)}
                 disabled
                 fullWidth
-                helperText="Puedes actualizar el formato de facturación"
               />
             </Box>
           </form>
