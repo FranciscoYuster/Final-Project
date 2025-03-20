@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination } from "react-bootstrap";
+import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination, Col} from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -332,18 +332,33 @@ const Clientes = () => {
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3" style={{ color: "white" }}>Clientes</h1>
         <InputGroup className="mb-3">
-         
+        <Col className="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => setShowModal(true)}
+              className="rounded-pill me-2"
+              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+            >
+              <FaPlus className="me-1" />
+              Crear Ubicacion
+            </Button>
+          </div>
+          <div>
           <Button variant="success" className="rounded-pill" onClick={exportToCSV}>
             Exportar CSV
           </Button>
           <Button variant="success" className="rounded-pill ms-2" onClick={exportToExcel}>
             Exportar Excel
           </Button>
+          </div>
+          </Col>
         </InputGroup>
 
         {isLoading ? (
           <div>Cargando clientes...</div>
         ) : (
+          <div className="table-responsive">
           <Table bordered hover className="mt-4" style={{
             borderRadius: "10px",
             overflow: "hidden",
@@ -381,6 +396,7 @@ const Clientes = () => {
                   <td>{customer.phone}</td>
                   <td>{customer.rut}</td>
                   <td>
+                  <div className="d-flex flex-column flex-sm-row text-center justify-content-center">
                     <Button
                       variant="warning"
                       className="me-2 rounded-pill"
@@ -396,6 +412,7 @@ const Clientes = () => {
                     >
                       Eliminar
                     </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -408,6 +425,7 @@ const Clientes = () => {
               )}
             </tbody>
           </Table>
+          </div>
         )}
 
         <Button

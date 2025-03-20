@@ -73,8 +73,8 @@ const Login = () => {
                 onChange={e => setPassword(e.target.value)}
               />
             </div>
-            <div className="d-flex justify-content-center">
-              <a href="#" className="text-decoration-none mb-3" onClick={() => navigate('/forgot')}>
+            <div className="d-flex justify-content-end">
+              <a href="#" className="text-decoration-none mb-3 " onClick={() => navigate('/forgot')}>
                 Forgot Password?
               </a>
             </div>

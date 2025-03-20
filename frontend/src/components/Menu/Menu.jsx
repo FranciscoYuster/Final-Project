@@ -17,9 +17,9 @@ const Menu = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-custom">
+    <nav className="navbar navbar-expand-lg navbar-custom fixed-top">
       <div className="container">
-        <Link className="navbar-brand text-white fw-bold" to="/">
+        <Link className="navbar-brand text-white fw-bold " to="/">
           LogiGo
         </Link>
         <button

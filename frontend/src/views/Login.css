@@ -1,14 +1,16 @@
 body {
-  height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
   background: linear-gradient(to right, #39a2e7, #186fda); 
+  background-size: cover;
+  background-attachment: fixed;
   color: white;
   border-radius: 12px;
   margin: 20px auto;
-  padding: 10px 20px;
+  align-items: center;
+  padding-top: 150px;
+  justify-content: center;
 }
+
 
 .login-container {
   width: 100%;
@@ -32,6 +34,10 @@ body {
     font-weight: bold;
   }
   
+  .login-box a {
+    color: rgb(3, 42, 106);
+  }
+
   .login-box .form-control {
     background: rgba(255, 255, 255, 0.8);
     border: none;
@@ -60,7 +66,7 @@ body {
   }
   
   .login-box .btn:hover {
-    background: #186fda;
+    background: #043a7b;
   }
 
   .password-requirements {

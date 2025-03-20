@@ -586,7 +586,7 @@ const Facturas = () => {
                       <div className="d-flex justify-content-center gap-2 mb-2">
                         <Button
                           variant="secondary"
-                          size="sm"
+
                           onClick={() => handleChangeStatus(invoice.id, "Pendiente")}
                           disabled={invoice.status === "Pendiente" || invoice.status === "Pagada"}
                         >
@@ -594,13 +594,13 @@ const Facturas = () => {
                         </Button>
                         <Button
                           variant="primary"
-                          size="sm"
                           onClick={() => handleChangeStatus(invoice.id, "Pagada")}
                           disabled={invoice.status === "Pagada"}
                         >
                           Pagada
                         </Button>
                       </div>
+                      
                       <Button
                         variant="outline-secondary"
                         onClick={() =>
@@ -608,7 +608,7 @@ const Facturas = () => {
                             ? handleMostrarInvoice(invoice.id)
                             : handleOcultarInvoice(invoice.id)
                         }
-                        className="rounded-pill"
+                        className="rounded-pill me-2"
                       >
                         {hiddenInvoices.includes(invoice.id) ? <FaEye /> : <FaEyeSlash />}
                       </Button>
@@ -616,7 +616,7 @@ const Facturas = () => {
                         <Button
                           variant="secondary"
                           onClick={() => handleOpenAnularModal(invoice)}
-                          className="rounded-pill"
+                          className="rounded-pill "
                           style={{ backgroundColor: "orange", borderColor: "orange" }}
                         >
                           Anular

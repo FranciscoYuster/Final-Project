@@ -395,7 +395,8 @@ const Productos = () => {
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3 text-white">Lista de Productos</h1>
         <Row className="mb-3">
-          <Col md={6} className="text-end">
+          <Col className="d-flex justify-content-between align-items-center">
+          <div>
             <Button
               variant="primary"
               onClick={() => handleShowModal()}
@@ -404,12 +405,15 @@ const Productos = () => {
             >
               <FaPlus className="me-1" /> Crear Nuevo Producto
             </Button>
+            </div>
+            <div className="d-flex justify-content-end">
             <Button variant="success" className="rounded-pill me-2" onClick={exportToCSV}>
               Exportar CSV
             </Button>
             <Button variant="success" className="rounded-pill" onClick={exportToExcel}>
               Exportar Excel
             </Button>
+            </div>
           </Col>
         </Row>
         <div className="table-responsive">
@@ -461,6 +465,7 @@ const Productos = () => {
                   <td>{producto.categoria}</td>
                   <td>{producto.ubicacion ? producto.ubicacion.nombre : "Sin asignar"}</td>
                   <td>
+                  <div className="d-flex flex-column flex-sm-row">
                     <Button
                       variant="warning"
                       onClick={() => handleShowModal(producto)}
@@ -477,6 +482,7 @@ const Productos = () => {
                     >
                       Eliminar
                     </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

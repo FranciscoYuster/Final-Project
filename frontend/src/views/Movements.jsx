@@ -219,27 +219,26 @@ const Movements = () => {
         <h1 className="mb-3 text-white">Historial de Movimientos</h1>
         {/* Filtro global */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-         
+         <div>
           <Button
             variant="primary"
             onClick={() => setShowModal(true)}
-            className="rounded-pill"
+            className="rounded-pill me-2"
             style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
           >
-            <FaPlus className="me-1" /> Agregar Nuevo movimiento
+            <FaPlus className="me-1" /> Crear movimiento
           </Button>
-        </div>
+          </div>
 
         {/* Botones de exportación */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div className="d-flex gap-2">
-            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportCSV}>
+          <div>
+            <Button variant="success" className="rounded-pill me-2" onClick={handleExportCSV}>
               Exportar CSV
             </Button>
-            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportExcel}>
+            <Button variant="success"  className="rounded-pill me-2" onClick={handleExportExcel}>
               Exportar Excel
             </Button>
-            <Button variant="success" size="sm" className="rounded-pill" onClick={handleExportPDF}>
+            <Button variant="success" className="rounded-pill me-2" onClick={handleExportPDF}>
               Exportar PDF
             </Button>
           </div>
