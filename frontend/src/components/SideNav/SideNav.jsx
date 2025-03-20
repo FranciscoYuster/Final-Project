@@ -186,8 +186,7 @@ const SideNav = () => {
             </ul>
           )}
 
-          {/* Submenú de Operaciones */}
-          <motion.li
+       {/*    <motion.li
             variants={linkVariants}
             whileHover="hover"
             onClick={() => setShowOperaciones(!showOperaciones)}
@@ -212,7 +211,7 @@ const SideNav = () => {
                 </Link>
               </li>
             </ul>
-          )}
+          )} */}
 
           {/* Submenú de Administración */}
           <motion.li variants={linkVariants} whileHover="hover">
