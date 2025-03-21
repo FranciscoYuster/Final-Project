@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination, Col} from "react-bootstrap";
+import { Button, Modal, Table, Form, FormControl, InputGroup, Pagination, Col } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import { FaPlus } from "react-icons/fa";
 import * as XLSX from "xlsx";
@@ -332,26 +332,27 @@ const Clientes = () => {
       <div className="w-100" style={{ maxWidth: "1200px" }}>
         <h1 className="mb-3" style={{ color: "white" }}>Clientes</h1>
         <InputGroup className="mb-3">
-        <Col className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <Button
-              variant="primary"
-              onClick={() => setShowModal(true)}
-              className="rounded-pill me-2"
-              style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
-            >
-              <FaPlus className="me-1" />
-              Crear Cliente
-            </Button>
-          </div>
-          <div>
-          <Button variant="success" className="rounded-pill" onClick={exportToCSV}>
-            Exportar CSV
-          </Button>
-          <Button variant="success" className="rounded-pill ms-2" onClick={exportToExcel}>
-            Exportar Excel
-          </Button>
-          </div>
+          <Col className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              {/* Botón corregido para abrir el modal de creación */}
+              <Button
+                variant="primary"
+                onClick={handleOpenCreateModal}
+                className="rounded-pill me-2"
+                style={{ backgroundColor: "#074de3", borderColor: "#074de3" }}
+              >
+                <FaPlus className="me-1" />
+                Crear Cliente
+              </Button>
+            </div>
+            <div>
+              <Button variant="success" className="rounded-pill" onClick={exportToCSV}>
+                Exportar CSV
+              </Button>
+              <Button variant="success" className="rounded-pill ms-2" onClick={exportToExcel}>
+                Exportar Excel
+              </Button>
+            </div>
           </Col>
         </InputGroup>
 
@@ -359,72 +360,72 @@ const Clientes = () => {
           <div>Cargando clientes...</div>
         ) : (
           <div className="table-responsive">
-          <Table bordered hover className="mt-4" style={{
-            borderRadius: "10px",
-            overflow: "hidden",
-            backgroundColor: "#E8F8FF",
-            textAlign: "center",
-          }}>
-            <thead style={{ backgroundColor: "#0775e3" }}>
-              <tr>
-                <th>
-                  <Form.Check
-                    type="checkbox"
-                    onChange={handleSelectAll}
-                    checked={selectedCustomers.length === customers.length && customers.length > 0}
-                  />
-                </th>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>RUT</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCustomers.map(customer => (
-                <tr key={customer.id}>
-                  <td>
+            <Table bordered hover className="mt-4" style={{
+              borderRadius: "10px",
+              overflow: "hidden",
+              backgroundColor: "#E8F8FF",
+              textAlign: "center",
+            }}>
+              <thead style={{ backgroundColor: "#0775e3" }}>
+                <tr>
+                  <th>
                     <Form.Check
                       type="checkbox"
-                      checked={selectedCustomers.includes(customer.id)}
-                      onChange={() => handleSelectCustomer(customer.id)}
+                      onChange={handleSelectAll}
+                      checked={selectedCustomers.length === customers.length && customers.length > 0}
                     />
-                  </td>
-                  <td>{customer.name}</td>
-                  <td>{customer.email}</td>
-                  <td>{customer.phone}</td>
-                  <td>{customer.rut}</td>
-                  <td>
-                  <div className="d-flex flex-column flex-sm-row text-center justify-content-center">
-                    <Button
-                      variant="warning"
-                      className="me-2 rounded-pill"
-                      onClick={() => handleOpenEditModal(customer)}
-                      style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="rounded-pill"
-                      onClick={() => confirmDelete(customer.id)}
-                    >
-                      Eliminar
-                    </Button>
-                    </div>
-                  </td>
+                  </th>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>RUT</th>
+                  <th>Acciones</th>
                 </tr>
-              ))}
-              {filteredCustomers.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="text-center">
-                    No se encontraron resultados
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {filteredCustomers.map(customer => (
+                  <tr key={customer.id}>
+                    <td>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectedCustomers.includes(customer.id)}
+                        onChange={() => handleSelectCustomer(customer.id)}
+                      />
+                    </td>
+                    <td>{customer.name}</td>
+                    <td>{customer.email}</td>
+                    <td>{customer.phone}</td>
+                    <td>{customer.rut}</td>
+                    <td>
+                      <div className="d-flex flex-column flex-sm-row text-center justify-content-center">
+                        <Button
+                          variant="warning"
+                          className="me-2 rounded-pill"
+                          onClick={() => handleOpenEditModal(customer)}
+                          style={{ backgroundColor: "#FFD700", borderColor: "#FFD700" }}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="danger"
+                          className="rounded-pill"
+                          onClick={() => confirmDelete(customer.id)}
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredCustomers.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="text-center">
+                      No se encontraron resultados
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
           </div>
         )}
 
