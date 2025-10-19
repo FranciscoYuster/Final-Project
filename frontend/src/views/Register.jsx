@@ -88,37 +88,37 @@ const Register = () => {
                         </div>
                     )}
 
-                    <h2 className="text-center">Register</h2>
+                    <h2 className="text-center">Registro</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="row">
                             <div className="col-md-6 mb-3 input-container">
                                 <FaUser className="input-icon" />
-                                <input type="text" id="firstName" className="form-control" placeholder='First Name'
+                                <input type="text" id="firstName" className="form-control" placeholder='Nombre'
                                     onChange={e => setFirstName(e.target.value)}
                                 />
                             </div>
                             <div className="col-md-6 mb-3 input-container">
                                 <FaUser className="input-icon" />
-                                <input type="text" id="lastName" className="form-control" placeholder='Last Name'
+                                <input type="text" id="lastName" className="form-control" placeholder='Apellido'
                                     onChange={e => setLastName(e.target.value)}
                                 />
                             </div>
                         </div>
                         <div className="form-group mb-3 input-container">
                             <FaEnvelope className="input-icon" />
-                            <input type="email" id="email" className="form-control" placeholder='Email'
+                            <input type="email" id="email" className="form-control" placeholder='Correo Electrónico'
                                 onChange={e => setEmail(e.target.value)}
                             />
                         </div>
                         <div className="form-group mb-3 input-container">
                             <FaEnvelope className="input-icon" />
-                            <input type="email" id="confirmEmail" className="form-control" placeholder='Confirm Email'
+                            <input type="email" id="confirmEmail" className="form-control" placeholder='Confirmar Correo Electrónico'
                                 onChange={e => setConfirmEmail(e.target.value)}
                             />
                         </div>
                         <div className="form-group mb-3 input-container">
                             <FaLock className="input-icon" />
-                            <input type="password" id="password" className="form-control" placeholder='Password'
+                            <input type="password" id="password" className="form-control" placeholder='Contraseña'
                                 onChange={e => setPassword(e.target.value)}
                                 onFocus={() => setShowPasswordRequirements(true)}
                                 onBlur={() => !password && setShowPasswordRequirements(false)} // Ocultar si está vacío
@@ -139,12 +139,12 @@ const Register = () => {
 
                         <div className="form-group mb-3 input-container">
                             <FaLock className="input-icon" />
-                            <input type="password" id="confirmPassword" className="form-control" placeholder='Confirm Password'
+                            <input type="password" id="confirmPassword" className="form-control" placeholder='Confirmar Contraseña'
                                 onChange={e => setConfirmPassword(e.target.value)}
                             />
                         </div>
                         <button className="btn btn-primary w-100">
-                            Register
+                            Registrarse
                         </button>
                     </form>
                     <p className="text-center mt-3">

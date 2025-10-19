@@ -69,17 +69,17 @@ const Login = () => {
                 type="password"
                 id="password"
                 className="form-control"
-                placeholder='Password'
+                placeholder='Contraseña'
                 onChange={e => setPassword(e.target.value)}
               />
             </div>
             <div className="d-flex justify-content-end">
               <a href="#" className="text-decoration-none mb-3 " onClick={() => navigate('/forgot')}>
-                Forgot Password?
+                Olvidaste la contraseña?
               </a>
             </div>
             <button className="btn btn-primary mb-3 w-100" type="submit">
-              Login
+              Iniciar Sesión
             </button>
             <GoogleLogin 
               onSuccess={(response) => {
@@ -108,9 +108,9 @@ const Login = () => {
             />
           </form>
           <p className="text-center mt-3">
-            Don't have an account?{' '}
+            No tienes una cuenta?{' '}
             <a href="#" className="text-decoration-none" onClick={() => navigate('/register')}>
-              Register
+              Registrate ahora!
             </a>
           </p>
         </div>

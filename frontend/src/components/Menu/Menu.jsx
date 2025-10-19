@@ -41,7 +41,7 @@ const Menu = () => {
               whileHover="hover"
             >
               <Link className="nav-link text-white mx-2 fw-semibold" to="/">
-                Home
+                Inicio
               </Link>
             </motion.li>
             <motion.li
@@ -50,7 +50,7 @@ const Menu = () => {
               whileHover="hover"
             >
               <Link className="nav-link text-white mx-2 fw-semibold" to="/services">
-                Services
+                Servicios
               </Link>
             </motion.li>
             {user ? (
@@ -78,7 +78,7 @@ const Menu = () => {
                   whileHover="hover"
                 >
                   <Link className="nav-link text-white mx-2 fw-semibold" to="/login">
-                    Login
+                    Inicar Sesión
                   </Link>
                 </motion.li>
                 <motion.li
@@ -87,7 +87,7 @@ const Menu = () => {
                   whileHover="hover"
                 >
                   <Link className="nav-link text-white mx-2 fw-semibold" to="/register">
-                    Register
+                    Registro
                   </Link>
                 </motion.li>
               </>

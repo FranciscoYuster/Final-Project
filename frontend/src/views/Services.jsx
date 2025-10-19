@@ -3,7 +3,7 @@ import React from 'react';
 const Services = () => {
   return (
     <div className="container-fluid my-5 text-center text-white">
-      <h1 className="text-white">¡Services!</h1>
+      <h1 className="text-white">¡Servicios!</h1>
       <p className="text-white"> 
         Sistema de Inventario diseñado para optimizar la gestión y el control de activos.
       </p>
@@ -17,28 +17,28 @@ const Services = () => {
         </div>
         <div className="carousel-inner">
           <div className="carousel-item active">
-            <img src="/Images/Registro de productos.mov" className="d-block w-100 img-fluid" alt="..." />
+            <video src="/Images/Registro de productos.mov" className="d-block w-100 img-fluid" controls autoplay alt="Registro de productos"></video>
             <div className="carousel-caption d-none d-md-block">
               <h5>Registro de productos fácil y rápido</h5>
               <p>Los usuarios pueden agregar productos de manera sencilla, especificando su nombre, cantidad, precio y detalles importantes. Todo se guarda en tiempo real y es accesible desde cualquier dispositivo.</p>
             </div>
           </div>
           <div className="carousel-item">
-            <img src="/Images/Control de stock.mov" className="d-block w-100 img-fluid" alt="..." />
+            <video src="/Images/Control de stock.mov" className="d-block w-100 img-fluid" controls autoplay alt="Control de stock"></video>
             <div className="carousel-caption d-none d-md-block">
               <h5>Control de stock en tiempo real</h5>
               <p>Los usuarios tienen acceso inmediato a la cantidad de productos disponibles, sin tener que hacer cálculos o revisar múltiples fuentes.</p>
             </div>
           </div>
           <div className="carousel-item">
-            <img src="/Images/Informes y reportes.png" className="d-block w-100 img-fluid" alt="..." />
+            <img src="/Images/Informes y reportes.png" className="d-block w-100 img-fluid" alt="Informes y reportes" />
             <div className="carousel-caption d-none d-md-block">
               <h5>Informes y reportes de inventario</h5>
               <p>Los usuarios pueden generar informes detallados del estado de su inventario, lo que facilita la toma de decisiones para el negocio.</p>
             </div>
           </div>
           <div className="carousel-item">
-            <img src="/Images/Interfaz amigable.mov" className="d-block w-100 img-fluid" alt="..." />
+            <video src="/Images/Interfaz amigable.mov" className="d-block w-100 img-fluid" controls autoplay alt="Interfaz amigable"></video>
             <div className="carousel-caption d-none d-md-block">
               <h5>Interfaz amigable y sencilla</h5>
               <p>A diferencia de otros sistemas complejos, Logigo tiene una interfaz intuitiva que permite a los usuarios navegar sin problemas, sin necesidad de capacitación técnica.</p>
