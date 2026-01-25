@@ -109,8 +109,25 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(datos)
       });
-      const data = await response.json();
-      return data;
+      
+      // Verificar si hay contenido antes de parsear JSON
+      const text = await response.text();
+      let data = {};
+      
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.error('Error parsing JSON:', e);
+          return { error: 'Respuesta inválida del servidor' };
+        }
+      }
+      
+      if (response.ok) {
+        return data;
+      } else {
+        return { error: data.error || 'Error en el registro' };
+      }
     } catch (error) {
       console.log(error.message);
       return { error: error.message };

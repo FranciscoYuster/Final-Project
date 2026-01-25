@@ -54,6 +54,17 @@ def add_security_headers(response):
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return response
 
+# Manejador de errores global
+@app.errorhandler(Exception)
+def handle_error(error):
+    error_message = str(error)
+    if hasattr(error, 'code'):
+        status_code = error.code
+    else:
+        status_code = 500
+    
+    return jsonify({"error": error_message}), status_code
+
 @app.route('/')
 def main():
     return jsonify({"status": "Server running successfully with JWT and Flask"}), 200

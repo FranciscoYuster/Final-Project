@@ -70,34 +70,43 @@ def register():
     Endpoint para registrar un nuevo usuario y crear su inventario.
     Se espera un JSON con: email, password, firstName, lastName.
     """
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    first_name = data.get('firstName')
-    last_name = data.get('lastName')
-
-    if not all([email, password, first_name, last_name]):
-        return jsonify({"error": "Faltan datos requeridos."}), 400
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "El usuario ya existe."}), 400
-
-    new_user = User(
-        email=email,
-        first_name=first_name,
-        last_name=last_name,
-        created_by=None,
-        role='user'
-    )
-    new_user.set_password(password)
-    new_user.save()
-
     try:
-        create_inventory_for_user(new_user)
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No se recibieron datos."}), 400
+        
+        email = data.get('email')
+        password = data.get('password')
+        first_name = data.get('firstName')
+        last_name = data.get('lastName')
 
-    return jsonify({"success": True, "user": new_user.serialize()}), 201
+        if not all([email, password, first_name, last_name]):
+            return jsonify({"error": "Faltan datos requeridos."}), 400
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({"error": "El usuario ya existe."}), 400
+
+        new_user = User(
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            created_by=None,
+            role='user'
+        )
+        new_user.set_password(password)
+        new_user.save()
+
+        try:
+            create_inventory_for_user(new_user)
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+
+        return jsonify({"success": True, "user": new_user.serialize()}), 201
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error en el registro: {str(e)}"}), 500
 
 # Ruta de login tradicional.
 @api.route('/login', methods=['POST'])
